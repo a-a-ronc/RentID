@@ -174,34 +174,36 @@ export function AppShell({
               <span className="font-display text-[10px] font-medium">{item.label}</span>
             </Link>
           ))}
-          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-            <SheetTrigger className="flex flex-col items-center gap-1 rounded-xl py-2 text-muted-foreground">
-              <Home className="size-4" strokeWidth={1.75} />
-              <span className="font-display text-[10px] font-medium">More</span>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-3xl border-none bg-background px-5 pb-8">
-              <SheetTitle className="font-display text-base">All sections</SheetTitle>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {NAV.slice(4).map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMoreOpen(false)}
-                    className="glass flex items-center gap-2.5 rounded-2xl px-3 py-3 text-[13px] font-medium"
-                  >
-                    <item.icon className="size-4 text-accent" strokeWidth={1.75} />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-              <button
-                onClick={signOut}
-                className="mt-4 w-full rounded-2xl bg-secondary px-3 py-3 text-[13px] font-medium text-muted-foreground"
-              >
-                Sign out
-              </button>
-            </SheetContent>
-          </Sheet>
+          {nav.length > 4 ? (
+            <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+              <SheetTrigger className="flex flex-col items-center gap-1 rounded-xl py-2 text-muted-foreground">
+                <Home className="size-4" strokeWidth={1.75} />
+                <span className="font-display text-[10px] font-medium">More</span>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="rounded-t-3xl border-none bg-background px-5 pb-8">
+                <SheetTitle className="font-display text-base">All sections</SheetTitle>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  {nav.slice(4).map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMoreOpen(false)}
+                      className="glass flex items-center gap-2.5 rounded-2xl px-3 py-3 text-[13px] font-medium"
+                    >
+                      <item.icon className="size-4 text-accent" strokeWidth={1.75} />
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+                <button
+                  onClick={signOut}
+                  className="mt-4 w-full rounded-2xl bg-secondary px-3 py-3 text-[13px] font-medium text-muted-foreground"
+                >
+                  Sign out
+                </button>
+              </SheetContent>
+            </Sheet>
+          ) : null}
         </div>
       </nav>
     </div>
