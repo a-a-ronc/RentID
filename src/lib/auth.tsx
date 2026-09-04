@@ -28,9 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const session = authService.getSession();
     setState({ user: session?.user ?? null, roles: session?.roles ?? [], loading: false });
-    return authService.onAuthStateChange((next) => {
+    const unsubscribe = authService.onAuthStateChange((next) => {
       setState({ user: next?.user ?? null, roles: next?.roles ?? [], loading: false });
     });
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
