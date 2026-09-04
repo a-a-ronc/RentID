@@ -164,7 +164,7 @@ function AuthPage() {
             <Field label="Email" htmlFor="email">
               <TextInput id="email" name="email" type="email" required autoComplete="email" placeholder="you@email.com" />
             </Field>
-            <Field label="Password" htmlFor="password" hint={mode === "signup" ? "At least 8 characters." : undefined}>
+            <Field label="Password" htmlFor="password" {...(mode === "signup" ? { hint: "At least 8 characters." } : {})}>
               <TextInput
                 id="password"
                 name="password"

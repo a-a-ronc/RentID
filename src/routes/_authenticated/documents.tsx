@@ -39,7 +39,7 @@ const KINDS: { value: DocumentKind; label: string }[] = [
   { value: "inspection", label: "Inspection" },
   { value: "notice", label: "Notice" },
   { value: "receipt", label: "Receipt" },
-  { value: "insurance", label: "Insurance" },
+  { value: "id_verification", label: "ID verification" },
   { value: "other", label: "Other" },
 ];
 
@@ -61,7 +61,7 @@ function DocumentsPage() {
     try {
       await upload.mutateAsync({
         organizationId: active.orgId,
-        propertyId: tenancy?.property_id ?? String(form.get("propertyId") ?? "") || null,
+        propertyId: tenancy?.property_id ?? (String(form.get("propertyId") ?? "") || null),
         unitId: tenancy?.unit_id ?? null,
         tenancyId,
         kind: String(form.get("kind") ?? "other") as DocumentKind,
@@ -154,8 +154,8 @@ function DocumentsPage() {
                       size="sm"
                       onClick={() =>
                         toast.info(
-                          d.file_name
-                            ? `${d.file_name} opens once document storage is connected.`
+                          d.storage_path
+                            ? `${d.storage_path.split("/").pop()} opens once document storage is connected.`
                             : "No file attached to this record yet.",
                         )
                       }
