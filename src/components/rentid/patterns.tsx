@@ -93,11 +93,11 @@ export function ListRow({
   delay,
 }: {
   title: string;
-  subtitle?: string;
-  value?: ReactNode;
-  pill?: ReactNode;
-  onClick?: () => void;
-  delay?: number;
+  subtitle?: string | undefined;
+  value?: ReactNode | undefined;
+  pill?: ReactNode | undefined;
+  onClick?: (() => void) | undefined;
+  delay?: number | undefined;
 }) {
   const content = (
     <>
