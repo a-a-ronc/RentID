@@ -57,7 +57,7 @@ function Landing() {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 sm:px-8">
         <header className="flex items-center justify-between py-6">
-          <div className="font-display text-[20px] font-bold tracking-tight">RentID</div>
+          <RentIDLogo markClassName="size-8" wordmarkClassName="text-[20px]" />
           <Link
             to="/auth"
             className="glass rounded-full px-4 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
