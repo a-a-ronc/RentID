@@ -1,15 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AppShell, PageHeader, SectionCard } from "@/components/rentid/patterns";
-import { Eyebrow } from "@/components/rentid/Surface";
-import { useProfile } from "@/lib/auth";
-import { useActiveOrg, useInvalidateRentId } from "@/lib/rentid";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  AppShell,
+  Button,
+  DemoNotice,
+  Field,
+  FormGrid,
+  Glass,
+  ListRow,
+  PageHeader,
+  SectionCard,
+  StatusPill,
+  TextInput,
+} from "@/components/rentid/patterns";
+import { useAuth, usePrimaryRole, useProfile, useSignOut, useUpdateProfile } from "@/lib/auth";
+import { useActiveOrg, useInvalidateRentId, useUpdateOrganization } from "@/lib/rentid";
+import { resetDemoData } from "@/lib/services";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -23,95 +30,145 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const profile = useProfile();
+  const role = usePrimaryRole();
   const active = useActiveOrg();
+  const updateProfile = useUpdateProfile();
+  const updateOrg = useUpdateOrganization();
+  const signOut = useSignOut();
   const invalidate = useInvalidateRentId();
-  const [name, setName] = useState("");
-  const [orgName, setOrgName] = useState("");
-  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (profile.data?.full_name != null) setName(profile.data.full_name);
-  }, [profile.data?.full_name]);
+  const isTenant = role === "tenant";
 
-  useEffect(() => {
-    if (active.org?.name) setOrgName(active.org.name);
-  }, [active.org?.name]);
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
+  async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
     try {
-      const { error: profileErr } = await supabase
-        .from("profiles")
-        .update({ full_name: name.trim() || null })
-        .eq("id", profile.data?.id ?? "");
-      if (profileErr) throw profileErr;
-      if (active.org && orgName.trim() && orgName.trim() !== active.org.name) {
-        const { error: orgErr } = await supabase
-          .from("organizations")
-          .update({ name: orgName.trim() })
-          .eq("id", active.org.id);
-        if (orgErr) throw orgErr;
-      }
-      toast.success("Settings saved.");
-      invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save settings.");
-    } finally {
-      setBusy(false);
+      await updateProfile.mutateAsync({
+        full_name: String(form.get("fullName") ?? "") || null,
+        phone: String(form.get("phone") ?? "") || null,
+      });
+      toast.success("Profile saved.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Profile could not be saved.");
     }
   }
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+  async function saveOrg(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!active.orgId) return;
+    const form = new FormData(event.currentTarget);
+    try {
+      await updateOrg.mutateAsync({
+        orgId: active.orgId,
+        name: String(form.get("name") ?? ""),
+        legal_entity_name: String(form.get("legalEntityName") ?? "") || null,
+      });
+      toast.success("Workspace saved.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Workspace could not be saved.");
+    }
   }
 
   return (
-    <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
-      <PageHeader title="Settings" subtitle={active.org?.name} />
+    <AppShell subtitle={isTenant ? "Tenant" : active.isDemo ? "Demo portfolio" : "Landlord"}>
+      <PageHeader title="Settings" subtitle={user?.email ?? undefined} />
 
-      <form onSubmit={save} className="mt-5">
-        <SectionCard title="Profile & workspace">
-          <div className="space-y-3.5 px-4 py-4">
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Your name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Alex Rivera" />
+      <div className="mt-5 space-y-4">
+        <SectionCard title="Your profile">
+          <form onSubmit={saveProfile} className="space-y-3 px-4 py-4">
+            <FormGrid>
+              <Field label="Full name" htmlFor="fullName">
+                <TextInput id="fullName" name="fullName" defaultValue={profile.data?.full_name ?? ""} />
+              </Field>
+              <Field label="Phone" htmlFor="phone">
+                <TextInput id="phone" name="phone" defaultValue={profile.data?.phone ?? ""} />
+              </Field>
+            </FormGrid>
+            <Field label="Email" htmlFor="email" hint="Email changes need the live auth service.">
+              <TextInput id="email" value={user?.email ?? ""} readOnly disabled />
+            </Field>
+            <div className="flex justify-end">
+              <Button type="submit" loading={updateProfile.isPending}>
+                Save profile
+              </Button>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Workspace name</Label>
-              <Input value={orgName} onChange={(e) => setOrgName(e.target.value)} />
-              {active.isDemo && (
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  This is the shared demo portfolio — create your own workspace from the dashboard.
-                </p>
-              )}
-            </div>
-            <Button
-              type="submit"
-              disabled={busy}
-              className="rounded-xl bg-brand px-5 text-[13px] font-semibold text-brand-foreground hover:bg-brand/90"
-            >
-              {busy ? "Saving…" : "Save changes"}
-            </Button>
-          </div>
+          </form>
         </SectionCard>
-      </form>
 
-      <SectionCard title="Account" className="mt-4">
-        <div className="px-4 py-4">
-          <Eyebrow>Signed in as</Eyebrow>
-          <p className="num mt-1 text-[13px]">{profile.data?.email ?? "—"}</p>
+        {!isTenant && active.org ? (
+          <SectionCard title="Workspace" aside={active.isDemo ? "Demo portfolio" : undefined}>
+            <form onSubmit={saveOrg} className="space-y-3 px-4 py-4">
+              <FormGrid>
+                <Field label="Workspace name" htmlFor="name">
+                  <TextInput id="name" name="name" defaultValue={active.org.name} required />
+                </Field>
+                <Field label="Legal entity" htmlFor="legalEntityName">
+                  <TextInput
+                    id="legalEntityName"
+                    name="legalEntityName"
+                    defaultValue={active.org.legal_entity_name ?? ""}
+                  />
+                </Field>
+              </FormGrid>
+              <div className="flex justify-end">
+                <Button type="submit" loading={updateOrg.isPending}>
+                  Save workspace
+                </Button>
+              </div>
+            </form>
+          </SectionCard>
+        ) : null}
+
+        <SectionCard title="Account">
+          <ListRow
+            title="Role"
+            subtitle="Roles are stored separately from your profile and cannot be self-assigned."
+            pill={<StatusPill status={(role ?? "unknown").replace("_", " ")} tone="accent" />}
+          />
+          <ListRow
+            title="Sign out"
+            subtitle="Ends this session on this device."
+            value={
+              <Button
+                tone="secondary"
+                size="sm"
+                onClick={async () => {
+                  await signOut();
+                  await navigate({ to: "/auth", replace: true });
+                }}
+              >
+                Sign out
+              </Button>
+            }
+          />
+        </SectionCard>
+
+        <Glass className="p-5">
+          <p className="font-display text-[14px] font-semibold">Preview data</p>
+          <p className="mt-1 text-[12.5px] text-muted-foreground">
+            Reset the demo portfolio back to its seeded state — properties, tenancies, payments and documents.
+          </p>
           <Button
-            onClick={signOut}
-            variant="outline"
-            className="mt-4 rounded-xl border-border text-[13px] font-medium"
+            tone="danger"
+            size="sm"
+            className="mt-3"
+            onClick={() => {
+              resetDemoData();
+              invalidate();
+              toast.success("Demo data reset.");
+            }}
           >
-            Sign out
+            Reset demo data
           </Button>
-        </div>
-      </SectionCard>
+        </Glass>
+
+        <DemoNotice>
+          When the backend reconnects: authentication, storage and row-level security take over these screens without
+          UI changes — see the integration checklist in the repository.
+        </DemoNotice>
+      </div>
     </AppShell>
   );
 }
