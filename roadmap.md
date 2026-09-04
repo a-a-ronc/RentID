@@ -16,6 +16,7 @@
 - [ ] Tenant dashboard (/tenant) + accept invitation + lease view
 - [ ] Placeholder sections (applications, messages, reviews, documents, reports, settings)
 - [ ] Typecheck + build verification, responsive browser audit
+- ETA: pages land over the next several minutes; full milestone verification (typecheck + browser flow) right after.
 
 ## Audits (after milestone flow works)
 - [ ] Schema + RLS audit (incl. 9 remaining SECURITY DEFINER linter warnings)
