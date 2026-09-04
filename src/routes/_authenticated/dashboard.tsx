@@ -1,27 +1,35 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { ArrowRight, TriangleAlert } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import {
   AppShell,
+  EmptyState,
+  InlineError,
   ListRow,
+  LoadingCard,
   PageHeader,
   SectionCard,
   StatusPill,
   SummaryGrid,
   ToolbarButton,
+  TrustBadge,
 } from "@/components/rentid/patterns";
-import { ComingSoon, Glass, Eyebrow } from "@/components/rentid/Surface";
 import { useProfile } from "@/lib/auth";
 import { daysUntil, greeting, money, monthLabel, shortDate } from "@/lib/format";
-import { useActiveOrg, useLeases, useMaintenance, usePayments, useProperties, useTenancies } from "@/lib/rentid";
+import {
+  useActiveOrg,
+  useDashboardMetrics,
+  useLeases,
+  useMaintenance,
+  useNotifications,
+  usePayments,
+  useTenancies,
+} from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
-    meta: [
-      { title: "Dashboard — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Dashboard — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: Dashboard,
 });
@@ -31,233 +39,213 @@ function Dashboard() {
   const profile = useProfile();
   const orgId = active.orgId;
 
-  const properties = useProperties(orgId);
-  const tenancies = useTenancies(orgId);
+  const metrics = useDashboardMetrics(orgId);
   const payments = usePayments(orgId);
+  const tenancies = useTenancies(orgId);
   const maintenance = useMaintenance(orgId);
   const leases = useLeases(orgId);
+  const notifications = useNotifications();
 
   const loading =
-    properties.isLoading || payments.isLoading || maintenance.isLoading || leases.isLoading;
+    metrics.isLoading || payments.isLoading || tenancies.isLoading || maintenance.isLoading || leases.isLoading;
+  const isError = metrics.isError || payments.isError || tenancies.isError || maintenance.isError || leases.isError;
 
-  const stats = useMemo(() => {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-    let collected = 0;
-    let outstanding = 0;
-    for (const p of payments.data ?? []) {
-      const due = p.due_date ? new Date(`${p.due_date}T00:00:00`) : null;
-      if (p.status === "paid") {
-        if (p.paid_at) {
-          const paid = new Date(p.paid_at);
-          if (paid >= monthStart && paid < monthEnd) collected += Number(p.amount);
-        }
-      } else if (due && due < now && (p.status === "late" || p.status === "scheduled" || p.status === "pending")) {
-        outstanding += Number(p.amount);
-      }
-    }
-
-    const units = (properties.data ?? []).flatMap((pr) => pr.units ?? []);
-    const occupied = units.filter((u) => u.occupancy_status === "occupied").length;
-
-    const expiring = (leases.data ?? []).filter((l) => {
-      if (!l.end_date) return false;
-      const d = daysUntil(l.end_date);
-      return d != null && d >= 0 && d <= 60;
-    });
-
-    const openMaintenance = (maintenance.data ?? []).filter(
-      (m) => m.status === "open" || m.status === "in_progress",
-    );
-
-    return { collected, outstanding, units: units.length, occupied, expiring, openMaintenance };
-  }, [payments.data, properties.data, leases.data, maintenance.data]);
+  const tenancyById = useMemo(() => {
+    const map = new Map<string, (typeof tenancies.data)[number]>();
+    for (const t of tenancies.data ?? []) map.set(t.id, t);
+    return map;
+  }, [tenancies.data]);
 
   const recentPayments = (payments.data ?? [])
     .slice()
     .sort((a, b) => (b.due_date ?? "").localeCompare(a.due_date ?? ""))
     .slice(0, 5);
 
+  const upcomingRent = (payments.data ?? [])
+    .filter((p) => p.status === "scheduled" || p.status === "pending")
+    .slice()
+    .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""))
+    .slice(0, 5);
+
+  const lateTenants = (payments.data ?? [])
+    .filter((p) => p.status === "late")
+    .slice(0, 5);
+
+  const openMaintenance = (maintenance.data ?? [])
+    .filter((m) => m.status !== "completed" && m.status !== "cancelled")
+    .slice(0, 5);
+
+  const expiringLeases = (leases.data ?? [])
+    .filter((l) => {
+      const d = daysUntil(l.end_date);
+      return d != null && d >= 0 && d <= 60;
+    })
+    .slice(0, 5);
+
+  const recentNotifications = (notifications.data ?? []).slice(0, 5);
+
   return (
     <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
       <PageHeader
         title={`${greeting()}${profile.data?.full_name ? `, ${profile.data.full_name.split(" ")[0]}` : ""}`}
         subtitle={active.org ? `${active.org.name} · ${monthLabel(new Date())}` : undefined}
-        action={
-          <ToolbarButton to="/properties" label="Add property" icon={ArrowRight} />
-        }
+        action={<ToolbarButton to="/properties" label="Add property" icon={ArrowRight} />}
       />
 
-      {active.isDemo && (
-        <Glass className="mt-4 flex items-start gap-3 p-4">
-          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" strokeWidth={1.75} />
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-medium">You're viewing the RentID demo portfolio.</p>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              Finish onboarding to create your own workspace — your properties, tenants and leases
-              live there.
-            </p>
-          </div>
-          <Link
-            to="/onboarding"
-            className="shrink-0 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-semibold text-brand-foreground"
-          >
-            Set up
-          </Link>
-        </Glass>
-      )}
-
-      <SummaryGrid
-        className="mt-5"
-        items={[
-          {
-            label: "Collected this month",
-            value: money(stats.collected),
-            tone: "success" as const,
-            hint: "Rent marked paid",
-          },
-          {
-            label: "Outstanding",
-            value: money(stats.outstanding),
-            tone: stats.outstanding > 0 ? ("warning" as const) : ("neutral" as const),
-            hint: "Past due",
-          },
-          {
-            label: "Occupancy",
-            value: `${stats.occupied}/${stats.units}`,
-            tone: "neutral" as const,
-            hint: "Units occupied",
-          },
-          {
-            label: "Maintenance",
-            value: String(stats.openMaintenance.length),
-            tone: stats.openMaintenance.length > 0 ? ("warning" as const) : ("neutral" as const),
-            hint: "Open requests",
-          },
-        ]}
-      />
-
-      {loading ? (
-        <Glass className="mt-6 p-6 text-[13px] text-muted-foreground">Loading your ledger…</Glass>
+      {isError ? (
+        <InlineError message="Couldn't load your dashboard data." className="mt-5" />
+      ) : loading ? (
+        <LoadingCard className="mt-5" label="Loading dashboard…" />
       ) : (
         <>
-          <SectionCard title="Recent rent" aside="Payments" className="mt-6">
+          <SummaryGrid
+            className="mt-5"
+            items={[
+              {
+                label: "Rent collected",
+                value: money(metrics.data?.rent_collected),
+                tone: "success" as const,
+                hint: "This month",
+              },
+              {
+                label: "Outstanding rent",
+                value: money(metrics.data?.outstanding_rent),
+                tone: (metrics.data?.outstanding_rent ?? 0) > 0 ? ("warning" as const) : ("neutral" as const),
+                hint: "Past due",
+              },
+              {
+                label: "Occupied units",
+                value: `${metrics.data?.occupied_units ?? 0} / ${metrics.data?.total_units ?? 0}`,
+                tone: "neutral" as const,
+                hint: "Across your portfolio",
+              },
+              {
+                label: "Late payments",
+                value: String(metrics.data?.late_payments ?? 0),
+                tone: (metrics.data?.late_payments ?? 0) > 0 ? ("danger" as const) : ("neutral" as const),
+                hint: "This month",
+              },
+              {
+                label: "Open maintenance",
+                value: String(metrics.data?.open_maintenance ?? 0),
+                tone: (metrics.data?.open_maintenance ?? 0) > 0 ? ("warning" as const) : ("neutral" as const),
+                hint: "Requests",
+              },
+              {
+                label: "Leases expiring",
+                value: String(metrics.data?.leases_expiring ?? 0),
+                tone: (metrics.data?.leases_expiring ?? 0) > 0 ? ("warning" as const) : ("neutral" as const),
+                hint: "Next 60 days",
+              },
+            ]}
+          />
+
+          <SectionCard title="Recent payments" aside="Latest 5" className="mt-6">
             {recentPayments.length === 0 ? (
-              <p className="px-4 py-5 text-[13px] text-muted-foreground">No payments recorded yet.</p>
+              <EmptyState title="No payments yet" description="Rent records appear once tenancies are set up." />
             ) : (
-              recentPayments.map((p) => {
-                const t = p.tenancies as { tenant_name?: string } | null;
-                const u = p.tenancies as { units?: { name?: string } } | null;
-                return (
-                  <ListRow
-                    key={p.id}
-                    title={t?.tenant_name ?? "Tenant"}
-                    subtitle={u?.units?.name ?? ""}
-                    value={money(Number(p.amount))}
-                    pill={
+              recentPayments.map((p) => (
+                <ListRow
+                  key={p.id}
+                  title={p.tenant_name}
+                  subtitle={`${p.property_name} · ${p.unit_name} · ${shortDate(p.due_date)}`}
+                  value={money(Number(p.amount))}
+                  pill={
+                    <div className="flex items-center gap-2">
+                      {p.verified ? <TrustBadge kind="verified_payment" /> : null}
                       <StatusPill
-                        status={p.status as string}
+                        status={p.status}
                         tone={
-                          p.status === "paid"
-                            ? "success"
-                            : p.status === "late"
-                              ? "danger"
-                              : p.status === "scheduled"
-                                ? "neutral"
-                                : "warning"
+                          p.status === "paid" ? "success" : p.status === "late" ? "danger" : "neutral"
                         }
                       />
-                    }
-                  />
-                );
-              })
+                    </div>
+                  }
+                />
+              ))
             )}
           </SectionCard>
 
-          <SectionCard title="Open maintenance" aside="Requests" className="mt-4">
-            {stats.openMaintenance.length === 0 ? (
-              <p className="px-4 py-5 text-[13px] text-muted-foreground">
-                Nothing open — units are quiet.
-              </p>
+          <SectionCard title="Upcoming rent" aside="Next due" className="mt-4">
+            {upcomingRent.length === 0 ? (
+              <EmptyState title="Nothing scheduled" description="No upcoming rent is scheduled." />
             ) : (
-              stats.openMaintenance.slice(0, 4).map((m) => {
-                const u = m as { units?: { name?: string } };
-                return (
-                  <ListRow
-                    key={m.id}
-                    title={m.title}
-                    subtitle={u.units?.name ?? ""}
-                    pill={
-                      <StatusPill
-                        status={m.status}
-                        tone={m.status === "open" ? "warning" : "neutral"}
-                      />
-                    }
-                  />
-                );
-              })
+              upcomingRent.map((p) => (
+                <ListRow
+                  key={p.id}
+                  title={p.tenant_name}
+                  subtitle={`${p.property_name} · ${p.unit_name} · Due ${shortDate(p.due_date)}`}
+                  value={money(Number(p.amount))}
+                  pill={<StatusPill status={p.status} tone="neutral" />}
+                />
+              ))
             )}
           </SectionCard>
 
-          {stats.expiring.length > 0 && (
-            <SectionCard title="Leases expiring soon" aside="Next 60 days" className="mt-4">
-              {stats.expiring.map((l) => {
-                const t = l.tenancies as { tenant_name?: string; units?: { name?: string } } | null;
+          <SectionCard title="Late tenants" aside={`${lateTenants.length} late`} className="mt-4">
+            {lateTenants.length === 0 ? (
+              <EmptyState title="All caught up" description="No tenants are currently late on rent." />
+            ) : (
+              lateTenants.map((p) => (
+                <ListRow
+                  key={p.id}
+                  title={p.tenant_name}
+                  subtitle={`${p.property_name} · ${p.unit_name} · Due ${shortDate(p.due_date)}`}
+                  value={money(Number(p.amount))}
+                  pill={<StatusPill status="Late" tone="danger" />}
+                />
+              ))
+            )}
+          </SectionCard>
+
+          <SectionCard title="Maintenance requests" aside="Open" className="mt-4">
+            {openMaintenance.length === 0 ? (
+              <EmptyState title="Nothing open" description="Units are quiet — no open maintenance requests." />
+            ) : (
+              openMaintenance.map((m) => (
+                <ListRow
+                  key={m.id}
+                  title={m.title}
+                  subtitle={`${m.property_name} · ${m.unit_name}`}
+                  pill={<StatusPill status={m.status.replace("_", " ")} tone={m.status === "open" ? "warning" : "neutral"} />}
+                />
+              ))
+            )}
+          </SectionCard>
+
+          <SectionCard title="Lease expirations" aside="Next 60 days" className="mt-4">
+            {expiringLeases.length === 0 ? (
+              <EmptyState title="Nothing expiring" description="No leases expire in the next 60 days." />
+            ) : (
+              expiringLeases.map((l) => {
+                const tenant = tenancyById.get(l.tenancy_id);
+                const days = daysUntil(l.end_date);
                 return (
                   <ListRow
                     key={l.id}
-                    title={t?.tenant_name ?? "Tenant"}
-                    subtitle={t?.units?.name ?? ""}
-                    pill={<StatusPill status={`${daysUntil(l.end_date!)} days`} tone="warning" />}
+                    title={tenant?.tenant_name ?? l.tenancy?.tenant_name ?? "Tenant"}
+                    subtitle={`${l.property?.name ?? ""} · ${l.unit?.name ?? ""} · Ends ${shortDate(l.end_date)}`}
+                    pill={<StatusPill status={`${days} days`} tone="warning" />}
                   />
                 );
-              })}
-            </SectionCard>
-          )}
-
-          <SectionCard
-            title="Properties"
-            aside={`${properties.data?.length ?? 0} total`}
-            className="mt-4"
-            footer={
-              <Link
-                to="/properties"
-                className="flex items-center gap-1.5 text-[13px] font-medium text-brand"
-              >
-                View all properties <ArrowRight className="size-3.5" />
-              </Link>
-            }
-          >
-            {(properties.data ?? []).slice(0, 3).map((pr) => (
-              <ListRow
-                key={pr.id}
-                title={pr.name}
-                subtitle={`${pr.city}, ${pr.state} · ${(pr.units ?? []).length} units`}
-                value={
-                  <Link to="/properties/$propertyId" params={{ propertyId: pr.id }}>
-                    <StatusPill status="Open" tone="neutral" />
-                  </Link>
-                }
-              />
-            ))}
+              })
+            )}
           </SectionCard>
 
-          <div className="mt-8">
-            <Eyebrow>Coming soon</Eyebrow>
-            <div className="mt-2">
-              <ComingSoon
-                title="Rent collection & reporting"
-                description="RentID-owned payments with automated rent collection, receipts and portfolio reporting are planned next."
-                points={[
-                  "Autopay rent schedules per lease",
-                  "Late-fee tracking and reminders",
-                  "Owner statements and cash-flow reports",
-                ]}
-              />
-            </div>
-          </div>
+          <SectionCard title="Notifications" aside="Recent" className="mt-4">
+            {recentNotifications.length === 0 ? (
+              <EmptyState title="No notifications" description="You're all caught up." />
+            ) : (
+              recentNotifications.map((n) => (
+                <ListRow
+                  key={n.id}
+                  title={n.title}
+                  subtitle={n.body ?? undefined}
+                  pill={n.read_at ? undefined : <StatusPill status="New" tone="accent" />}
+                />
+              ))
+            )}
+          </SectionCard>
         </>
       )}
     </AppShell>
