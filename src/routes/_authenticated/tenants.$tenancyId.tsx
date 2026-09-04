@@ -78,7 +78,7 @@ function TenancyDetail() {
     }
     await supabase.from("verification_records").insert({
       tenancy_id: tenancyId,
-      subject_user_id: tenancy.tenant_user_id,
+      subject_user_id: tenancy!.tenant_user_id,
       record_type: "tenancy",
       label: "Verified Tenancy — Confirmed by landlord",
     });
@@ -122,10 +122,10 @@ function TenancyDetail() {
           .insert({
             organization_id: active.orgId,
             tenancy_id: tenancyId,
-            unit_id: tenancy.unit_id,
-            start_date: tenancy.start_date,
-            end_date: tenancy.end_date,
-            monthly_rent: tenancy.monthly_rent,
+            unit_id: tenancy!.unit_id,
+            start_date: tenancy!.start_date,
+            end_date: tenancy!.end_date,
+            monthly_rent: tenancy!.monthly_rent,
             document_path: path,
           })
           .select("id")
@@ -137,8 +137,8 @@ function TenancyDetail() {
       const { error: docErr } = await supabase.from("documents").insert({
         organization_id: active.orgId,
         tenancy_id: tenancyId,
-        property_id: tenancy.property_id,
-        unit_id: tenancy.unit_id,
+        property_id: tenancy!.property_id,
+        unit_id: tenancy!.unit_id,
         lease_id: leaseId,
         kind: "lease",
         title: leaseName.trim() || file.name,

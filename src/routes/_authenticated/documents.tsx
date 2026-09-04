@@ -128,7 +128,7 @@ function UploadDialog() {
                 <Label className="text-[12px]">Kind</Label>
                 <select
                   value={kind}
-                  onChange={(e) => setKind(e.target.value)}
+                  onChange={(e) => setKind(e.target.value as DocKind)}
                   className="h-9 w-full rounded-xl border border-input bg-card px-3 text-[13px]"
                 >
                   {["lease", "move_in_inspection", "notice", "receipt", "photo", "other"].map((k) => (
