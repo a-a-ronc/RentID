@@ -14,7 +14,7 @@ import {
 import { ComingSoon, Glass, Eyebrow } from "@/components/rentid/Surface";
 import { useProfile } from "@/lib/auth";
 import { daysUntil, greeting, money, monthLabel, shortDate } from "@/lib/format";
-import { useActiveOrg, useLeases, useMaintenance, usePayments, useProperties } from "@/lib/rentid";
+import { useActiveOrg, useLeases, useMaintenance, usePayments, useProperties, useTenancies } from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -65,7 +65,7 @@ function Dashboard() {
     const expiring = (leases.data ?? []).filter((l) => {
       if (!l.end_date) return false;
       const d = daysUntil(l.end_date);
-      return d >= 0 && d <= 60;
+      return d != null && d >= 0 && d <= 60;
     });
 
     const openMaintenance = (maintenance.data ?? []).filter(

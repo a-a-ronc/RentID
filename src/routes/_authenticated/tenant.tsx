@@ -159,9 +159,10 @@ function TenantHome() {
                 </p>
                 {(() => {
                   const end = activeTenancy.end_date;
-                  return end && daysUntil(end) >= 0 ? (
+                  const left = end ? daysUntil(end) : null;
+                  return left != null && left >= 0 ? (
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {daysUntil(end)} days remaining
+                      {left} days remaining
                     </p>
                   ) : null;
                 })()}

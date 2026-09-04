@@ -58,7 +58,7 @@ function MaintenancePage() {
   async function advance(id: string, current: string) {
     const next = NEXT_STATUS[current];
     if (!next) return;
-    const patch: Record<string, unknown> = { status: next };
+    const patch: { status: string; resolved_at?: string | undefined } = { status: next };
     if (next === "resolved") patch.resolved_at = new Date().toISOString();
     const { error } = await supabase.from("maintenance_requests").update(patch).eq("id", id);
     if (error) {

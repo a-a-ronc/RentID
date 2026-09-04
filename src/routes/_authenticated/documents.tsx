@@ -29,6 +29,17 @@ export const Route = createFileRoute("/_authenticated/documents")({
   component: DocumentsPage,
 });
 
+const DOC_KINDS = [
+  "lease",
+  "move_in_inspection",
+  "notice",
+  "receipt",
+  "photo",
+  "other",
+] as const;
+
+type DocKind = (typeof DOC_KINDS)[number];
+
 function UploadDialog() {
   const active = useActiveOrg();
   const tenancies = useTenancies(active.orgId);
@@ -37,7 +48,7 @@ function UploadDialog() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [tenancyId, setTenancyId] = useState("");
-  const [kind, setKind] = useState("other");
+  const [kind, setKind] = useState<DocKind>("other");
   const [title, setTitle] = useState("");
 
   async function submit(e: React.FormEvent) {
@@ -69,7 +80,7 @@ function UploadDialog() {
         mime_type: file.type || null,
         size_bytes: file.size,
         visible_to_tenant: true,
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id,
+        uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
       });
       if (error) throw error;
 
