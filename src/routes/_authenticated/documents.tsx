@@ -1,23 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   AppShell,
-  ListRow,
+  Button,
+  DataTable,
+  DemoNotice,
+  EmptyState,
+  Field,
+  FormGrid,
+  InlineError,
+  LoadingCard,
+  Modal,
   PageHeader,
   SectionCard,
+  Select,
   StatusPill,
-  ToolbarButton,
+  TextInput,
 } from "@/components/rentid/patterns";
-import { EmptyState } from "@/components/rentid/Surface";
 import { shortDate } from "@/lib/format";
-import { useActiveOrg, useDocuments, useInvalidateRentId, useTenancies } from "@/lib/rentid";
-import { supabase } from "@/integrations/supabase/client";
+import { useActiveOrg, useDocuments, useProperties, useTenancies, useUploadDocument } from "@/lib/rentid";
+import type { DocumentKind, DocumentWithContext } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/documents")({
   head: () => ({
@@ -29,192 +33,207 @@ export const Route = createFileRoute("/_authenticated/documents")({
   component: DocumentsPage,
 });
 
-const DOC_KINDS = [
-  "lease",
-  "move_in_inspection",
-  "notice",
-  "receipt",
-  "photo",
-  "other",
-] as const;
-
-type DocKind = (typeof DOC_KINDS)[number];
-
-function UploadDialog() {
-  const active = useActiveOrg();
-  const tenancies = useTenancies(active.orgId);
-  const invalidate = useInvalidateRentId();
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [tenancyId, setTenancyId] = useState("");
-  const [kind, setKind] = useState<DocKind>("other");
-  const [title, setTitle] = useState("");
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const file = fileInput.current?.files?.[0];
-    if (!file) {
-      toast.error("Choose a file first.");
-      return;
-    }
-    if (!active.orgId) return;
-    setBusy(true);
-    try {
-      const tenancy = (tenancies.data ?? []).find((t) => t.id === tenancyId);
-      const path = `${active.orgId}/${tenancyId || "general"}/${crypto.randomUUID()}-${file.name}`;
-      const { error: upErr } = await supabase.storage.from("documents").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (upErr) throw upErr;
-
-      const { error } = await supabase.from("documents").insert({
-        organization_id: active.orgId,
-        tenancy_id: tenancyId || null,
-        property_id: tenancy?.property_id ?? null,
-        unit_id: tenancy?.unit_id ?? null,
-        kind,
-        title: title.trim() || file.name,
-        storage_path: path,
-        mime_type: file.type || null,
-        size_bytes: file.size,
-        visible_to_tenant: true,
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
-      });
-      if (error) throw error;
-
-      toast.success("Document uploaded.");
-      setOpen(false);
-      setTitle("");
-      if (fileInput.current) fileInput.current.value = "";
-      invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <section aria-label="Upload document">
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <ToolbarButton label="Upload" />
-        </DialogTrigger>
-        <DialogContent className="rounded-3xl border-border/60 bg-background sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display">Upload a document</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={submit} className="space-y-3.5">
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Attach to tenancy</Label>
-              <select
-                value={tenancyId}
-                onChange={(e) => setTenancyId(e.target.value)}
-                className="h-9 w-full rounded-xl border border-input bg-card px-3 text-[13px]"
-                required
-              >
-                <option value="">Choose…</option>
-                {(tenancies.data ?? []).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.tenant_name ?? "Tenant"} — {t.units?.name ?? ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label className="text-[12px]">Kind</Label>
-                <select
-                  value={kind}
-                  onChange={(e) => setKind(e.target.value as DocKind)}
-                  className="h-9 w-full rounded-xl border border-input bg-card px-3 text-[13px]"
-                >
-                  {["lease", "move_in_inspection", "notice", "receipt", "photo", "other"].map((k) => (
-                    <option key={k} value={k}>
-                      {k.replace(/_/g, " ")}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[12px]">Title</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Optional" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">File</Label>
-              <Input ref={fileInput} type="file" className="h-9 rounded-xl text-[12px]" required />
-            </div>
-            <Button
-              type="submit"
-              disabled={busy}
-              className="w-full rounded-xl bg-brand text-[14px] font-semibold text-brand-foreground hover:bg-brand/90"
-            >
-              {busy ? "Uploading…" : "Upload"}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </section>
-  );
-}
+const KINDS: { value: DocumentKind; label: string }[] = [
+  { value: "lease", label: "Lease" },
+  { value: "addendum", label: "Addendum" },
+  { value: "inspection", label: "Inspection" },
+  { value: "notice", label: "Notice" },
+  { value: "receipt", label: "Receipt" },
+  { value: "insurance", label: "Insurance" },
+  { value: "other", label: "Other" },
+];
 
 function DocumentsPage() {
   const active = useActiveOrg();
   const documents = useDocuments(active.orgId);
+  const properties = useProperties(active.orgId);
+  const tenancies = useTenancies(active.orgId);
+  const upload = useUploadDocument();
+  const [open, setOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
 
-  async function open(path: string) {
-    const { data, error } = await supabase.storage.from("documents").createSignedUrl(path, 300);
-    if (error || !data) {
-      toast.error("Could not open the document.");
-      return;
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!active.orgId) return;
+    const form = new FormData(event.currentTarget);
+    const tenancyId = String(form.get("tenancyId") ?? "") || null;
+    const tenancy = (tenancies.data ?? []).find((t) => t.id === tenancyId) ?? null;
+    try {
+      await upload.mutateAsync({
+        organizationId: active.orgId,
+        propertyId: tenancy?.property_id ?? String(form.get("propertyId") ?? "") || null,
+        unitId: tenancy?.unit_id ?? null,
+        tenancyId,
+        kind: String(form.get("kind") ?? "other") as DocumentKind,
+        title: String(form.get("title") ?? ""),
+        fileName: file?.name ?? null,
+        fileSize: file?.size ?? null,
+        mimeType: file?.type ?? null,
+        visibleToTenant: form.get("visibleToTenant") === "on",
+      });
+      toast.success("Document filed.");
+      setFile(null);
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed.");
     }
-    window.open(data.signedUrl, "_blank");
   }
 
   return (
     <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
       <PageHeader
         title="Documents"
-        subtitle={active.org?.name}
-        action={<UploadDialog />}
+        subtitle={active.org ? `${active.org.name} · ${(documents.data ?? []).length} filed` : undefined}
+        action={
+          <Button size="sm" onClick={() => setOpen(true)} disabled={!active.orgId}>
+            Upload document
+          </Button>
+        }
       />
 
-      <div className="mt-5">
+      <div className="mt-5 space-y-4">
+        <DemoNotice>
+          Metadata is stored now; the file itself is kept only in this session. When storage reconnects the same upload
+          form writes the file to the private documents bucket.
+        </DemoNotice>
+
         {documents.isLoading ? (
-          <EmptyState title="Loading…" description="Fetching documents." />
-        ) : (documents.data ?? []).length === 0 ? (
-          <EmptyState
-            title="No documents yet"
-            description="Leases, inspections and notices you upload appear here and can be shared with tenants."
-          />
+          <LoadingCard label="Loading documents…" />
+        ) : documents.isError ? (
+          <InlineError message="Documents could not be loaded." onRetry={() => void documents.refetch()} />
         ) : (
-          <SectionCard title="All documents" aside={`${(documents.data ?? []).length} on file`}>
-            {(documents.data ?? []).map((d) => {
-              const info = d as { tenancies?: { tenant_name?: string } | null };
-              return (
-                <ListRow
-                  key={d.id}
-                  title={d.title}
-                  subtitle={
-                    [info.tenancies?.tenant_name ?? "", d.created_at ? shortDate(d.created_at.slice(0, 10)) : ""]
-                      .filter(Boolean)
-                      .join(" · ")
-                  }
-                  pill={<StatusPill status={d.kind.replace(/_/g, " ")} tone="neutral" />}
-                  value={
-                    <button onClick={() => open(d.storage_path)} className="text-[12.5px] font-medium text-brand">
-                      Open
-                    </button>
-                  }
+          <SectionCard title="All documents" aside={`${(documents.data ?? []).length} total`}>
+            <DataTable<DocumentWithContext>
+              rows={documents.data ?? []}
+              empty={
+                <EmptyState
+                  title="No documents yet"
+                  description="Upload a lease, inspection report or notice and associate it with a property, unit or tenancy."
+                  action={<Button onClick={() => setOpen(true)}>Upload document</Button>}
                 />
-              );
-            })}
+              }
+              columns={[
+                {
+                  key: "title",
+                  header: "Document",
+                  cell: (d) => (
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{d.title}</p>
+                      <p className="truncate text-[11.5px] text-muted-foreground">
+                        {[d.property_name, d.unit_name, d.tenant_name].filter(Boolean).join(" · ") || "Unassigned"}
+                      </p>
+                    </div>
+                  ),
+                },
+                { key: "kind", header: "Kind", cell: (d) => <StatusPill status={d.kind} tone="accent" /> },
+                {
+                  key: "shared",
+                  header: "Tenant access",
+                  hideOnMobile: true,
+                  cell: (d) => (
+                    <StatusPill
+                      status={d.visible_to_tenant ? "shared" : "private"}
+                      tone={d.visible_to_tenant ? "success" : "neutral"}
+                    />
+                  ),
+                },
+                {
+                  key: "date",
+                  header: "Filed",
+                  align: "right",
+                  hideOnMobile: true,
+                  cell: (d) => <span className="num">{shortDate(d.created_at)}</span>,
+                },
+                {
+                  key: "actions",
+                  header: "",
+                  align: "right",
+                  cell: (d) => (
+                    <Button
+                      tone="secondary"
+                      size="sm"
+                      onClick={() =>
+                        toast.info(
+                          d.file_name
+                            ? `${d.file_name} opens once document storage is connected.`
+                            : "No file attached to this record yet.",
+                        )
+                      }
+                    >
+                      Open
+                    </Button>
+                  ),
+                },
+              ]}
+            />
           </SectionCard>
         )}
       </div>
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Upload document"
+        description="Associate the document so both sides see it in context."
+      >
+        <form onSubmit={submit} className="space-y-3">
+          <Field label="Title" htmlFor="title">
+            <TextInput id="title" name="title" required placeholder="2026 lease — Unit 2B" />
+          </Field>
+          <FormGrid>
+            <Field label="Kind" htmlFor="kind">
+              <Select id="kind" name="kind" defaultValue="lease">
+                {KINDS.map((kind) => (
+                  <option key={kind.value} value={kind.value}>
+                    {kind.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Property" htmlFor="propertyId" hint="Optional if a tenancy is chosen.">
+              <Select id="propertyId" name="propertyId" defaultValue="">
+                <option value="">—</option>
+                {(properties.data ?? []).map((property) => (
+                  <option key={property.id} value={property.id}>
+                    {property.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </FormGrid>
+          <Field label="Tenancy" htmlFor="tenancyId" hint="Links the document to a tenant and unit.">
+            <Select id="tenancyId" name="tenancyId" defaultValue="">
+              <option value="">—</option>
+              {(tenancies.data ?? []).map((tenancy) => (
+                <option key={tenancy.id} value={tenancy.id}>
+                  {tenancy.tenant_name} — {tenancy.unit?.name ?? ""}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="File" htmlFor="file" hint="PDF or image. Stored in-session until storage reconnects.">
+            <input
+              id="file"
+              type="file"
+              accept="application/pdf,image/*"
+              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              className="w-full rounded-xl border border-border bg-card/70 px-3 py-2.5 text-[12.5px]"
+            />
+          </Field>
+          <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+            <input type="checkbox" name="visibleToTenant" defaultChecked className="size-4 accent-[var(--brand)]" />
+            Visible to the tenant
+          </label>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button tone="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={upload.isPending}>
+              Upload
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </AppShell>
   );
 }
