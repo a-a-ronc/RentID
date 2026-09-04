@@ -155,8 +155,13 @@ export function AppShell({
 
       {/* Mobile bottom nav */}
       <nav className="glass fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-          {MOBILE_PRIMARY.map((item) => (
+        <div
+          className={cn(
+            "mx-auto grid max-w-md gap-1",
+            nav.length > 4 ? "grid-cols-5" : "grid-cols-4",
+          )}
+        >
+          {mobilePrimary.map((item) => (
             <Link
               key={item.to}
               to={item.to}
