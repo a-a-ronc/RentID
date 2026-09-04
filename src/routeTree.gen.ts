@@ -30,6 +30,7 @@ import { Route as AuthenticatedPropertiesPropertyIdRouteImport } from './routes/
 import { Route as AuthenticatedTenantIndexRouteImport } from './routes/_authenticated/tenant.index'
 import { Route as AuthenticatedTenantLeaseRouteImport } from './routes/_authenticated/tenant.lease'
 import { Route as AuthenticatedTenantMaintenanceRouteImport } from './routes/_authenticated/tenant.maintenance'
+import { Route as AuthenticatedTenantMessagesRouteImport } from './routes/_authenticated/tenant.messages'
 import { Route as AuthenticatedTenantPayRouteImport } from './routes/_authenticated/tenant.pay'
 import { Route as AuthenticatedTenantTenancyRouteImport } from './routes/_authenticated/tenant.tenancy'
 import { Route as AuthenticatedTenantsIndexRouteImport } from './routes/_authenticated/tenants.index'
@@ -149,6 +150,12 @@ const AuthenticatedTenantMaintenanceRoute =
     path: '/maintenance',
     getParentRoute: () => AuthenticatedTenantRoute,
   } as any)
+const AuthenticatedTenantMessagesRoute =
+  AuthenticatedTenantMessagesRouteImport.update({
+    id: '/messages',
+    path: '/messages',
+    getParentRoute: () => AuthenticatedTenantRoute,
+  } as any)
 const AuthenticatedTenantPayRoute = AuthenticatedTenantPayRouteImport.update({
   id: '/pay',
   path: '/pay',
@@ -196,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenant/lease': typeof AuthenticatedTenantLeaseRoute
   '/tenant/maintenance': typeof AuthenticatedTenantMaintenanceRoute
+  '/tenant/messages': typeof AuthenticatedTenantMessagesRoute
   '/tenant/pay': typeof AuthenticatedTenantPayRoute
   '/tenant/tenancy': typeof AuthenticatedTenantTenancyRoute
   '/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
@@ -222,6 +230,7 @@ export interface FileRoutesByTo {
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenant/lease': typeof AuthenticatedTenantLeaseRoute
   '/tenant/maintenance': typeof AuthenticatedTenantMaintenanceRoute
+  '/tenant/messages': typeof AuthenticatedTenantMessagesRoute
   '/tenant/pay': typeof AuthenticatedTenantPayRoute
   '/tenant/tenancy': typeof AuthenticatedTenantTenancyRoute
   '/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
@@ -251,6 +260,7 @@ export interface FileRoutesById {
   '/_authenticated/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/_authenticated/tenant/lease': typeof AuthenticatedTenantLeaseRoute
   '/_authenticated/tenant/maintenance': typeof AuthenticatedTenantMaintenanceRoute
+  '/_authenticated/tenant/messages': typeof AuthenticatedTenantMessagesRoute
   '/_authenticated/tenant/pay': typeof AuthenticatedTenantPayRoute
   '/_authenticated/tenant/tenancy': typeof AuthenticatedTenantTenancyRoute
   '/_authenticated/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/properties/$propertyId'
     | '/tenant/lease'
     | '/tenant/maintenance'
+    | '/tenant/messages'
     | '/tenant/pay'
     | '/tenant/tenancy'
     | '/tenants/$tenancyId'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/properties/$propertyId'
     | '/tenant/lease'
     | '/tenant/maintenance'
+    | '/tenant/messages'
     | '/tenant/pay'
     | '/tenant/tenancy'
     | '/tenants/$tenancyId'
@@ -334,6 +346,7 @@ export interface FileRouteTypes {
     | '/_authenticated/properties/$propertyId'
     | '/_authenticated/tenant/lease'
     | '/_authenticated/tenant/maintenance'
+    | '/_authenticated/tenant/messages'
     | '/_authenticated/tenant/pay'
     | '/_authenticated/tenant/tenancy'
     | '/_authenticated/tenants/$tenancyId'
@@ -499,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTenantMaintenanceRouteImport
       parentRoute: typeof AuthenticatedTenantRoute
     }
+    '/_authenticated/tenant/messages': {
+      id: '/_authenticated/tenant/messages'
+      path: '/messages'
+      fullPath: '/tenant/messages'
+      preLoaderRoute: typeof AuthenticatedTenantMessagesRouteImport
+      parentRoute: typeof AuthenticatedTenantRoute
+    }
     '/_authenticated/tenant/pay': {
       id: '/_authenticated/tenant/pay'
       path: '/pay'
@@ -540,6 +560,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedTenantRouteChildren {
   AuthenticatedTenantLeaseRoute: typeof AuthenticatedTenantLeaseRoute
   AuthenticatedTenantMaintenanceRoute: typeof AuthenticatedTenantMaintenanceRoute
+  AuthenticatedTenantMessagesRoute: typeof AuthenticatedTenantMessagesRoute
   AuthenticatedTenantPayRoute: typeof AuthenticatedTenantPayRoute
   AuthenticatedTenantTenancyRoute: typeof AuthenticatedTenantTenancyRoute
   AuthenticatedTenantIndexRoute: typeof AuthenticatedTenantIndexRoute
@@ -548,6 +569,7 @@ interface AuthenticatedTenantRouteChildren {
 const AuthenticatedTenantRouteChildren: AuthenticatedTenantRouteChildren = {
   AuthenticatedTenantLeaseRoute: AuthenticatedTenantLeaseRoute,
   AuthenticatedTenantMaintenanceRoute: AuthenticatedTenantMaintenanceRoute,
+  AuthenticatedTenantMessagesRoute: AuthenticatedTenantMessagesRoute,
   AuthenticatedTenantPayRoute: AuthenticatedTenantPayRoute,
   AuthenticatedTenantTenancyRoute: AuthenticatedTenantTenancyRoute,
   AuthenticatedTenantIndexRoute: AuthenticatedTenantIndexRoute,
