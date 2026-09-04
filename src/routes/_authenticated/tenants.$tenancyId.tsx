@@ -15,7 +15,7 @@ import {
 } from "@/components/rentid/patterns";
 import { EmptyState, Glass, Eyebrow } from "@/components/rentid/Surface";
 import { money, shortDate } from "@/lib/format";
-import { useActiveOrg, useDocuments, useInvalidateRentId, usePayments } from "@/lib/rentid";
+import { useActiveOrg, useDocuments, useInvalidateRentId, usePayments, useTenancies } from "@/lib/rentid";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/tenants/$tenancyId")({
@@ -146,7 +146,7 @@ function TenancyDetail() {
         mime_type: file.type || null,
         size_bytes: file.size,
         visible_to_tenant: true,
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id,
+        uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
       });
       if (docErr) throw docErr;
 

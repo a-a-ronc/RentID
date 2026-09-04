@@ -157,11 +157,14 @@ function TenantHome() {
                 <p className="num mt-1.5 text-[22px] leading-none font-medium">
                   {activeTenancy.end_date ? shortDate(activeTenancy.end_date) : "—"}
                 </p>
-                {activeTenancy.end_date && daysUntil(activeTenancy.end_date) >= 0 && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {daysUntil(activeTenancy.end_date)} days remaining
-                  </p>
-                )}
+                {(() => {
+                  const end = activeTenancy.end_date;
+                  return end && daysUntil(end) >= 0 ? (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {daysUntil(end)} days remaining
+                    </p>
+                  ) : null;
+                })()}
               </div>
             </div>
 
@@ -180,7 +183,7 @@ function TenantHome() {
                     tenancy_id: activeTenancy.id,
                     property_id: activeTenancy.property_id,
                     unit_id: activeTenancy.unit_id,
-                    created_by: userData.user?.id,
+                    created_by: userData.user?.id ?? null,
                     title: "New maintenance request",
                     description: "Submitted from the tenant dashboard.",
                     priority: "normal",

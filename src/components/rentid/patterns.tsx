@@ -14,8 +14,8 @@ export function PageHeader({
   action,
 }: {
   title: string;
-  subtitle?: string;
-  action?: ReactNode;
+  subtitle?: string | undefined;
+  action?: ReactNode | undefined;
 }) {
   return (
     <div className="flex items-start justify-between gap-3">
