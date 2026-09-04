@@ -39,7 +39,14 @@ const NAV: NavItem[] = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
-const MOBILE_PRIMARY = NAV.slice(0, 4);
+// Tenants only see their own record and the shared surfaces — the portfolio
+// management pages are landlord-scoped.
+const TENANT_NAV: NavItem[] = [
+  { to: "/tenant", label: "My home", icon: Home },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/reviews", label: "Reviews", icon: Star },
+  { to: "/settings", label: "Settings", icon: Settings },
+];
 
 export function AppShell({
   children,
@@ -54,6 +61,11 @@ export function AppShell({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  const isTenant = subtitle === "Tenant";
+  const nav = isTenant ? TENANT_NAV : NAV;
+  const mobilePrimary = nav.slice(0, 4);
+  const home = isTenant ? "/tenant" : "/dashboard";
 
   const name = profile.data?.full_name ?? user?.email ?? "";
 
