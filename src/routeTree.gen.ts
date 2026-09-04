@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated/properties.index'
 import { Route as AuthenticatedPropertiesPropertyIdRouteImport } from './routes/_authenticated/properties.$propertyId'
 import { Route as AuthenticatedTenantsIndexRouteImport } from './routes/_authenticated/tenants.index'
@@ -41,6 +42,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPaymentsRoute = AuthenticatedPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPropertiesIndexRoute =
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/payments': typeof AuthenticatedPaymentsRoute
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/payments': typeof AuthenticatedPaymentsRoute
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
   '/properties': typeof AuthenticatedPropertiesIndexRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/_authenticated/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/onboarding'
+    | '/payments'
     | '/properties/$propertyId'
     | '/tenants/$tenancyId'
     | '/properties/'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/onboarding'
+    | '/payments'
     | '/properties/$propertyId'
     | '/tenants/$tenancyId'
     | '/properties'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/onboarding'
+    | '/_authenticated/payments'
     | '/_authenticated/properties/$propertyId'
     | '/_authenticated/tenants/$tenancyId'
     | '/_authenticated/properties/'
@@ -177,6 +189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/payments': {
+      id: '/_authenticated/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AuthenticatedPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/properties/': {
       id: '/_authenticated/properties/'
       path: '/properties'
@@ -211,6 +230,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedPropertiesPropertyIdRoute: typeof AuthenticatedPropertiesPropertyIdRoute
   AuthenticatedTenantsTenancyIdRoute: typeof AuthenticatedTenantsTenancyIdRoute
   AuthenticatedPropertiesIndexRoute: typeof AuthenticatedPropertiesIndexRoute
@@ -220,6 +240,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedPropertiesPropertyIdRoute:
     AuthenticatedPropertiesPropertyIdRoute,
   AuthenticatedTenantsTenancyIdRoute: AuthenticatedTenantsTenancyIdRoute,
