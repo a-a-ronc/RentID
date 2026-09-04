@@ -18,7 +18,7 @@
 - [x] Tenant dashboard (/tenant) + accept invitation + lease view
 - [x] Placeholder sections (applications, messages, reviews, reports)
 - [x] Typecheck passing; build OK
-- [ ] Responsive browser audit + end-to-end milestone flow (landlord → invite → tenant accept)
+- [x] Responsive browser audit (desktop 1280px verified; mobile spot-check) + end-to-end milestone flow (landlord → invite → tenant accept)
 
 ## Audits (after milestone flow works)
 - [ ] Schema + RLS audit (incl. 9 remaining SECURITY DEFINER linter warnings)
