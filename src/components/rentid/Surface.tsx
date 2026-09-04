@@ -7,8 +7,8 @@ export function Glass({
   delay,
 }: {
   children: ReactNode;
-  className?: string;
-  delay?: number;
+  className?: string | undefined;
+  delay?: number | undefined;
 }) {
   return (
     <div

@@ -182,7 +182,8 @@ export function useMyInvitations() {
       const { data, error } = await supabase
         .from("tenant_invitations")
         .select("*, units(name, monthly_rent), properties(name, street_address, city, state), organizations(name)")
-        .eq("status", "pending");
+        .eq("status", "pending")
+        .eq("email", user!.email!);
       if (error) throw error;
       return data ?? [];
     },
