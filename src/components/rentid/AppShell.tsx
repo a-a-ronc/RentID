@@ -89,12 +89,12 @@ export function AppShell({
       <div className="relative flex min-h-screen lg:gap-6">
         {/* Desktop sidebar */}
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col px-4 py-6 lg:flex">
-          <Link to="/dashboard" className="px-2">
+          <Link to={home} className="px-2">
             <div className="font-display text-[19px] font-bold tracking-tight">RentID</div>
             <Eyebrow className="mt-0.5">{subtitle}</Eyebrow>
           </Link>
           <nav className="mt-7 flex flex-1 flex-col gap-1">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
