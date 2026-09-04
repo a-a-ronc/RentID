@@ -17,6 +17,7 @@ import {
 import { useState, type ReactNode } from "react";
 
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { RentIDLogo } from "@/components/rentid/Logo";
 import { Eyebrow } from "@/components/rentid/Surface";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useProfile } from "@/lib/auth";
@@ -90,7 +91,7 @@ export function AppShell({
         {/* Desktop sidebar */}
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col px-4 py-6 lg:flex">
           <Link to={home} className="px-2">
-            <div className="font-display text-[19px] font-bold tracking-tight">RentID</div>
+            <RentIDLogo markClassName="size-7" wordmarkClassName="text-[19px]" />
             <Eyebrow className="mt-0.5">{subtitle}</Eyebrow>
           </Link>
           <nav className="mt-7 flex flex-1 flex-col gap-1">
@@ -123,7 +124,7 @@ export function AppShell({
           <header className="sticky top-0 z-20 px-4 pt-4 sm:px-6">
             <div className="glass flex items-center justify-between rounded-2xl px-4 py-2.5">
               <div className="leading-none lg:hidden">
-                <div className="font-display text-[17px] font-bold tracking-tight">RentID</div>
+                <RentIDLogo markClassName="size-6" wordmarkClassName="text-[17px]" />
                 <Eyebrow className="mt-0.5">{subtitle}</Eyebrow>
               </div>
               <div className="hidden min-w-0 lg:block">
