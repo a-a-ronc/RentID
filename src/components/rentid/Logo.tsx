@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
  * RentID emblem — a house enclosing an ID card, drawn in the brand coral
  * gradient. Pure SVG so it stays crisp at nav sizes and inherits sizing.
  */
-export function RentIDMark({ className }: { className?: string }) {
+export function RentIDMark({ className }: { className?: string | undefined }) {
   return (
     <svg
       viewBox="0 0 64 64"
@@ -35,7 +35,7 @@ export function RentIDMark({ className }: { className?: string }) {
   );
 }
 
-export function RentIDWordmark({ className }: { className?: string }) {
+export function RentIDWordmark({ className }: { className?: string | undefined }) {
   return (
     <span className={cn("font-display font-bold tracking-tight", className)}>
       Rent<span className="text-accent">ID</span>
@@ -48,9 +48,9 @@ export function RentIDLogo({
   markClassName,
   wordmarkClassName,
 }: {
-  className?: string;
-  markClassName?: string;
-  wordmarkClassName?: string;
+  className?: string | undefined;
+  markClassName?: string | undefined;
+  wordmarkClassName?: string | undefined;
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
