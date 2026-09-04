@@ -22,10 +22,17 @@ export const Route = createFileRoute("/auth")({
 type Mode = "signin" | "signup";
 
 async function resolveHome(userId: string, email: string | undefined): Promise<string> {
-  // Landlord-ish role -> dashboard; tenant role -> tenant home.
+  // Landlord-ish role -> dashboard (onboarding first if they have no workspace yet).
   const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   const roleSet = new Set((roles ?? []).map((r) => r.role));
-  if (roleSet.has("landlord") || roleSet.has("property_manager")) return "/dashboard";
+  if (roleSet.has("landlord") || roleSet.has("property_manager")) {
+    const { data: orgs } = await supabase
+      .from("organizations")
+      .select("id")
+      .eq("owner_id", userId)
+      .limit(1);
+    return orgs && orgs.length > 0 ? "/dashboard" : "/onboarding";
+  }
   if (roleSet.has("tenant")) return "/tenant";
 
   // Pending invitation for this email -> tenant flow.
