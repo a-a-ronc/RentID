@@ -1,22 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { toast } from "sonner";
-import { BadgeCheck, FileUp } from "lucide-react";
+import { useState } from "react";
+import { BadgeCheck, DoorOpen } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   AppShell,
+  Button,
+  EmptyState,
+  Field,
+  FormGrid,
+  InlineError,
   ListRow,
+  LoadingCard,
+  Modal,
   PageHeader,
   SectionCard,
   StatusPill,
+  TextInput,
+  TrustBadge,
+  VerificationChecklist,
 } from "@/components/rentid/patterns";
-import { EmptyState, Glass, Eyebrow } from "@/components/rentid/Surface";
 import { money, shortDate } from "@/lib/format";
-import { useActiveOrg, useDocuments, useInvalidateRentId, usePayments, useTenancies } from "@/lib/rentid";
-import { supabase } from "@/integrations/supabase/client";
+import { tenancyVerification, useEndTenancy, useTenancy, useUploadLease, useVerifyTenancy } from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/tenants/$tenancyId")({
   head: () => ({
@@ -30,25 +34,39 @@ export const Route = createFileRoute("/_authenticated/tenants/$tenancyId")({
 
 function TenancyDetail() {
   const { tenancyId } = Route.useParams();
-  const active = useActiveOrg();
-  const invalidate = useInvalidateRentId();
-  const tenancies = useTenancies(active.orgId);
-  const payments = usePayments(active.orgId);
-  const documents = useDocuments(active.orgId);
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [leaseName, setLeaseName] = useState("");
-  const [busy, setBusy] = useState(false);
+  const tenancy = useTenancy(tenancyId);
+  const verifyMutation = useVerifyTenancy();
+  const endMutation = useEndTenancy();
+  const uploadLease = useUploadLease();
 
-  const tenancy = (tenancies.data ?? []).find((t) => t.id === tenancyId);
+  const [leaseOpen, setLeaseOpen] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [monthlyRent, setMonthlyRent] = useState("");
+  const [securityDeposit, setSecurityDeposit] = useState("");
+  const [rentDueDay, setRentDueDay] = useState("1");
+  const [file, setFile] = useState<File | null>(null);
 
-  if (tenancies.isLoading) {
+  if (tenancy.isLoading) {
     return (
       <AppShell>
-        <p className="text-[13px] text-muted-foreground">Loading tenancy…</p>
+        <LoadingCard label="Fetching tenancy…" />
       </AppShell>
     );
   }
-  if (!tenancy) {
+  if (tenancy.isError) {
+    return (
+      <AppShell>
+        <InlineError
+          message={tenancy.error instanceof Error ? tenancy.error.message : "Could not load this tenancy."}
+          onRetry={() => tenancy.refetch()}
+        />
+      </AppShell>
+    );
+  }
+  const detail = tenancy.data;
+  if (!detail) {
     return (
       <AppShell>
         <EmptyState
@@ -64,220 +82,203 @@ function TenancyDetail() {
     );
   }
 
-  const tenancyPayments = (payments.data ?? []).filter((p) => p.tenancy_id === tenancyId);
-  const tenancyDocs = (documents.data ?? []).filter((d) => d.tenancy_id === tenancyId);
+  const verification = tenancyVerification(detail);
 
-  async function verify() {
-    const { error } = await supabase
-      .from("tenancies")
-      .update({ verified: true, verified_at: new Date().toISOString(), status: "active" })
-      .eq("id", tenancyId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    await supabase.from("verification_records").insert({
-      tenancy_id: tenancyId,
-      subject_user_id: tenancy!.tenant_user_id,
-      record_type: "tenancy",
-      label: "Verified Tenancy — Confirmed by landlord",
-    });
-    toast.success("Tenancy verified.");
-    invalidate();
+  function openLeaseModal() {
+    setStartDate(detail!.start_date ?? "");
+    setEndDate(detail!.end_date ?? "");
+    setMonthlyRent(detail!.monthly_rent != null ? String(detail!.monthly_rent) : "");
+    setSecurityDeposit(detail!.security_deposit != null ? String(detail!.security_deposit) : "");
+    setRentDueDay(String(detail!.lease?.rent_due_day ?? 1));
+    setFile(null);
+    setLeaseOpen(true);
   }
 
-  async function uploadLease(e: React.FormEvent) {
+  function submitLease(e: React.FormEvent) {
     e.preventDefault();
-    const file = fileInput.current?.files?.[0];
-    if (!file) {
-      toast.error("Choose a file first.");
-      return;
-    }
-    if (!active.orgId) return;
-    setBusy(true);
-    try {
-      const path = `${active.orgId}/${tenancyId}/${crypto.randomUUID()}-${file.name}`;
-      const { error: upErr } = await supabase.storage.from("documents").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (upErr) throw upErr;
-
-      // Create or update the lease record for this tenancy.
-      const { data: existingLease } = await supabase
-        .from("leases")
-        .select("id")
-        .eq("tenancy_id", tenancyId)
-        .maybeSingle();
-
-      let leaseId = existingLease?.id;
-      if (leaseId) {
-        await supabase
-          .from("leases")
-          .update({ document_path: path })
-          .eq("id", leaseId);
-      } else {
-        const { data: lease, error: leaseErr } = await supabase
-          .from("leases")
-          .insert({
-            organization_id: active.orgId,
-            tenancy_id: tenancyId,
-            unit_id: tenancy!.unit_id,
-            start_date: tenancy!.start_date,
-            end_date: tenancy!.end_date,
-            monthly_rent: tenancy!.monthly_rent,
-            document_path: path,
-          })
-          .select("id")
-          .single();
-        if (leaseErr) throw leaseErr;
-        leaseId = lease.id;
-      }
-
-      const { error: docErr } = await supabase.from("documents").insert({
-        organization_id: active.orgId,
-        tenancy_id: tenancyId,
-        property_id: tenancy!.property_id,
-        unit_id: tenancy!.unit_id,
-        lease_id: leaseId,
-        kind: "lease",
-        title: leaseName.trim() || file.name,
-        storage_path: path,
-        mime_type: file.type || null,
-        size_bytes: file.size,
-        visible_to_tenant: true,
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
-      });
-      if (docErr) throw docErr;
-
-      toast.success("Lease uploaded and attached.");
-      setLeaseName("");
-      if (fileInput.current) fileInput.current.value = "";
-      invalidate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function viewDoc(path: string) {
-    const { data, error } = await supabase.storage.from("documents").createSignedUrl(path, 300);
-    if (error || !data) {
-      toast.error("Could not open the document.");
-      return;
-    }
-    window.open(data.signedUrl, "_blank");
+    if (!detail || !startDate || !endDate || !monthlyRent) return;
+    uploadLease.mutate(
+      {
+        organizationId: detail.organization_id,
+        tenancyId: detail.id,
+        unitId: detail.unit_id,
+        startDate,
+        endDate,
+        monthlyRent: Number(monthlyRent),
+        securityDeposit: securityDeposit ? Number(securityDeposit) : null,
+        rentDueDay: Number(rentDueDay) || 1,
+        fileName: file?.name ?? null,
+        fileSize: file?.size ?? null,
+        mimeType: file?.type ?? null,
+      },
+      { onSuccess: () => setLeaseOpen(false) },
+    );
   }
 
   return (
-    <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
+    <AppShell subtitle="Landlord">
       <PageHeader
-        title={tenancy.tenant_name ?? "Tenant"}
-        subtitle={[tenancy.properties?.name ?? "", tenancy.units?.name ?? ""].filter(Boolean).join(" · ")}
+        title={detail.tenant_name ?? "Tenant"}
+        subtitle={[detail.property?.name ?? "", detail.unit?.name ?? ""].filter(Boolean).join(" · ")}
         action={
-          tenancy.verified ? (
-            <StatusPill status="Verified tenancy" tone="success" />
+          detail.verified ? (
+            <TrustBadge kind="verified_tenancy" size="md" />
           ) : (
-            <Button
-              onClick={verify}
-              className="rounded-full bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground hover:bg-brand/90"
-            >
-              <BadgeCheck className="size-3.5" /> Verify tenancy
+            <Button onClick={() => verifyMutation.mutate(detail.id)} loading={verifyMutation.isPending}>
+              <BadgeCheck className="size-3.5" /> Mark verified
             </Button>
           )
         }
       />
 
-      <SectionCard title="Lease" aside={tenancy.verified ? "Active" : "Pending"} className="mt-5">
-        <ListRow
-          title="Term"
-          subtitle={`${tenancy.start_date ? shortDate(tenancy.start_date) : "—"} → ${tenancy.end_date ? shortDate(tenancy.end_date) : "—"}`}
-          value={tenancy.monthly_rent != null ? `${money(Number(tenancy.monthly_rent))}/mo` : undefined}
-        />
+      <SectionCard title="Verification" aside={verification.complete ? "Complete" : "Incomplete"} className="mt-5">
         <div className="px-4 py-4">
-          <form onSubmit={uploadLease} className="space-y-2.5">
-            <Eyebrow>Attach lease document</Eyebrow>
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                ref={fileInput}
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                className="h-9 max-w-xs rounded-xl text-[12px]"
-                required
-              />
-              <Input
-                value={leaseName}
-                onChange={(e) => setLeaseName(e.target.value)}
-                placeholder="Name (optional)"
-                className="h-9 max-w-[12rem] rounded-xl text-[12px]"
-              />
-              <Button
-                type="submit"
-                disabled={busy}
-                className="h-9 rounded-xl bg-brand px-4 text-[12.5px] font-semibold text-brand-foreground hover:bg-brand/90"
-              >
-                <FileUp className="size-3.5" /> {busy ? "Uploading…" : "Upload"}
-              </Button>
-            </div>
-          </form>
+          <VerificationChecklist checks={verification.checks} />
         </div>
       </SectionCard>
 
-      <SectionCard title="Rent history" aside={`${tenancyPayments.length} records`} className="mt-4">
-        {tenancyPayments.length === 0 ? (
-          <p className="px-4 py-5 text-[13px] text-muted-foreground">No payments recorded.</p>
+      <SectionCard title="Tenancy terms" className="mt-4">
+        <ListRow
+          title="Status"
+          value={<StatusPill status={detail.status} tone={detail.status === "active" ? "success" : detail.status === "ended" ? "neutral" : "warning"} />}
+        />
+        <ListRow
+          title="Term"
+          subtitle={`${shortDate(detail.start_date)} → ${shortDate(detail.end_date)}`}
+          value={detail.monthly_rent != null ? `${money(Number(detail.monthly_rent))}/mo` : undefined}
+        />
+        <ListRow
+          title="Contact"
+          subtitle={[detail.tenant_email ?? "", detail.tenant_phone ?? ""].filter(Boolean).join(" · ") || "—"}
+        />
+        {detail.status !== "ended" ? (
+          <div className="px-4 py-3">
+            <Button tone="danger" size="sm" onClick={() => setEndOpen(true)}>
+              <DoorOpen className="size-3.5" /> End tenancy
+            </Button>
+          </div>
+        ) : null}
+      </SectionCard>
+
+      <SectionCard
+        title="Lease"
+        aside={detail.lease ? detail.lease.status : "None on file"}
+        className="mt-4"
+        footer={
+          <Button tone="secondary" size="sm" onClick={openLeaseModal}>
+            {detail.lease ? "Upload / replace lease" : "Upload lease"}
+          </Button>
+        }
+      >
+        {detail.lease ? (
+          <ListRow
+            title={`${shortDate(detail.lease.start_date)} → ${shortDate(detail.lease.end_date)}`}
+            subtitle={`Rent due day ${detail.lease.rent_due_day} · deposit ${money(detail.lease.security_deposit ?? 0)}`}
+            value={`${money(detail.lease.monthly_rent)}/mo`}
+          />
         ) : (
-          tenancyPayments.slice(0, 8).map((p) => (
+          <div className="px-4 py-4 text-[12.5px] text-muted-foreground">No lease attached yet.</div>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Rent ledger" aside={`${detail.payments.length} entries`} className="mt-4">
+        {detail.payments.length === 0 ? (
+          <div className="px-4 py-4 text-[12.5px] text-muted-foreground">No payments recorded yet.</div>
+        ) : (
+          detail.payments.map((p) => (
             <ListRow
               key={p.id}
-              title={p.due_date ? shortDate(p.due_date) : "—"}
-              subtitle={p.status === "paid" && p.days_late ? `${p.days_late} day${p.days_late === 1 ? "" : "s"} late` : "Rent"}
-              value={money(Number(p.amount))}
-              pill={
-                <StatusPill
-                  status={p.status}
-                  tone={p.status === "paid" ? "success" : p.status === "late" ? "danger" : "neutral"}
-                />
-              }
+              title={p.period_label}
+              subtitle={`Due ${shortDate(p.due_date)}${p.paid_at ? ` · paid ${shortDate(p.paid_at)}` : ""}`}
+              pill={<StatusPill status={p.status} tone={p.status === "paid" ? "success" : p.status === "late" ? "danger" : "neutral"} />}
+              value={money(p.amount)}
             />
           ))
         )}
       </SectionCard>
 
-      <SectionCard title="Documents" aside={`${tenancyDocs.length} on file`} className="mt-4">
-        {tenancyDocs.length === 0 ? (
-          <p className="px-4 py-5 text-[13px] text-muted-foreground">No documents yet.</p>
+      <SectionCard title="Maintenance history" aside={`${detail.maintenance.length} requests`} className="mt-4">
+        {detail.maintenance.length === 0 ? (
+          <div className="px-4 py-4 text-[12.5px] text-muted-foreground">No maintenance requests yet.</div>
         ) : (
-          tenancyDocs.map((d) => (
+          detail.maintenance.map((m) => (
             <ListRow
-              key={d.id}
-              title={d.title}
-              subtitle={d.created_at ? shortDate(d.created_at.slice(0, 10)) : ""}
-              pill={<StatusPill status={d.kind.replace(/_/g, " ")} tone="neutral" />}
-              value={
-                <button
-                  onClick={() => viewDoc(d.storage_path)}
-                  className="text-[12.5px] font-medium text-brand"
-                >
-                  Open
-                </button>
-              }
+              key={m.id}
+              title={m.title}
+              subtitle={shortDate(m.created_at)}
+              pill={<StatusPill status={m.status.replace("_", " ")} tone={m.status === "completed" ? "success" : "neutral"} />}
             />
           ))
         )}
       </SectionCard>
 
-      {tenancy.verified && (
-        <Glass className="mt-4 p-4">
-          <Eyebrow>Verification</Eyebrow>
-          <p className="mt-1.5 text-[13px] text-muted-foreground">
-            {tenancy.verified_at
-              ? `Verified on ${shortDate(tenancy.verified_at.slice(0, 10))}. This tenancy counts toward both parties' RentID reputation.`
-              : "This tenancy is verified and counts toward both parties' RentID reputation."}
-          </p>
-        </Glass>
-      )}
+      <SectionCard title="Documents" aside={`${detail.documents.length} on file`} className="mt-4">
+        {detail.documents.length === 0 ? (
+          <div className="px-4 py-4 text-[12.5px] text-muted-foreground">No documents on file.</div>
+        ) : (
+          detail.documents.map((d) => (
+            <ListRow key={d.id} title={d.title} subtitle={shortDate(d.created_at)} pill={<StatusPill status={d.kind} tone="neutral" />} />
+          ))
+        )}
+      </SectionCard>
+
+      <Modal
+        open={leaseOpen}
+        onClose={() => setLeaseOpen(false)}
+        title="Upload / replace lease"
+        description="File bytes are not persisted until Supabase Storage is connected — only lease metadata is saved for now."
+      >
+        <form onSubmit={submitLease} className="space-y-3.5">
+          <FormGrid>
+            <Field label="Start date" htmlFor="lease-start">
+              <TextInput id="lease-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+            </Field>
+            <Field label="End date" htmlFor="lease-end">
+              <TextInput id="lease-end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+            </Field>
+            <Field label="Monthly rent" htmlFor="lease-rent">
+              <TextInput id="lease-rent" type="number" min="0" value={monthlyRent} onChange={(e) => setMonthlyRent(e.target.value)} required />
+            </Field>
+            <Field label="Security deposit" htmlFor="lease-deposit" hint="Optional">
+              <TextInput id="lease-deposit" type="number" min="0" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
+            </Field>
+            <Field label="Rent due day" htmlFor="lease-due-day">
+              <TextInput id="lease-due-day" type="number" min="1" max="28" value={rentDueDay} onChange={(e) => setRentDueDay(e.target.value)} />
+            </Field>
+            <Field label="Lease file" htmlFor="lease-file" hint="Optional — metadata only for now">
+              <TextInput id="lease-file" type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </Field>
+          </FormGrid>
+          <Button type="submit" className="w-full" loading={uploadLease.isPending}>
+            Save lease
+          </Button>
+        </form>
+      </Modal>
+
+      <Modal
+        open={endOpen}
+        onClose={() => setEndOpen(false)}
+        title="End this tenancy?"
+        description="The unit will be marked vacant. This cannot be undone from here."
+        footer={
+          <>
+            <Button tone="secondary" onClick={() => setEndOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              tone="danger"
+              loading={endMutation.isPending}
+              onClick={() => endMutation.mutate(detail.id, { onSuccess: () => setEndOpen(false) })}
+            >
+              End tenancy
+            </Button>
+          </>
+        }
+      >
+        <p className="text-[13px] text-muted-foreground">
+          Ending {detail.tenant_name ?? "this tenant"}'s tenancy sets its status to ended and frees the unit.
+        </p>
+      </Modal>
     </AppShell>
   );
 }

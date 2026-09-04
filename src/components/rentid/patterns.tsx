@@ -183,3 +183,7 @@ export function SummaryGrid({
     </div>
   );
 }
+
+export * from "@/components/rentid/kit";
+export { TrustBadge, VerificationChecklist } from "@/components/rentid/TrustBadge";
+export { Glass, Eyebrow, MetricCard, Pill, EmptyState, SectionHeading, ComingSoon } from "@/components/rentid/Surface";

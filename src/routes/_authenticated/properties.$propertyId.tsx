@@ -2,269 +2,257 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   AppShell,
+  Button,
+  DataTable,
+  EmptyState,
+  Field,
+  FormGrid,
+  InlineError,
   ListRow,
+  LoadingCard,
+  Modal,
   PageHeader,
   SectionCard,
+  Select,
   StatusPill,
+  TextInput,
   ToolbarButton,
 } from "@/components/rentid/patterns";
-import { EmptyState } from "@/components/rentid/Surface";
-import { money } from "@/lib/format";
-import { useActiveOrg, useInvalidateRentId, useProperty, useTenancies } from "@/lib/rentid";
-import { supabase } from "@/integrations/supabase/client";
+import { money, shortDate } from "@/lib/format";
+import {
+  useActiveOrg,
+  useCreateUnit,
+  useInvitations,
+  useInviteTenant,
+  useProperty,
+  useTenancies,
+  useUpdateUnit,
+} from "@/lib/rentid";
+import type { Unit } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/properties/$propertyId")({
   head: () => ({
-    meta: [
-      { title: "Property — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Property — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: PropertyDetail,
 });
 
-function AddUnitDialog({ propertyId }: { propertyId: string }) {
-  const invalidate = useInvalidateRentId();
+function AddUnitModal({ propertyId, organizationId }: { propertyId: string; organizationId: string | null }) {
+  const createUnit = useCreateUnit();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     name: "",
     bedrooms: "1",
     bathrooms: "1",
-    monthly_rent: "",
-    security_deposit: "",
-    rent_due_day: "1",
+    monthlyRent: "",
+    securityDeposit: "",
+    rentDueDay: "1",
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
+    if (!organizationId) return;
     try {
-      const { error } = await supabase.from("units").insert({
-        property_id: propertyId,
+      await createUnit.mutateAsync({
+        organizationId,
+        propertyId,
         name: form.name.trim(),
-        bedrooms: Number(form.bedrooms) || null,
-        bathrooms: Number(form.bathrooms) || null,
-        monthly_rent: form.monthly_rent ? Number(form.monthly_rent) : null,
-        security_deposit: form.security_deposit ? Number(form.security_deposit) : null,
-        rent_due_day: Number(form.rent_due_day) || 1,
-        occupancy_status: "vacant",
+        bedrooms: form.bedrooms ? Number(form.bedrooms) : null,
+        bathrooms: form.bathrooms ? Number(form.bathrooms) : null,
+        monthlyRent: form.monthlyRent ? Number(form.monthlyRent) : null,
+        securityDeposit: form.securityDeposit ? Number(form.securityDeposit) : null,
+        rentDueDay: Number(form.rentDueDay) || 1,
       });
-      if (error) throw error;
       toast.success("Unit added.");
       setOpen(false);
-      setForm({ ...form, name: "", monthly_rent: "", security_deposit: "" });
-      invalidate();
+      setForm({ name: "", bedrooms: "1", bathrooms: "1", monthlyRent: "", securityDeposit: "", rentDueDay: "1" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not add the unit.");
-    } finally {
-      setBusy(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <ToolbarButton label="Add unit" />
-      </DialogTrigger>
-      <DialogContent className="rounded-3xl border-border/60 bg-background sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-display">Add a unit</DialogTitle>
-        </DialogHeader>
+    <>
+      <ToolbarButton label="Add unit" onClick={() => setOpen(true)} />
+      <Modal open={open} onClose={() => setOpen(false)} title="Add a unit">
         <form onSubmit={submit} className="space-y-3.5">
-          <div className="space-y-1.5">
-            <Label className="text-[12px]">Unit name</Label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Unit 1A" />
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Beds</Label>
-              <Input type="number" min={0} step="0.5" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Baths</Label>
-              <Input type="number" min={0} step="0.5" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Due day</Label>
-              <Input type="number" min={1} max={28} value={form.rent_due_day} onChange={(e) => set("rent_due_day", e.target.value)} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Monthly rent</Label>
-              <Input type="number" min={0} value={form.monthly_rent} onChange={(e) => set("monthly_rent", e.target.value)} placeholder="1400" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Deposit</Label>
-              <Input type="number" min={0} value={form.security_deposit} onChange={(e) => set("security_deposit", e.target.value)} placeholder="1400" />
-            </div>
-          </div>
-          <Button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-brand text-[14px] font-semibold text-brand-foreground hover:bg-brand/90"
-          >
-            {busy ? "Saving…" : "Save unit"}
+          <Field label="Unit name" htmlFor="u-name">
+            <TextInput id="u-name" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Unit 1A" />
+          </Field>
+          <FormGrid className="sm:grid-cols-3">
+            <Field label="Beds" htmlFor="u-beds">
+              <TextInput id="u-beds" type="number" min={0} step="0.5" value={form.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} />
+            </Field>
+            <Field label="Baths" htmlFor="u-baths">
+              <TextInput id="u-baths" type="number" min={0} step="0.5" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} />
+            </Field>
+            <Field label="Due day" htmlFor="u-due">
+              <TextInput id="u-due" type="number" min={1} max={28} value={form.rentDueDay} onChange={(e) => set("rentDueDay", e.target.value)} />
+            </Field>
+          </FormGrid>
+          <FormGrid>
+            <Field label="Monthly rent" htmlFor="u-rent">
+              <TextInput id="u-rent" type="number" min={0} value={form.monthlyRent} onChange={(e) => set("monthlyRent", e.target.value)} placeholder="1400" />
+            </Field>
+            <Field label="Deposit" htmlFor="u-deposit">
+              <TextInput id="u-deposit" type="number" min={0} value={form.securityDeposit} onChange={(e) => set("securityDeposit", e.target.value)} placeholder="1400" />
+            </Field>
+          </FormGrid>
+          <Button type="submit" loading={createUnit.isPending} className="w-full">
+            Save unit
           </Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Modal>
+    </>
   );
 }
 
-function InviteTenantDialog({
+function InviteTenantModal({
   propertyId,
   unitId,
   unitName,
   monthlyRent,
+  organizationId,
 }: {
   propertyId: string;
   unitId: string;
   unitName: string;
   monthlyRent: number | null;
+  organizationId: string | null;
 }) {
-  const active = useActiveOrg();
-  const invalidate = useInvalidateRentId();
+  const inviteTenant = useInviteTenant();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState<{ email: string } | null>(null);
   const [form, setForm] = useState({
-    full_name: "",
+    name: "",
     email: "",
-    phone: "",
-    monthly_rent: monthlyRent ? String(monthlyRent) : "",
-    lease_start: "",
-    lease_end: "",
+    monthlyRent: monthlyRent ? String(monthlyRent) : "",
+    startDate: "",
+    endDate: "",
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!active.orgId) return;
-    setBusy(true);
+    if (!organizationId) return;
     try {
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 14);
-
-      // Create the (pending, unverified) tenancy and the invitation together.
-      const { data: tenancy, error: tenancyErr } = await supabase
-        .from("tenancies")
-        .insert({
-          organization_id: active.orgId,
-          property_id: propertyId,
-          unit_id: unitId,
-          tenant_name: form.full_name.trim(),
-          tenant_email: form.email.trim().toLowerCase(),
-          tenant_phone: form.phone.trim() || null,
-          status: "pending",
-          monthly_rent: form.monthly_rent ? Number(form.monthly_rent) : null,
-          start_date: form.lease_start || null,
-          end_date: form.lease_end || null,
-          verified: false,
-        })
-        .select("id")
-        .single();
-      if (tenancyErr) throw tenancyErr;
-
-      const { error: inviteErr } = await supabase.from("tenant_invitations").insert({
-        organization_id: active.orgId,
-        property_id: propertyId,
-        unit_id: unitId,
-        tenancy_id: tenancy.id,
-        full_name: form.full_name.trim(),
+      await inviteTenant.mutateAsync({
+        organizationId,
+        propertyId,
+        unitId,
         email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim() || null,
-        monthly_rent: form.monthly_rent ? Number(form.monthly_rent) : null,
-        lease_start: form.lease_start || null,
-        lease_end: form.lease_end || null,
-        status: "pending",
-        expires_at: expires.toISOString(),
+        name: form.name.trim(),
+        monthlyRent: form.monthlyRent ? Number(form.monthlyRent) : null,
+        startDate: form.startDate || null,
+        endDate: form.endDate || null,
       });
-      if (inviteErr) throw inviteErr;
-
-      await supabase.from("units").update({ occupancy_status: "occupied" }).eq("id", unitId);
-
+      setSent({ email: form.email.trim() });
       toast.success(`Invitation ready for ${form.email.trim()}`);
-      setOpen(false);
-      setForm({ ...form, full_name: "", email: "", phone: "" });
-      invalidate();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not send the invitation.");
-    } finally {
-      setBusy(false);
+    }
+  }
+
+  function close() {
+    setOpen(false);
+    setSent(null);
+    setForm({ name: "", email: "", monthlyRent: monthlyRent ? String(monthlyRent) : "", startDate: "", endDate: "" });
+  }
+
+  return (
+    <>
+      <Button tone="secondary" size="sm" onClick={() => setOpen(true)}>
+        Invite tenant
+      </Button>
+      <Modal open={open} onClose={close} title={`Invite a tenant — ${unitName}`}>
+        {sent ? (
+          <div className="space-y-3">
+            <p className="text-[13px] text-muted-foreground">
+              An invitation was created for <span className="font-medium text-foreground">{sent.email}</span>. It's
+              pending until they accept.
+            </p>
+            <StatusPill status="Pending" tone="warning" />
+            <Button className="w-full" onClick={close}>
+              Done
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-3.5">
+            <p className="text-[12.5px] leading-relaxed text-muted-foreground">
+              They'll receive a RentID invitation. When they accept, the tenancy becomes a verified tenancy for both
+              sides.
+            </p>
+            <Field label="Tenant name" htmlFor="i-name">
+              <TextInput id="i-name" value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Jordan Smith" />
+            </Field>
+            <Field label="Email" htmlFor="i-email">
+              <TextInput id="i-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required placeholder="jordan@example.com" />
+            </Field>
+            <FormGrid>
+              <Field label="Monthly rent" htmlFor="i-rent">
+                <TextInput id="i-rent" type="number" min={0} value={form.monthlyRent} onChange={(e) => set("monthlyRent", e.target.value)} />
+              </Field>
+              <Field label="Start date" htmlFor="i-start">
+                <TextInput id="i-start" type="date" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} />
+              </Field>
+            </FormGrid>
+            <Field label="End date" htmlFor="i-end">
+              <TextInput id="i-end" type="date" value={form.endDate} onChange={(e) => set("endDate", e.target.value)} />
+            </Field>
+            <Button type="submit" loading={inviteTenant.isPending} className="w-full">
+              Send invitation
+            </Button>
+          </form>
+        )}
+      </Modal>
+    </>
+  );
+}
+
+function UnitActions({
+  unit,
+  propertyId,
+  organizationId,
+  tenancyId,
+}: {
+  unit: Unit;
+  propertyId: string;
+  organizationId: string | null;
+  tenancyId?: string;
+}) {
+  const updateUnit = useUpdateUnit();
+
+  async function toggleOccupancy() {
+    const next = unit.occupancy_status === "occupied" ? "vacant" : "occupied";
+    try {
+      await updateUnit.mutateAsync({ unitId: unit.id, patch: { occupancy_status: next } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update the unit.");
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="h-7 rounded-full border-border px-3 text-[11.5px] font-medium"
-        >
-          Invite tenant
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="rounded-3xl border-border/60 bg-background sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-display">Invite a tenant — {unitName}</DialogTitle>
-        </DialogHeader>
-        <p className="text-[12.5px] leading-relaxed text-muted-foreground">
-          They'll receive a RentID invitation. When they accept, the tenancy becomes a verified
-          tenancy for both sides.
-        </p>
-        <form onSubmit={submit} className="space-y-3.5">
-          <div className="space-y-1.5">
-            <Label className="text-[12px]">Tenant name</Label>
-            <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} required placeholder="Jordan Smith" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[12px]">Email</Label>
-            <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required placeholder="jordan@example.com" />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Monthly rent</Label>
-              <Input type="number" min={0} value={form.monthly_rent} onChange={(e) => set("monthly_rent", e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Phone</Label>
-              <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Optional" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Lease start</Label>
-              <Input type="date" value={form.lease_start} onChange={(e) => set("lease_start", e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px]">Lease end</Label>
-              <Input type="date" value={form.lease_end} onChange={(e) => set("lease_end", e.target.value)} />
-            </div>
-          </div>
-          <Button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-brand text-[14px] font-semibold text-brand-foreground hover:bg-brand/90"
-          >
-            {busy ? "Sending…" : "Send invitation"}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+      {tenancyId ? (
+        <Link to="/tenants/$tenancyId" params={{ tenancyId }} className="text-[12px] font-medium text-brand">
+          View tenant
+        </Link>
+      ) : (
+        <InviteTenantModal
+          propertyId={propertyId}
+          unitId={unit.id}
+          unitName={unit.name}
+          monthlyRent={unit.monthly_rent}
+          organizationId={organizationId}
+        />
+      )}
+      <Button tone="ghost" size="sm" loading={updateUnit.isPending} onClick={toggleOccupancy}>
+        {unit.occupancy_status === "occupied" ? "Vacate" : "Fill"}
+      </Button>
+    </div>
   );
 }
 
@@ -273,30 +261,27 @@ function PropertyDetail() {
   const active = useActiveOrg();
   const property = useProperty(propertyId);
   const tenancies = useTenancies(active.orgId);
-  const invalidate = useInvalidateRentId();
+  const invitations = useInvitations(active.orgId);
 
-  async function toggleOccupancy(unitId: string, current: string) {
-    const next = current === "occupied" ? "vacant" : "occupied";
-    const { error } = await supabase.from("units").update({ occupancy_status: next }).eq("id", unitId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    invalidate();
-  }
-
-  const propertyTenancies = (tenancies.data ?? []).filter((t) => t.property_id === propertyId);
-
-  if (property.isLoading) {
+  if (property.isError) {
     return (
-      <AppShell>
-        <p className="text-[13px] text-muted-foreground">Loading property…</p>
+      <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
+        <InlineError message="Couldn't load this property." onRetry={() => void property.refetch()} />
       </AppShell>
     );
   }
+
+  if (property.isLoading) {
+    return (
+      <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
+        <LoadingCard label="Loading property…" />
+      </AppShell>
+    );
+  }
+
   if (!property.data) {
     return (
-      <AppShell>
+      <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
         <EmptyState
           title="Property not found"
           description="This property may belong to a different workspace."
@@ -311,75 +296,74 @@ function PropertyDetail() {
   }
 
   const p = property.data;
+  const units = p.units ?? [];
+  const occupied = units.filter((u) => u.occupancy_status === "occupied").length;
+  const propertyTenancies = (tenancies.data ?? []).filter((t) => t.property_id === propertyId);
+  const propertyInvitations = (invitations.data ?? []).filter(
+    (i) => i.property_id === propertyId && i.status === "pending",
+  );
 
   return (
     <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
       <PageHeader
         title={p.name}
-        subtitle={`${p.street_address}, ${p.city}, ${p.state} ${p.zip}`}
-        action={<AddUnitDialog propertyId={p.id} />}
+        subtitle={`${p.street_address}, ${p.city}, ${p.state} ${p.zip} · ${occupied}/${units.length} occupied`}
+        action={<AddUnitModal propertyId={p.id} organizationId={active.orgId} />}
       />
 
-      <SectionCard title="Units" aside={`${(p.units ?? []).length} total`} className="mt-5">
-        {(p.units ?? []).length === 0 ? (
-          <p className="px-4 py-5 text-[13px] text-muted-foreground">No units yet.</p>
+      <SectionCard title="Units" aside={`${units.length} total`} className="mt-5">
+        {units.length === 0 ? (
+          <EmptyState title="No units yet" description="Add a unit to start renting this property." />
         ) : (
-          (p.units ?? []).map((u) => {
-            const tenancy = (tenancies.data ?? []).find(
-              (t) => t.unit_id === u.id && t.status !== "cancelled" && t.status !== "ended",
-            );
-            return (
-              <ListRow
-                key={u.id}
-                title={u.name}
-                subtitle={
-                  [
-                    u.bedrooms != null ? `${u.bedrooms} bd` : null,
-                    u.bathrooms != null ? `${u.bathrooms} ba` : null,
-                    u.monthly_rent != null ? `${money(Number(u.monthly_rent))}/mo` : null,
-                    tenancy?.tenant_name ? `Tenant: ${tenancy.tenant_name}` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")
-                }
-                pill={
+          <DataTable
+            rows={units}
+            empty={<EmptyState title="No units yet" description="Add a unit to start renting this property." />}
+            columns={[
+              { key: "name", header: "Unit", cell: (u) => <span className="font-medium">{u.name}</span> },
+              {
+                key: "beds",
+                header: "Beds/baths",
+                cell: (u) => `${u.bedrooms ?? "—"} bd · ${u.bathrooms ?? "—"} ba`,
+                hideOnMobile: true,
+              },
+              { key: "rent", header: "Rent", cell: (u) => (u.monthly_rent != null ? `${money(Number(u.monthly_rent))}/mo` : "—") },
+              {
+                key: "status",
+                header: "Status",
+                cell: (u) => (
                   <StatusPill
                     status={u.occupancy_status === "occupied" ? "Occupied" : "Vacant"}
                     tone={u.occupancy_status === "occupied" ? "success" : "neutral"}
                   />
-                }
-                value={
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <InviteTenantDialog
-                      propertyId={p.id}
-                      unitId={u.id}
-                      unitName={u.name}
-                      monthlyRent={u.monthly_rent != null ? Number(u.monthly_rent) : null}
-                    />
-                    <Button
-                      variant="ghost"
-                      onClick={() => toggleOccupancy(u.id, u.occupancy_status)}
-                      className="h-7 rounded-full px-2 text-[11.5px] text-muted-foreground"
-                    >
-                      {u.occupancy_status === "occupied" ? "Vacate" : "Fill"}
-                    </Button>
-                  </div>
-                }
-              />
-            );
-          })
+                ),
+              },
+              {
+                key: "actions",
+                header: "",
+                align: "right",
+                cell: (u) => {
+                  const tenancy = propertyTenancies.find(
+                    (t) => t.unit_id === u.id && t.status !== "cancelled" && t.status !== "ended",
+                  );
+                  return (
+                    <UnitActions unit={u} propertyId={p.id} organizationId={active.orgId} tenancyId={tenancy?.id} />
+                  );
+                },
+              },
+            ]}
+          />
         )}
       </SectionCard>
 
       <SectionCard title="Tenancies" aside={`${propertyTenancies.length} total`} className="mt-4">
         {propertyTenancies.length === 0 ? (
-          <p className="px-4 py-5 text-[13px] text-muted-foreground">No tenancies for this property.</p>
+          <EmptyState title="No tenancies" description="No tenancies exist yet for this property." />
         ) : (
           propertyTenancies.map((t) => (
             <ListRow
               key={t.id}
-              title={t.tenant_name ?? "Tenant"}
-              subtitle={t.units?.name ?? ""}
+              title={t.tenant_name}
+              subtitle={t.unit?.name ?? ""}
               pill={
                 t.verified ? (
                   <StatusPill status="Verified" tone="success" />
@@ -388,14 +372,25 @@ function PropertyDetail() {
                 )
               }
               value={
-                <Link
-                  to="/tenants/$tenancyId"
-                  params={{ tenancyId: t.id }}
-                  className="text-[12.5px] font-medium text-brand"
-                >
+                <Link to="/tenants/$tenancyId" params={{ tenancyId: t.id }} className="text-[12.5px] font-medium text-brand">
                   Manage
                 </Link>
               }
+            />
+          ))
+        )}
+      </SectionCard>
+
+      <SectionCard title="Pending invitations" aside={`${propertyInvitations.length} pending`} className="mt-4">
+        {propertyInvitations.length === 0 ? (
+          <EmptyState title="No pending invitations" description="Invite a tenant from a vacant unit above." />
+        ) : (
+          propertyInvitations.map((inv) => (
+            <ListRow
+              key={inv.id}
+              title={inv.invited_name ?? inv.email}
+              subtitle={`${inv.unit?.name ?? ""} · Expires ${shortDate(inv.expires_at)}`}
+              pill={<StatusPill status="Pending" tone="warning" />}
             />
           ))
         )}

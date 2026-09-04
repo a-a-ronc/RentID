@@ -9,7 +9,9 @@ import {
   LineChart,
   MessageSquare,
   Settings,
+  ShieldCheck,
   Star,
+  User,
   Users,
   Wallet,
   Wrench,
@@ -19,34 +21,55 @@ import { useState, type ReactNode } from "react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { RentIDLogo } from "@/components/rentid/Logo";
 import { Eyebrow } from "@/components/rentid/Surface";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth, useProfile } from "@/lib/auth";
+import { authService, useAuth, useProfile } from "@/lib/auth";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; icon: typeof Home };
 
-const NAV: NavItem[] = [
+// Full landlord workspace, shown on the desktop sidebar.
+const LANDLORD_NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { to: "/properties", label: "Properties", icon: Building2 },
-  { to: "/tenants", label: "Tenants", icon: Users },
   { to: "/payments", label: "Payments", icon: Wallet },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/tenants", label: "Tenants", icon: Users },
   { to: "/maintenance", label: "Maintenance", icon: Wrench },
   { to: "/applications", label: "Applications", icon: ClipboardList },
-  { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/reviews", label: "Reviews", icon: Star },
   { to: "/documents", label: "Documents", icon: FileText },
   { to: "/reports", label: "Reports", icon: LineChart },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
+// Exact mobile bottom-nav order for landlords: Home, Properties, Payments, Messages, More.
+const LANDLORD_MOBILE: NavItem[] = [
+  { to: "/dashboard", label: "Home", icon: LayoutGrid },
+  { to: "/properties", label: "Properties", icon: Building2 },
+  { to: "/payments", label: "Payments", icon: Wallet },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
+];
+
 // Tenants only see their own record and the shared surfaces — the portfolio
 // management pages are landlord-scoped.
 const TENANT_NAV: NavItem[] = [
   { to: "/tenant", label: "My home", icon: Home },
-  { to: "/messages", label: "Messages", icon: MessageSquare },
-  { to: "/reviews", label: "Reviews", icon: Star },
+  { to: "/tenant/tenancy", label: "My tenancy", icon: ShieldCheck },
+  { to: "/tenant/lease", label: "Lease", icon: FileText },
+  { to: "/tenant/pay", label: "Payments", icon: Wallet },
+  { to: "/tenant/maintenance", label: "Maintenance", icon: Wrench },
+  { to: "/tenant/messages", label: "Messages", icon: MessageSquare },
+  { to: "/tenant/profile", label: "Rental profile", icon: User },
   { to: "/settings", label: "Settings", icon: Settings },
+];
+
+// Exact mobile bottom-nav order for tenants: Home, Pay, Maintenance, Messages, Profile.
+const TENANT_MOBILE: NavItem[] = [
+  { to: "/tenant", label: "Home", icon: Home },
+  { to: "/tenant/pay", label: "Pay", icon: Wallet },
+  { to: "/tenant/maintenance", label: "Maintenance", icon: Wrench },
+  { to: "/tenant/messages", label: "Messages", icon: MessageSquare },
+  { to: "/tenant/profile", label: "Profile", icon: User },
 ];
 
 export function AppShell({
@@ -64,20 +87,21 @@ export function AppShell({
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isTenant = subtitle === "Tenant";
-  const nav = isTenant ? TENANT_NAV : NAV;
-  const mobilePrimary = nav.slice(0, 4);
+  const desktopNav = isTenant ? TENANT_NAV : LANDLORD_NAV;
+  const mobilePrimary = isTenant ? TENANT_MOBILE : LANDLORD_MOBILE;
+  const moreItems = isTenant ? [] : LANDLORD_NAV.filter((item) => !mobilePrimary.some((m) => m.to === item.to));
   const home = isTenant ? "/tenant" : "/dashboard";
 
   const name = profile.data?.full_name ?? user?.email ?? "";
 
   async function signOut() {
     await queryClient.cancelQueries();
+    await authService.signOut();
     queryClient.clear();
-    await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
 
-  const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
+  const isActive = (to: string) => pathname === to || (to !== "/tenant" && pathname.startsWith(`${to}/`));
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-background text-foreground">
@@ -95,7 +119,7 @@ export function AppShell({
             <Eyebrow className="mt-0.5">{subtitle}</Eyebrow>
           </Link>
           <nav className="mt-7 flex flex-1 flex-col gap-1">
-            {nav.map((item) => (
+            {desktopNav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -159,7 +183,7 @@ export function AppShell({
         <div
           className={cn(
             "mx-auto grid max-w-md gap-1",
-            nav.length > 4 ? "grid-cols-5" : "grid-cols-4",
+            mobilePrimary.length + (moreItems.length > 0 ? 1 : 0) > 4 ? "grid-cols-5" : "grid-cols-4",
           )}
         >
           {mobilePrimary.map((item) => (
@@ -175,16 +199,16 @@ export function AppShell({
               <span className="font-display text-[10px] font-medium">{item.label}</span>
             </Link>
           ))}
-          {nav.length > 4 ? (
+          {moreItems.length > 0 ? (
             <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
               <SheetTrigger className="flex flex-col items-center gap-1 rounded-xl py-2 text-muted-foreground">
-                <Home className="size-4" strokeWidth={1.75} />
+                <LayoutGrid className="size-4" strokeWidth={1.75} />
                 <span className="font-display text-[10px] font-medium">More</span>
               </SheetTrigger>
               <SheetContent side="bottom" className="rounded-t-3xl border-none bg-background px-5 pb-8">
                 <SheetTitle className="font-display text-base">All sections</SheetTitle>
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  {nav.slice(4).map((item) => (
+                  {moreItems.map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
