@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RentIDLogo } from "@/components/rentid/Logo";
 import { Eyebrow } from "@/components/rentid/Surface";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -118,7 +119,7 @@ function AuthPage() {
       </div>
 
       <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-8 pb-10">
-        <div className="font-display text-[19px] font-bold tracking-tight">RentID</div>
+        <RentIDLogo markClassName="size-8" wordmarkClassName="text-[19px]" />
 
         <div className="mt-10">
           <Eyebrow>{mode === "signup" ? "Create account" : "Welcome back"}</Eyebrow>

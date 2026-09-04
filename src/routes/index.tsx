@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, BadgeCheck, Building2, ShieldCheck, Wallet } from "lucide-react";
 
+import { RentIDLogo } from "@/components/rentid/Logo";
 import { Eyebrow } from "@/components/rentid/Surface";
 
 export const Route = createFileRoute("/")({
