@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { acceptInvitation } from "@/lib/invitations.functions";
 
 export type Organization = {
   id: string;
@@ -246,78 +248,13 @@ export function useInvalidateRentId() {
 
 /** Accept an invitation: links the signed-in tenant and marks the tenancy verified. */
 export function useAcceptInvitation() {
-  const { user } = useAuth();
   const invalidate = useInvalidateRentId();
+  const acceptFn = useServerFn(acceptInvitation);
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
-      if (!user) throw new Error("You need to be signed in.");
-
-      const { data: invite, error: inviteError } = await supabase
-        .from("tenant_invitations")
-        .select("*")
-        .eq("id", invitationId)
-        .maybeSingle();
-      if (inviteError) throw inviteError;
-      if (!invite) throw new Error("This invitation is no longer available.");
-
-      let tenancyId = invite.tenancy_id;
-
-      if (tenancyId) {
-        const { error } = await supabase
-          .from("tenancies")
-          .update({
-            tenant_user_id: user.id,
-            status: "active",
-            verified: true,
-            verified_at: new Date().toISOString(),
-          })
-          .eq("id", tenancyId);
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from("tenancies")
-          .insert({
-            organization_id: invite.organization_id,
-            property_id: invite.property_id!,
-            unit_id: invite.unit_id!,
-            tenant_user_id: user.id,
-            tenant_name: invite.full_name,
-            tenant_email: invite.email,
-            tenant_phone: invite.phone,
-            status: "active",
-            monthly_rent: invite.monthly_rent,
-            start_date: invite.lease_start,
-            end_date: invite.lease_end,
-            verified: true,
-            verified_at: new Date().toISOString(),
-          })
-          .select("id")
-          .single();
-        if (error) throw error;
-        tenancyId = data.id;
-      }
-
-      const { error: inviteUpdate } = await supabase
-        .from("tenant_invitations")
-        .update({
-          status: "accepted",
-          accepted_by: user.id,
-          accepted_at: new Date().toISOString(),
-          tenancy_id: tenancyId,
-        })
-        .eq("id", invitationId);
-      if (inviteUpdate) throw inviteUpdate;
-
-      await supabase.from("user_roles").insert({ user_id: user.id, role: "tenant" });
-      await supabase.from("verification_records").insert({
-        tenancy_id: tenancyId!,
-        subject_user_id: user.id,
-        record_type: "tenancy",
-        label: "Verified Tenancy — Confirmed by landlord invitation",
-      });
-
-      return tenancyId;
+      const result = await acceptFn({ data: { invitationId } });
+      return result.tenancyId;
     },
     onSuccess: invalidate,
   });

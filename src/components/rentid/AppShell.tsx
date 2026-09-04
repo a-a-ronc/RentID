@@ -39,7 +39,14 @@ const NAV: NavItem[] = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
-const MOBILE_PRIMARY = NAV.slice(0, 4);
+// Tenants only see their own record and the shared surfaces — the portfolio
+// management pages are landlord-scoped.
+const TENANT_NAV: NavItem[] = [
+  { to: "/tenant", label: "My home", icon: Home },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/reviews", label: "Reviews", icon: Star },
+  { to: "/settings", label: "Settings", icon: Settings },
+];
 
 export function AppShell({
   children,
@@ -54,6 +61,11 @@ export function AppShell({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  const isTenant = subtitle === "Tenant";
+  const nav = isTenant ? TENANT_NAV : NAV;
+  const mobilePrimary = nav.slice(0, 4);
+  const home = isTenant ? "/tenant" : "/dashboard";
 
   const name = profile.data?.full_name ?? user?.email ?? "";
 
@@ -77,12 +89,12 @@ export function AppShell({
       <div className="relative flex min-h-screen lg:gap-6">
         {/* Desktop sidebar */}
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col px-4 py-6 lg:flex">
-          <Link to="/dashboard" className="px-2">
+          <Link to={home} className="px-2">
             <div className="font-display text-[19px] font-bold tracking-tight">RentID</div>
             <Eyebrow className="mt-0.5">{subtitle}</Eyebrow>
           </Link>
           <nav className="mt-7 flex flex-1 flex-col gap-1">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -143,8 +155,13 @@ export function AppShell({
 
       {/* Mobile bottom nav */}
       <nav className="glass fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-          {MOBILE_PRIMARY.map((item) => (
+        <div
+          className={cn(
+            "mx-auto grid max-w-md gap-1",
+            nav.length > 4 ? "grid-cols-5" : "grid-cols-4",
+          )}
+        >
+          {mobilePrimary.map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -157,34 +174,36 @@ export function AppShell({
               <span className="font-display text-[10px] font-medium">{item.label}</span>
             </Link>
           ))}
-          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-            <SheetTrigger className="flex flex-col items-center gap-1 rounded-xl py-2 text-muted-foreground">
-              <Home className="size-4" strokeWidth={1.75} />
-              <span className="font-display text-[10px] font-medium">More</span>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-3xl border-none bg-background px-5 pb-8">
-              <SheetTitle className="font-display text-base">All sections</SheetTitle>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {NAV.slice(4).map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMoreOpen(false)}
-                    className="glass flex items-center gap-2.5 rounded-2xl px-3 py-3 text-[13px] font-medium"
-                  >
-                    <item.icon className="size-4 text-accent" strokeWidth={1.75} />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-              <button
-                onClick={signOut}
-                className="mt-4 w-full rounded-2xl bg-secondary px-3 py-3 text-[13px] font-medium text-muted-foreground"
-              >
-                Sign out
-              </button>
-            </SheetContent>
-          </Sheet>
+          {nav.length > 4 ? (
+            <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+              <SheetTrigger className="flex flex-col items-center gap-1 rounded-xl py-2 text-muted-foreground">
+                <Home className="size-4" strokeWidth={1.75} />
+                <span className="font-display text-[10px] font-medium">More</span>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="rounded-t-3xl border-none bg-background px-5 pb-8">
+                <SheetTitle className="font-display text-base">All sections</SheetTitle>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  {nav.slice(4).map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMoreOpen(false)}
+                      className="glass flex items-center gap-2.5 rounded-2xl px-3 py-3 text-[13px] font-medium"
+                    >
+                      <item.icon className="size-4 text-accent" strokeWidth={1.75} />
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+                <button
+                  onClick={signOut}
+                  className="mt-4 w-full rounded-2xl bg-secondary px-3 py-3 text-[13px] font-medium text-muted-foreground"
+                >
+                  Sign out
+                </button>
+              </SheetContent>
+            </Sheet>
+          ) : null}
         </div>
       </nav>
     </div>
