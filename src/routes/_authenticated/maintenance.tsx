@@ -58,7 +58,10 @@ function MaintenancePage() {
   async function advance(id: string, current: string) {
     const next = NEXT_STATUS[current];
     if (!next) return;
-    const patch: { status: string; resolved_at?: string | null } = { status: next };
+    const patch: {
+      status: "open" | "in_progress" | "resolved" | "closed";
+      resolved_at?: string | null;
+    } = { status: next as "open" | "in_progress" | "resolved" | "closed" };
     if (next === "resolved") patch.resolved_at = new Date().toISOString();
     const { error } = await supabase.from("maintenance_requests").update(patch).eq("id", id);
     if (error) {
