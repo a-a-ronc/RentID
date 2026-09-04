@@ -1,13 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import {
   AppShell,
+  EmptyState,
+  InlineError,
   ListRow,
+  LoadingCard,
   PageHeader,
   SectionCard,
   StatusPill,
+  TextInput,
+  TrustBadge,
 } from "@/components/rentid/patterns";
-import { EmptyState } from "@/components/rentid/Surface";
 import { daysUntil, money } from "@/lib/format";
 import { useActiveOrg, useTenancies } from "@/lib/rentid";
 
@@ -21,52 +26,105 @@ export const Route = createFileRoute("/_authenticated/tenants/")({
   component: TenantsPage,
 });
 
+type Filter = "all" | "verified" | "pending" | "ended";
+
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "verified", label: "Verified" },
+  { key: "pending", label: "Pending" },
+  { key: "ended", label: "Ended" },
+];
+
 function TenantsPage() {
   const active = useActiveOrg();
   const tenancies = useTenancies(active.orgId);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [q, setQ] = useState("");
 
-  const rows = (tenancies.data ?? []).slice().sort((a, b) => {
-    if (a.verified !== b.verified) return a.verified ? -1 : 1;
-    return (a.tenant_name ?? "").localeCompare(b.tenant_name ?? "");
-  });
+  const all = tenancies.data ?? [];
+  const filtered = all
+    .filter((t) => {
+      if (filter === "verified") return t.verified;
+      if (filter === "pending") return t.status === "pending";
+      if (filter === "ended") return t.status === "ended";
+      return true;
+    })
+    .filter((t) => {
+      if (!q.trim()) return true;
+      const haystack = [t.tenant_name, t.property?.name, t.unit?.name].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(q.trim().toLowerCase());
+    })
+    .sort((a, b) => (a.tenant_name ?? "").localeCompare(b.tenant_name ?? ""));
 
   return (
     <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
       <PageHeader
         title="Tenants"
-        subtitle={
-          active.org ? `${active.org.name} · ${rows.length} tenanc${rows.length === 1 ? "y" : "ies"}` : undefined
-        }
+        subtitle={active.org ? `${active.org.name} · ${filtered.length} shown` : undefined}
       />
 
       <div className="mt-5 space-y-3">
+        <TextInput
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search tenants, properties or units…"
+          aria-label="Search tenants"
+        />
+
+        <div className="flex flex-wrap gap-2">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              className={`rounded-full px-4 py-1.5 font-display text-[12px] font-medium transition-colors ${
+                filter === f.key ? "bg-brand text-brand-foreground" : "glass text-muted-foreground"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         {tenancies.isLoading ? (
-          <EmptyState title="Loading…" description="Fetching your tenancies." />
-        ) : rows.length === 0 ? (
+          <LoadingCard label="Fetching tenancies…" />
+        ) : tenancies.isError ? (
+          <InlineError
+            message={tenancies.error instanceof Error ? tenancies.error.message : "Could not load tenants."}
+            onRetry={() => tenancies.refetch()}
+          />
+        ) : filtered.length === 0 ? (
           <EmptyState
-            title="No tenants yet"
-            description="Invite a tenant from a unit page — they accept, and the tenancy becomes verified."
+            title={all.length === 0 ? "No tenants yet" : "No matches"}
+            description={
+              all.length === 0
+                ? "Invite a tenant from a unit page — once they accept, the tenancy becomes verified."
+                : "Try a different search or filter."
+            }
           />
         ) : (
-          <SectionCard title="All tenancies" aside={`${rows.length} total`}>
-            {rows.map((t) => {
+          <SectionCard title="All tenancies" aside={`${filtered.length} total`}>
+            {filtered.map((t) => {
               const end = t.end_date ? daysUntil(t.end_date) : null;
               return (
                 <ListRow
                   key={t.id}
+                  onClick={undefined}
                   title={t.tenant_name ?? "Tenant"}
-                  subtitle={
-                    [t.properties?.name ?? "", t.units?.name ?? "", t.monthly_rent != null ? `${money(Number(t.monthly_rent))}/mo` : null]
-                      .filter(Boolean)
-                      .join(" · ")
-                  }
+                  subtitle={[
+                    t.property?.name ?? "",
+                    t.unit?.name ?? "",
+                    t.monthly_rent != null ? `${money(Number(t.monthly_rent))}/mo` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                   pill={
                     t.verified ? (
-                      <StatusPill status="Verified" tone="success" />
+                      <TrustBadge kind="verified_tenancy" />
                     ) : (
                       <StatusPill
                         status={t.status === "pending" ? "Invitation sent" : t.status}
-                        tone="warning"
+                        tone={t.status === "ended" ? "neutral" : "warning"}
                       />
                     )
                   }

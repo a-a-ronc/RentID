@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 
 import {
@@ -50,12 +49,6 @@ function Dashboard() {
     metrics.isLoading || payments.isLoading || tenancies.isLoading || maintenance.isLoading || leases.isLoading;
   const isError = metrics.isError || payments.isError || tenancies.isError || maintenance.isError || leases.isError;
 
-  const tenancyById = useMemo(() => {
-    const map = new Map<string, (typeof tenancies.data)[number]>();
-    for (const t of tenancies.data ?? []) map.set(t.id, t);
-    return map;
-  }, [tenancies.data]);
-
   const recentPayments = (payments.data ?? [])
     .slice()
     .sort((a, b) => (b.due_date ?? "").localeCompare(a.due_date ?? ""))
@@ -93,9 +86,9 @@ function Dashboard() {
       />
 
       {isError ? (
-        <InlineError message="Couldn't load your dashboard data." className="mt-5" />
+        <div className="mt-5"><InlineError message="Couldn't load your dashboard data." /></div>
       ) : loading ? (
-        <LoadingCard className="mt-5" label="Loading dashboard…" />
+        <div className="mt-5"><LoadingCard label="Loading dashboard…" /></div>
       ) : (
         <>
           <SummaryGrid
@@ -218,12 +211,11 @@ function Dashboard() {
               <EmptyState title="Nothing expiring" description="No leases expire in the next 60 days." />
             ) : (
               expiringLeases.map((l) => {
-                const tenant = tenancyById.get(l.tenancy_id);
                 const days = daysUntil(l.end_date);
                 return (
                   <ListRow
                     key={l.id}
-                    title={tenant?.tenant_name ?? l.tenancy?.tenant_name ?? "Tenant"}
+                    title={l.tenancy?.tenant_name ?? "Tenant"}
                     subtitle={`${l.property?.name ?? ""} · ${l.unit?.name ?? ""} · Ends ${shortDate(l.end_date)}`}
                     pill={<StatusPill status={`${days} days`} tone="warning" />}
                   />
