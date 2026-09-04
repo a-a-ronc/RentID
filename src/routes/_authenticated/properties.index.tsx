@@ -35,14 +35,22 @@ export const Route = createFileRoute("/_authenticated/properties/")({
   component: PropertiesPage,
 });
 
-const PROPERTY_TYPES = [
+type PropertyType =
+  | "single_family"
+  | "multi_family"
+  | "condo"
+  | "townhouse"
+  | "apartment"
+  | "other";
+
+const PROPERTY_TYPES: readonly [PropertyType, string][] = [
   ["single_family", "Single family"],
   ["multi_family", "Multi family"],
   ["condo", "Condo"],
   ["townhouse", "Townhouse"],
   ["apartment", "Apartment"],
   ["other", "Other"],
-] as const;
+];
 
 function AddPropertyDialog() {
   const active = useActiveOrg();
@@ -55,7 +63,7 @@ function AddPropertyDialog() {
     city: "",
     state: "",
     zip: "",
-    property_type: "multi_family",
+    property_type: "multi_family" as PropertyType,
     unit_count: "1",
   });
 
