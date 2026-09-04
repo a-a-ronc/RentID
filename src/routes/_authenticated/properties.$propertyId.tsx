@@ -221,7 +221,7 @@ function UnitActions({
   unit: Unit;
   propertyId: string;
   organizationId: string | null;
-  tenancyId?: string;
+  tenancyId?: string | undefined;
 }) {
   const updateUnit = useUpdateUnit();
 

@@ -37,7 +37,7 @@ function TenantProfilePage() {
 
   const rows = tenancies.data ?? [];
   const payments = rows.flatMap((t) => t.payments);
-  const onTime = payments.filter((p) => p.status === "paid" && (p.days_late ?? 0) === 0).length;
+  const onTime = payments.filter((p) => p.status === "paid" && (!p.paid_at || p.paid_at.slice(0, 10) <= p.due_date)).length;
   const paid = payments.filter((p) => p.status === "paid");
   const totalPaid = paid.reduce((sum, p) => sum + Number(p.amount), 0);
   const verifiedCount = rows.filter((t) => t.verified).length;

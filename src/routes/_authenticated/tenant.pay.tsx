@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { AppShell, DataTable, PageHeader, SectionCard, StatusPill, TrustBadge } from "@/components/rentid/patterns";
-import { DemoNotice, EmptyState } from "@/components/rentid/Surface";
+import { DemoNotice, EmptyState } from "@/components/rentid/patterns";
 import { money, shortDate } from "@/lib/format";
 import { useMyTenancies } from "@/lib/rentid";
 import type { Payment } from "@/lib/types";
