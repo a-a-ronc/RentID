@@ -107,10 +107,16 @@ export function ListRow({
           <p className="num mt-0.5 truncate text-[11.5px] text-muted-foreground">{subtitle}</p>
         ) : null}
       </div>
-      {pill}
-      {value != null && pill == null ? (
-        <span className="num shrink-0 text-[14px] font-medium">{value}</span>
-      ) : null}
+      {(pill != null || value != null) && (
+        <div className="flex shrink-0 items-center gap-3">
+          {pill}
+          {value != null && (typeof value === "string" || typeof value === "number") ? (
+            <span className="num text-[14px] font-medium">{value}</span>
+          ) : (
+            value
+          )}
+        </div>
+      )}
     </>
   );
 
