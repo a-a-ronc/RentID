@@ -16,6 +16,8 @@ import { DEMO_ACCOUNTS } from "@/lib/services";
 import type { AppRole } from "@/lib/types";
 
 export const Route = createFileRoute("/auth")({
+  // Client-rendered: the form is driven entirely by local session state.
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — RentID" },
