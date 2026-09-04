@@ -1,13 +1,15 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
-import { supabase } from "@/integrations/supabase/client";
+import { getSession } from "@/lib/services/auth";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+  beforeLoad: () => {
+    // Local session gate only — real auth arrives with the Supabase connection,
+    // and every protected read will then be enforced by RLS on the server.
+    const session = getSession();
+    if (!session) throw redirect({ to: "/auth" });
+    return { user: session.user, roles: session.roles };
   },
   component: () => <Outlet />,
 });
