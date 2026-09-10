@@ -18,6 +18,7 @@ import { Route as ForTenantsRouteImport } from './routes/for-tenants'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedListingsRouteImport } from './routes/_authenticated/listings'
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
 import { Route as AuthenticatedManagerRouteImport } from './routes/_authenticated/manager'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
@@ -91,6 +92,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedListingsRoute = AuthenticatedListingsRouteImport.update({
+  id: '/listings',
+  path: '/listings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMaintenanceRoute =
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/listings': typeof AuthenticatedListingsRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/manager': typeof AuthenticatedManagerRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
@@ -303,6 +310,7 @@ export interface FileRoutesByTo {
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/listings': typeof AuthenticatedListingsRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/listings': typeof AuthenticatedListingsRoute
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
   '/_authenticated/manager': typeof AuthenticatedManagerRouteWithChildren
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/applications'
     | '/dashboard'
     | '/documents'
+    | '/listings'
     | '/maintenance'
     | '/manager'
     | '/messages'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/applications'
     | '/dashboard'
     | '/documents'
+    | '/listings'
     | '/maintenance'
     | '/messages'
     | '/onboarding'
@@ -460,6 +471,7 @@ export interface FileRouteTypes {
     | '/_authenticated/applications'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
+    | '/_authenticated/listings'
     | '/_authenticated/maintenance'
     | '/_authenticated/manager'
     | '/_authenticated/messages'
@@ -566,6 +578,13 @@ declare module '@tanstack/react-router' {
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/listings': {
+      id: '/_authenticated/listings'
+      path: '/listings'
+      fullPath: '/listings'
+      preLoaderRoute: typeof AuthenticatedListingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/maintenance': {
@@ -816,6 +835,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedApplicationsRoute: typeof AuthenticatedApplicationsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedListingsRoute: typeof AuthenticatedListingsRoute
   AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
   AuthenticatedManagerRoute: typeof AuthenticatedManagerRouteWithChildren
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
@@ -838,6 +858,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplicationsRoute: AuthenticatedApplicationsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedListingsRoute: AuthenticatedListingsRoute,
   AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
   AuthenticatedManagerRoute: AuthenticatedManagerRouteWithChildren,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
