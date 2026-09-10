@@ -352,3 +352,93 @@ create policy "audit_logs_select_org_owner" on public.audit_logs
 --   the admin path is service-role only and every admin mutation must write
 --   an audit_logs row (action prefix 'admin.').
 -- =====================================================================
+
+-- =====================================================================
+-- Marketplace, ownership and management authority policies
+-- Review only — not applied until the backend is reachable.
+-- =====================================================================
+
+-- A PM organization may only read/operate a property whose owner has
+-- confirmed its authority. Ownership and authority stay separate.
+create or replace function public.has_management_authority(_property_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.management_assignments a
+    where a.property_id = _property_id
+      and a.authority_status = 'verified'
+      and a.revoked_at is null
+      and public.is_org_member(a.organization_id)
+  );
+$$;
+
+-- owner_accounts: visible only inside the managing organization.
+create policy "owner_accounts_select_org" on public.owner_accounts
+  for select to authenticated using (public.is_org_member(organization_id));
+create policy "owner_accounts_write_org" on public.owner_accounts
+  for insert to authenticated with check (public.is_org_member(organization_id));
+create policy "owner_accounts_update_org" on public.owner_accounts
+  for update to authenticated using (public.is_org_member(organization_id));
+
+-- management_assignments: the PM may request; only the property's owning
+-- organization may confirm, dispute or revoke authority.
+create policy "management_assignments_select" on public.management_assignments
+  for select to authenticated using (
+    public.is_org_member(organization_id) or public.can_manage_property(property_id)
+  );
+create policy "management_assignments_insert_pm" on public.management_assignments
+  for insert to authenticated with check (public.is_org_member(organization_id));
+create policy "management_assignments_update_owner" on public.management_assignments
+  for update to authenticated using (public.can_manage_property(property_id));
+
+-- listings: published listings are world-readable; only the owning
+-- organization (or an authorized manager) may create or change them.
+create policy "listings_select_public" on public.listings
+  for select to anon, authenticated using (status = 'published' and deleted_at is null);
+create policy "listings_select_org" on public.listings
+  for select to authenticated using (
+    public.is_org_member(organization_id) or public.has_management_authority(property_id)
+  );
+create policy "listings_insert_org" on public.listings
+  for insert to authenticated with check (
+    public.is_org_member(organization_id) or public.has_management_authority(property_id)
+  );
+create policy "listings_update_org" on public.listings
+  for update to authenticated using (
+    public.is_org_member(organization_id) or public.has_management_authority(property_id)
+  );
+
+-- rental_applications: an applicant sees only their own; the listing side
+-- sees applications to its own listings. Applicant contact data is never
+-- readable by unrelated organizations.
+create policy "applications_select_applicant" on public.rental_applications
+  for select to authenticated using (applicant_user_id = auth.uid());
+create policy "applications_select_org" on public.rental_applications
+  for select to authenticated using (
+    exists (
+      select 1 from public.listings l
+      where l.id = listing_id
+        and (public.is_org_member(l.organization_id) or public.has_management_authority(l.property_id))
+    )
+  );
+create policy "applications_insert_self" on public.rental_applications
+  for insert to authenticated with check (
+    applicant_user_id = auth.uid()
+    and exists (select 1 from public.listings l where l.id = listing_id and l.status = 'published')
+  );
+create policy "applications_update_org" on public.rental_applications
+  for update to authenticated using (
+    exists (
+      select 1 from public.listings l
+      where l.id = listing_id
+        and (public.is_org_member(l.organization_id) or public.has_management_authority(l.property_id))
+    )
+  );
+
+-- Anonymous applications (a renter applying before signing up) must go
+-- through a server function with the service role, which creates the user
+-- record first and writes an audit_logs row.

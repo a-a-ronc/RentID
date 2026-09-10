@@ -5,7 +5,13 @@ import { SectionCard, ListRow, StatusPill, SummaryGrid } from "@/components/rent
 import { DemoNotice, InlineError, LoadingCard } from "@/components/rentid/kit";
 import { EmptyState, Eyebrow, Glass } from "@/components/rentid/Surface";
 import { money } from "@/lib/format";
-import { useMaintenance, useManagementOrg, useOwnerAccounts, usePayments, usePmMetrics } from "@/lib/rentid";
+import {
+  useManagedPayments,
+  useManagedWorkOrders,
+  useManagementOrg,
+  useOwnerAccounts,
+  usePmMetrics,
+} from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/manager/")({
   head: () => ({
@@ -21,8 +27,8 @@ function ManagerOverview() {
   const active = useManagementOrg();
   const metrics = usePmMetrics(active.orgId);
   const owners = useOwnerAccounts(active.orgId);
-  const payments = usePayments(active.orgId);
-  const work = useMaintenance(active.orgId);
+  const payments = useManagedPayments(active.orgId);
+  const work = useManagedWorkOrders(active.orgId);
 
   if (active.isPending) {
     return (

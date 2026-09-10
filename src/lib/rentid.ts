@@ -43,6 +43,8 @@ const KEYS = [
   "profile",
   "roles",
   "audit",
+  "managed-payments",
+  "managed-work-orders",
 ];
 
 export function useInvalidateRentId() {
@@ -601,5 +603,23 @@ export function useUpdateApplicationStatus() {
     mutationFn: ({ applicationId, status }: { applicationId: UUID; status: ApplicationStatus }) =>
       svc.updateApplicationStatus(applicationId, status, user?.id ?? null),
     onSuccess: invalidate,
+  });
+}
+
+/* -------------------- managed portfolio operations (PM) ------------------- */
+
+export function useManagedPayments(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["managed-payments", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getManagedPayments(orgId),
+  });
+}
+
+export function useManagedWorkOrders(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["managed-work-orders", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getManagedWorkOrders(orgId),
   });
 }
