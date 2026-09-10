@@ -100,9 +100,11 @@ const TENANT_MOBILE: NavItem[] = [
 export function AppShell({
   children,
   subtitle = "Landlord",
+  role,
 }: {
   children: ReactNode;
   subtitle?: string;
+  role?: ShellRole;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const profile = useProfile();
@@ -111,11 +113,14 @@ export function AppShell({
   const queryClient = useQueryClient();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const isTenant = subtitle === "Tenant";
-  const desktopNav = isTenant ? TENANT_NAV : LANDLORD_NAV;
-  const mobilePrimary = isTenant ? TENANT_MOBILE : LANDLORD_MOBILE;
-  const moreItems = isTenant ? [] : LANDLORD_NAV.filter((item) => !mobilePrimary.some((m) => m.to === item.to));
-  const home = isTenant ? "/tenant" : "/dashboard";
+  const activeRole: ShellRole = role ?? (subtitle === "Tenant" ? "tenant" : "landlord");
+  const desktopNav =
+    activeRole === "tenant" ? TENANT_NAV : activeRole === "manager" ? MANAGER_NAV : LANDLORD_NAV;
+  const mobilePrimary =
+    activeRole === "tenant" ? TENANT_MOBILE : activeRole === "manager" ? MANAGER_MOBILE : LANDLORD_MOBILE;
+  const moreItems =
+    activeRole === "tenant" ? [] : desktopNav.filter((item) => !mobilePrimary.some((m) => m.to === item.to));
+  const home = activeRole === "tenant" ? "/tenant" : activeRole === "manager" ? "/manager" : "/dashboard";
 
   const name = profile.data?.full_name ?? user?.email ?? "";
 
