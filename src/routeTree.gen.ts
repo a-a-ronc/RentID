@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ForLandlordsRouteImport } from './routes/for-landlords'
+import { Route as ForPropertyManagersRouteImport } from './routes/for-property-managers'
+import { Route as ForTenantsRouteImport } from './routes/for-tenants'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
@@ -50,6 +53,21 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForLandlordsRoute = ForLandlordsRouteImport.update({
+  id: '/for-landlords',
+  path: '/for-landlords',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForPropertyManagersRoute = ForPropertyManagersRouteImport.update({
+  id: '/for-property-managers',
+  path: '/for-property-managers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForTenantsRoute = ForTenantsRouteImport.update({
+  id: '/for-tenants',
+  path: '/for-tenants',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedApplicationsRoute =
@@ -195,6 +213,9 @@ const AuthenticatedUnitsIndexRoute = AuthenticatedUnitsIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/for-landlords': typeof ForLandlordsRoute
+  '/for-property-managers': typeof ForPropertyManagersRoute
+  '/for-tenants': typeof ForTenantsRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -224,6 +245,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/for-landlords': typeof ForLandlordsRoute
+  '/for-property-managers': typeof ForPropertyManagersRoute
+  '/for-tenants': typeof ForTenantsRoute
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -254,6 +278,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/for-landlords': typeof ForLandlordsRoute
+  '/for-property-managers': typeof ForPropertyManagersRoute
+  '/for-tenants': typeof ForTenantsRoute
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
@@ -285,6 +312,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/for-landlords'
+    | '/for-property-managers'
+    | '/for-tenants'
     | '/applications'
     | '/dashboard'
     | '/documents'
@@ -314,6 +344,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/for-landlords'
+    | '/for-property-managers'
+    | '/for-tenants'
     | '/applications'
     | '/dashboard'
     | '/documents'
@@ -343,6 +376,9 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/for-landlords'
+    | '/for-property-managers'
+    | '/for-tenants'
     | '/_authenticated/applications'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
@@ -374,6 +410,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ForLandlordsRoute: typeof ForLandlordsRoute
+  ForPropertyManagersRoute: typeof ForPropertyManagersRoute
+  ForTenantsRoute: typeof ForTenantsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -397,6 +436,27 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-landlords': {
+      id: '/for-landlords'
+      path: '/for-landlords'
+      fullPath: '/for-landlords'
+      preLoaderRoute: typeof ForLandlordsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-property-managers': {
+      id: '/for-property-managers'
+      path: '/for-property-managers'
+      fullPath: '/for-property-managers'
+      preLoaderRoute: typeof ForPropertyManagersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-tenants': {
+      id: '/for-tenants'
+      path: '/for-tenants'
+      fullPath: '/for-tenants'
+      preLoaderRoute: typeof ForTenantsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/applications': {
@@ -650,6 +710,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ForLandlordsRoute: ForLandlordsRoute,
+  ForPropertyManagersRoute: ForPropertyManagersRoute,
+  ForTenantsRoute: ForTenantsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
