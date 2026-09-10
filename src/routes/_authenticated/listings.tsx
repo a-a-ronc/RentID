@@ -314,7 +314,7 @@ function ListingsPage() {
         open={Boolean(selected)}
         onClose={() => setSelected(null)}
         title={selected?.applicant_name ?? "Application"}
-        description={selected ? `${selected.property_name} · ${selected.unit_name}` : undefined}
+        {...(selected ? { description: `${selected.property_name} · ${selected.unit_name}` } : {})}
       >
         {selected ? (
           <div>
