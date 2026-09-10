@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import { AppShell, ListRow, PageHeader, SectionCard, StatusPill, SummaryGrid } from "@/components/rentid/patterns";
 import { Button, Field, Modal, Select, TextInput } from "@/components/rentid/kit";
-import { DemoNotice, EmptyState, Eyebrow, Glass, Pill } from "@/components/rentid/Surface";
+import { EmptyState, Eyebrow, Glass, Pill } from "@/components/rentid/Surface";
 import { useAuth } from "@/lib/auth";
 import { money, shortDate } from "@/lib/format";
 import { useCreateLeaseChangeRequest, useResidentHousing } from "@/lib/rentid";
@@ -69,7 +69,7 @@ function ResidentHousingPage() {
       <PageHeader
         title="My student housing"
         subtitle={data ? `${data.property_name} · ${data.unit_name}` : undefined}
-        actions={
+        action={
           data ? (
             <Button onClick={() => setOpen(true)}>Request a change</Button>
           ) : undefined
@@ -87,10 +87,10 @@ function ResidentHousingPage() {
         </div>
       ) : (
         <div className="mt-5 space-y-5">
-          <DemoNotice>
+          <Glass className="p-4 text-sm text-muted-foreground">
             Money shown here is yours alone — a roommate&apos;s balance is never visible to you, and requests take
             effect only after approvals, documents, signatures and payment all land.
-          </DemoNotice>
+          </Glass>
 
           <SummaryGrid
             items={[
@@ -98,14 +98,14 @@ function ResidentHousingPage() {
               {
                 label: "My bed",
                 value: data.bed ? `${data.bed.bed_label} · ${data.bed.room_label}` : `${data.occupancy.share_pct ?? 0}% joint share`,
-                hint: data.campus ?? undefined,
+                hint: data.campus ?? "Student housing",
               },
               { label: "Roommates", value: String(data.roommates.length), hint: data.lease_model.replace(/_/g, " ") },
               { label: "Open requests", value: String(data.requests.filter((r) => r.state !== "completed").length) },
             ]}
           />
 
-          <SectionCard title="My charges" eyebrow="What I owe">
+          <SectionCard title="My charges" aside="What I owe">
             {data.charges.length === 0 ? (
               <EmptyState title="No charges yet" description="Charges appear as your term is billed." />
             ) : (
@@ -115,12 +115,12 @@ function ResidentHousingPage() {
                     key={charge.id}
                     title={charge.label}
                     subtitle={`Due ${shortDate(charge.due_date)} · ${charge.source_status}`}
-                    right={
+                    value={
                       <div className="flex items-center gap-2">
                         <span className="font-display font-semibold">{money(charge.balance)}</span>
                         <StatusPill
                           tone={charge.balance === 0 ? "success" : charge.gated_on_request_id ? "neutral" : "warning"}
-                          label={charge.balance === 0 ? "Settled" : charge.gated_on_request_id ? "Gated" : "Due"}
+                          status={charge.balance === 0 ? "Settled" : charge.gated_on_request_id ? "Gated" : "Due"}
                         />
                       </div>
                     }
@@ -131,7 +131,7 @@ function ResidentHousingPage() {
           </SectionCard>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <SectionCard title="Who pays" eyebrow="Payers are separate from the lease">
+            <SectionCard title="Who pays" aside="Payers separate from the lease">
               {data.payers.length === 0 ? (
                 <EmptyState title="No payers on file" description="You or an authorized payer can be added." />
               ) : (
@@ -141,7 +141,7 @@ function ResidentHousingPage() {
                       key={payer.id}
                       title={payer.name}
                       subtitle={payer.kind.replace(/_/g, " ")}
-                      right={<Pill>{payer.authorized ? "Authorized" : "Not authorized"}</Pill>}
+                      value={<Pill>{payer.authorized ? "Authorized" : "Not authorized"}</Pill>}
                     />
                   ))}
                 </div>
@@ -158,7 +158,7 @@ function ResidentHousingPage() {
               )}
             </SectionCard>
 
-            <SectionCard title="My roommates" eyebrow="Names only — never their money">
+            <SectionCard title="My roommates" aside="Names only">
               {data.roommates.length === 0 ? (
                 <EmptyState title="No roommates" description="You are the only resident in this unit." />
               ) : (
@@ -168,7 +168,7 @@ function ResidentHousingPage() {
                       key={r.name}
                       title={r.name}
                       subtitle={r.bed_label ? `Bed ${r.bed_label}` : `${r.share_pct ?? 0}% joint share`}
-                      right={<Pill>{r.verified ? "Verified" : "Unverified"}</Pill>}
+                      value={<Pill>{r.verified ? "Verified" : "Unverified"}</Pill>}
                     />
                   ))}
                 </div>
@@ -178,8 +178,7 @@ function ResidentHousingPage() {
 
           <SectionCard
             title="My requests"
-            eyebrow="Approval-first"
-            aside={data.renewal_deadline ? `Renewal deadline ${shortDate(data.renewal_deadline)}` : undefined}
+            aside={data.renewal_deadline ? `Renewal deadline ${shortDate(data.renewal_deadline)}` : "Approval-first"}
           >
             {data.requests.length === 0 ? (
               <EmptyState
@@ -193,14 +192,14 @@ function ResidentHousingPage() {
                     key={r.id}
                     title={r.request_type.replace(/_/g, " ")}
                     subtitle={r.reason}
-                    right={<StatusPill tone={r.state === "denied" ? "danger" : "neutral"} label={r.state.replace(/_/g, " ")} />}
+                    value={<StatusPill tone={r.state === "denied" ? "danger" : "neutral"} status={r.state.replace(/_/g, " ")} />}
                   />
                 ))}
               </div>
             )}
           </SectionCard>
 
-          <SectionCard title="Maintenance in my unit" eyebrow="Private room and shared areas">
+          <SectionCard title="Maintenance in my unit" aside="Private room and shared areas">
             {data.maintenance.length === 0 ? (
               <EmptyState title="Nothing open" description="Reported issues appear here with their area and status." />
             ) : (
@@ -210,14 +209,14 @@ function ResidentHousingPage() {
                     key={c.id}
                     title={c.issue}
                     subtitle={`${c.area_label} · reported by ${c.requester_name}`}
-                    right={<StatusPill tone={c.status === "disputed" ? "danger" : "neutral"} label={c.status.replace(/_/g, " ")} />}
+                    value={<StatusPill tone={c.status === "disputed" ? "danger" : "neutral"} status={c.status.replace(/_/g, " ")} />}
                   />
                 ))}
               </div>
             )}
           </SectionCard>
 
-          <SectionCard title="My payment history" eyebrow="Append-only">
+          <SectionCard title="My payment history" aside="Append-only">
             {data.events.length === 0 ? (
               <EmptyState title="No activity yet" description="Every charge and payment is recorded here permanently." />
             ) : (
@@ -227,7 +226,7 @@ function ResidentHousingPage() {
                     key={e.id}
                     title={e.kind.replace(/_/g, " ")}
                     subtitle={`${shortDate(e.created_at)}${e.note ? ` · ${e.note}` : ""}`}
-                    right={<span className="font-display font-semibold">{money(e.amount)}</span>}
+                    value={<span className="font-display font-semibold">{money(e.amount)}</span>}
                   />
                 ))}
               </div>
