@@ -87,11 +87,15 @@ function AuthPage() {
     }
   }
 
-  async function demoSignIn(kind: "landlord" | "tenant" | "manager") {
+  async function demoSignIn(kind: "landlord" | "tenant" | "manager" | "student") {
     const account = DEMO_ACCOUNTS[kind];
     setBusy(true);
     try {
       const session = await authService.signIn(account.email, account.password);
+      if (kind === "student") {
+        await navigate({ to: "/tenant/housing", replace: true });
+        return;
+      }
       await route(session.roles);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Demo sign in failed.");
@@ -198,6 +202,9 @@ function AuthPage() {
               </Button>
               <Button tone="secondary" size="sm" onClick={() => void demoSignIn("manager")} disabled={busy}>
                 Manager demo
+              </Button>
+              <Button tone="secondary" size="sm" onClick={() => void demoSignIn("student")} disabled={busy}>
+                Student demo
               </Button>
             </div>
           </div>

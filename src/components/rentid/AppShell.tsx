@@ -89,6 +89,7 @@ const LANDLORD_MOBILE: NavItem[] = [
 const TENANT_NAV: NavItem[] = [
   { to: "/tenant", label: "My home", icon: Home },
   { to: "/tenant/tenancy", label: "My tenancy", icon: ShieldCheck },
+  { to: "/tenant/housing", label: "Student housing", icon: GraduationCap },
   { to: "/tenant/lease", label: "Lease", icon: FileText },
   { to: "/tenant/pay", label: "Payments", icon: Wallet },
   { to: "/tenant/maintenance", label: "Maintenance", icon: Wrench },
