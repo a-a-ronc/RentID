@@ -17,6 +17,17 @@
 - [x] Backend integration checklist (docs/SUPABASE_INTEGRATION.md)
 - [x] Typecheck clean
 
+## Milestone 2 — Rental identity network (business map, mock data)
+- [x] Public marketing routes per role: /for-tenants, /for-landlords, /for-property-managers
+- [x] Public rental marketplace: /rent search + /rent/$listingId detail with consented profile sharing
+- [x] Public provider profiles: /providers/$orgId with sourced trust signals and verified-tenancy reviews
+- [x] Property-manager product: /manager overview, /manager/portfolio, /manager/owners
+- [x] Owner accounts + owner-granted management authority, separate from ownership
+- [x] Landlord/PM leasing desk: /listings with syndication state and application review
+- [x] Manager demo sign-in and role-aware routing + mobile navigation
+- [x] Planned SQL + RLS for organizations.kind/verification, owner_accounts,
+      management_assignments, listings, rental_applications (review only)
+
 ## Next — when the backend is reachable
 - [ ] Apply schema migration, then RLS migration
 - [ ] Enable email/password + Google auth; move invitation acceptance to a server function
@@ -27,5 +38,5 @@
 
 ## Deliberately not started
 Stripe and live payments, autopay, credit screening, background checks,
-reputation scoring, AI tenant scores, native apps, marketplace listings,
-QuickBooks.
+reputation scoring, AI tenant scores, native apps, QuickBooks,
+partner listing syndication feeds, marketplace lease fees.
