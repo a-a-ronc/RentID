@@ -19,6 +19,7 @@ import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authent
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
+import { Route as AuthenticatedManagerRouteImport } from './routes/_authenticated/manager'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
@@ -31,6 +32,8 @@ import { Route as RentIndexRouteImport } from './routes/rent.index'
 import { Route as RentListingIdRouteImport } from './routes/rent.$listingId'
 import { Route as AuthenticatedLeasesIndexRouteImport } from './routes/_authenticated/leases.index'
 import { Route as AuthenticatedLeasesLeaseIdRouteImport } from './routes/_authenticated/leases.$leaseId'
+import { Route as AuthenticatedManagerIndexRouteImport } from './routes/_authenticated/manager.index'
+import { Route as AuthenticatedManagerPortfolioRouteImport } from './routes/_authenticated/manager.portfolio'
 import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated/properties.index'
 import { Route as AuthenticatedPropertiesPropertyIdRouteImport } from './routes/_authenticated/properties.$propertyId'
 import { Route as AuthenticatedTenantIndexRouteImport } from './routes/_authenticated/tenant.index'
@@ -95,6 +98,11 @@ const AuthenticatedMaintenanceRoute =
     path: '/maintenance',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManagerRoute = AuthenticatedManagerRouteImport.update({
+  id: '/manager',
+  path: '/manager',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -156,6 +164,18 @@ const AuthenticatedLeasesLeaseIdRoute =
     id: '/leases/$leaseId',
     path: '/leases/$leaseId',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManagerIndexRoute =
+  AuthenticatedManagerIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedManagerRoute,
+  } as any)
+const AuthenticatedManagerPortfolioRoute =
+  AuthenticatedManagerPortfolioRouteImport.update({
+    id: '/portfolio',
+    path: '/portfolio',
+    getParentRoute: () => AuthenticatedManagerRoute,
   } as any)
 const AuthenticatedPropertiesIndexRoute =
   AuthenticatedPropertiesIndexRouteImport.update({
@@ -238,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/manager': typeof AuthenticatedManagerRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/payments': typeof AuthenticatedPaymentsRoute
@@ -249,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent/': typeof RentIndexRoute
   '/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
+  '/manager/portfolio': typeof AuthenticatedManagerPortfolioRoute
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenant/lease': typeof AuthenticatedTenantLeaseRoute
   '/tenant/maintenance': typeof AuthenticatedTenantMaintenanceRoute
@@ -258,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/tenant/tenancy': typeof AuthenticatedTenantTenancyRoute
   '/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
   '/leases/': typeof AuthenticatedLeasesIndexRoute
+  '/manager/': typeof AuthenticatedManagerIndexRoute
   '/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/tenant/': typeof AuthenticatedTenantIndexRoute
   '/tenants/': typeof AuthenticatedTenantsIndexRoute
@@ -283,6 +306,7 @@ export interface FileRoutesByTo {
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent': typeof RentIndexRoute
   '/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
+  '/manager/portfolio': typeof AuthenticatedManagerPortfolioRoute
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenant/lease': typeof AuthenticatedTenantLeaseRoute
   '/tenant/maintenance': typeof AuthenticatedTenantMaintenanceRoute
@@ -292,6 +316,7 @@ export interface FileRoutesByTo {
   '/tenant/tenancy': typeof AuthenticatedTenantTenancyRoute
   '/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
   '/leases': typeof AuthenticatedLeasesIndexRoute
+  '/manager': typeof AuthenticatedManagerIndexRoute
   '/properties': typeof AuthenticatedPropertiesIndexRoute
   '/tenant': typeof AuthenticatedTenantIndexRoute
   '/tenants': typeof AuthenticatedTenantsIndexRoute
@@ -309,6 +334,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/_authenticated/manager': typeof AuthenticatedManagerRouteWithChildren
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
@@ -320,6 +346,7 @@ export interface FileRoutesById {
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent/': typeof RentIndexRoute
   '/_authenticated/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
+  '/_authenticated/manager/portfolio': typeof AuthenticatedManagerPortfolioRoute
   '/_authenticated/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/_authenticated/tenant/lease': typeof AuthenticatedTenantLeaseRoute
   '/_authenticated/tenant/maintenance': typeof AuthenticatedTenantMaintenanceRoute
@@ -329,6 +356,7 @@ export interface FileRoutesById {
   '/_authenticated/tenant/tenancy': typeof AuthenticatedTenantTenancyRoute
   '/_authenticated/tenants/$tenancyId': typeof AuthenticatedTenantsTenancyIdRoute
   '/_authenticated/leases/': typeof AuthenticatedLeasesIndexRoute
+  '/_authenticated/manager/': typeof AuthenticatedManagerIndexRoute
   '/_authenticated/properties/': typeof AuthenticatedPropertiesIndexRoute
   '/_authenticated/tenant/': typeof AuthenticatedTenantIndexRoute
   '/_authenticated/tenants/': typeof AuthenticatedTenantsIndexRoute
@@ -346,6 +374,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/maintenance'
+    | '/manager'
     | '/messages'
     | '/onboarding'
     | '/payments'
@@ -357,6 +386,7 @@ export interface FileRouteTypes {
     | '/rent/$listingId'
     | '/rent/'
     | '/leases/$leaseId'
+    | '/manager/portfolio'
     | '/properties/$propertyId'
     | '/tenant/lease'
     | '/tenant/maintenance'
@@ -366,6 +396,7 @@ export interface FileRouteTypes {
     | '/tenant/tenancy'
     | '/tenants/$tenancyId'
     | '/leases/'
+    | '/manager/'
     | '/properties/'
     | '/tenant/'
     | '/tenants/'
@@ -391,6 +422,7 @@ export interface FileRouteTypes {
     | '/rent/$listingId'
     | '/rent'
     | '/leases/$leaseId'
+    | '/manager/portfolio'
     | '/properties/$propertyId'
     | '/tenant/lease'
     | '/tenant/maintenance'
@@ -400,6 +432,7 @@ export interface FileRouteTypes {
     | '/tenant/tenancy'
     | '/tenants/$tenancyId'
     | '/leases'
+    | '/manager'
     | '/properties'
     | '/tenant'
     | '/tenants'
@@ -416,6 +449,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
     | '/_authenticated/maintenance'
+    | '/_authenticated/manager'
     | '/_authenticated/messages'
     | '/_authenticated/onboarding'
     | '/_authenticated/payments'
@@ -427,6 +461,7 @@ export interface FileRouteTypes {
     | '/rent/$listingId'
     | '/rent/'
     | '/_authenticated/leases/$leaseId'
+    | '/_authenticated/manager/portfolio'
     | '/_authenticated/properties/$propertyId'
     | '/_authenticated/tenant/lease'
     | '/_authenticated/tenant/maintenance'
@@ -436,6 +471,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tenant/tenancy'
     | '/_authenticated/tenants/$tenancyId'
     | '/_authenticated/leases/'
+    | '/_authenticated/manager/'
     | '/_authenticated/properties/'
     | '/_authenticated/tenant/'
     | '/_authenticated/tenants/'
@@ -526,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMaintenanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manager': {
+      id: '/_authenticated/manager'
+      path: '/manager'
+      fullPath: '/manager'
+      preLoaderRoute: typeof AuthenticatedManagerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/messages': {
       id: '/_authenticated/messages'
       path: '/messages'
@@ -609,6 +652,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/leases/$leaseId'
       preLoaderRoute: typeof AuthenticatedLeasesLeaseIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manager/': {
+      id: '/_authenticated/manager/'
+      path: '/'
+      fullPath: '/manager/'
+      preLoaderRoute: typeof AuthenticatedManagerIndexRouteImport
+      parentRoute: typeof AuthenticatedManagerRoute
+    }
+    '/_authenticated/manager/portfolio': {
+      id: '/_authenticated/manager/portfolio'
+      path: '/portfolio'
+      fullPath: '/manager/portfolio'
+      preLoaderRoute: typeof AuthenticatedManagerPortfolioRouteImport
+      parentRoute: typeof AuthenticatedManagerRoute
     }
     '/_authenticated/properties/': {
       id: '/_authenticated/properties/'
@@ -697,6 +754,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedManagerRouteChildren {
+  AuthenticatedManagerPortfolioRoute: typeof AuthenticatedManagerPortfolioRoute
+  AuthenticatedManagerIndexRoute: typeof AuthenticatedManagerIndexRoute
+}
+
+const AuthenticatedManagerRouteChildren: AuthenticatedManagerRouteChildren = {
+  AuthenticatedManagerPortfolioRoute: AuthenticatedManagerPortfolioRoute,
+  AuthenticatedManagerIndexRoute: AuthenticatedManagerIndexRoute,
+}
+
+const AuthenticatedManagerRouteWithChildren =
+  AuthenticatedManagerRoute._addFileChildren(AuthenticatedManagerRouteChildren)
+
 interface AuthenticatedTenantRouteChildren {
   AuthenticatedTenantLeaseRoute: typeof AuthenticatedTenantLeaseRoute
   AuthenticatedTenantMaintenanceRoute: typeof AuthenticatedTenantMaintenanceRoute
@@ -725,6 +795,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
+  AuthenticatedManagerRoute: typeof AuthenticatedManagerRouteWithChildren
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
@@ -746,6 +817,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
+  AuthenticatedManagerRoute: AuthenticatedManagerRouteWithChildren,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
