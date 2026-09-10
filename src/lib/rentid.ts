@@ -811,7 +811,7 @@ export function useEnableStudentHousing() {
 export function useResidentHousing(userId: string | undefined) {
   return useQuery({
     queryKey: ["resident-housing", userId],
-    queryFn: () => services.getResidentHousing(userId!),
+    queryFn: () => svc.getResidentHousing(userId!),
     enabled: Boolean(userId),
   });
 }
