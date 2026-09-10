@@ -540,7 +540,7 @@ export type ResidentHousing = {
   property_name: string;
   unit_name: string;
   campus: string | null;
-  lease_model: StudentLeaseModel;
+  lease_model: LeaseModel;
   term_label: string | null;
   renewal_deadline: DateOnly | null;
   sublease_policy: PolicyMode;

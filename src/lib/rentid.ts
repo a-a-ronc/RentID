@@ -642,6 +642,7 @@ function useInvalidateStudent() {
       "student-turnover",
       "student-maintenance",
       "student-charge",
+      "resident-housing",
     ].forEach((key) => qc.invalidateQueries({ queryKey: [key] }));
   };
 }
@@ -803,5 +804,14 @@ export function useEnableStudentHousing() {
     mutationFn: (input: Omit<Parameters<typeof svc.enableStudentHousing>[0], "actorId">) =>
       svc.enableStudentHousing({ ...input, actorId: user?.id ?? null }),
     onSuccess: invalidate,
+  });
+}
+
+/** Student resident's own housing view (bed, roommates, own money only). */
+export function useResidentHousing(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["resident-housing", userId],
+    queryFn: () => services.getResidentHousing(userId!),
+    enabled: Boolean(userId),
   });
 }
