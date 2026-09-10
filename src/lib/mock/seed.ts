@@ -424,6 +424,206 @@ export function seedDatabase(): MockDatabase {
   const conversationId = id("9000", 1);
   const conversation2 = id("9000", 2);
 
+  // ---- marketplace listings + applications ----------------------------
+  const vacant = units.filter((u) => u.occupancy_status === "vacant");
+  const listingSpecs: {
+    unit: Unit;
+    status: Listing["status"];
+    headline: string;
+    description: string;
+    amenities: string[];
+    syndicated: string[];
+    availableIn: number;
+  }[] = [
+    {
+      unit: vacant[0] ?? units[17]!,
+      status: "published",
+      headline: "Renovated 2-bed with in-unit laundry",
+      description:
+        "Bright corner unit with new appliances, in-unit laundry and off-street parking. Heat and water included.",
+      amenities: ["In-unit laundry", "Off-street parking", "Dishwasher", "Heat included"],
+      syndicated: ["Zillow", "RentID Marketplace"],
+      availableIn: 14,
+    },
+    {
+      unit: vacant[1] ?? units[18]!,
+      status: "published",
+      headline: "Top-floor loft near downtown",
+      description:
+        "Exposed brick, large windows and a secure entry. Walking distance to transit and the riverfront.",
+      amenities: ["Secure entry", "Central air", "Pet friendly", "Bike storage"],
+      syndicated: ["RentID Marketplace"],
+      availableIn: 30,
+    },
+    {
+      unit: units[0]!,
+      status: "draft",
+      headline: "Garden-level 1-bed, available at lease end",
+      description: "Pre-listing draft while the current lease is being renewed.",
+      amenities: ["Shared yard", "Laundry on site"],
+      syndicated: [],
+      availableIn: 45,
+    },
+  ];
+
+  const listings: Listing[] = listingSpecs.map((spec, i) => ({
+    id: id("a000", i + 1),
+    organization_id: ORG_ID,
+    property_id: spec.unit.property_id,
+    unit_id: spec.unit.id,
+    status: spec.status,
+    headline: spec.headline,
+    description: spec.description,
+    monthly_rent: spec.unit.monthly_rent ?? 1250,
+    security_deposit: spec.unit.security_deposit ?? spec.unit.monthly_rent ?? 1250,
+    available_on: dateOnly(spec.availableIn),
+    lease_term_months: 12,
+    amenities: spec.amenities,
+    screening_criteria:
+      "Verified RentID profile, income 3× rent, no unresolved move-out balance in the last 24 months.",
+    syndicated_to: spec.syndicated,
+    published_at: spec.status === "published" ? iso(-9 + i) : null,
+    created_at: iso(-12 + i),
+    updated_at: iso(-2),
+    deleted_at: null,
+  }));
+
+  const APPLICANTS: {
+    name: string;
+    email: string;
+    income: number;
+    status: RentalApplication["status"];
+    listingIndex: number;
+    note: string | null;
+    shared: boolean;
+    daysAgo: number;
+  }[] = [
+    {
+      name: "Alicia Diaz",
+      email: "alicia.diaz@example.com",
+      income: 5400,
+      status: "in_review",
+      listingIndex: 0,
+      note: "Relocating for work in October. Two verified tenancies, no damage events.",
+      shared: true,
+      daysAgo: 3,
+    },
+    {
+      name: "Marcus Webb",
+      email: "marcus.webb@example.com",
+      income: 4100,
+      status: "new",
+      listingIndex: 0,
+      note: "Current lease ends next month.",
+      shared: true,
+      daysAgo: 1,
+    },
+    {
+      name: "Nia Fletcher",
+      email: "nia.fletcher@example.com",
+      income: 6250,
+      status: "approved",
+      listingIndex: 1,
+      note: "Approved — lease packet sent.",
+      shared: true,
+      daysAgo: 8,
+    },
+    {
+      name: "Owen Petrov",
+      email: "owen.petrov@example.com",
+      income: 2800,
+      status: "denied",
+      listingIndex: 1,
+      note: "Income below 3× rent threshold.",
+      shared: true,
+      daysAgo: 10,
+    },
+    {
+      name: "Sasha Kim",
+      email: "sasha.kim@example.com",
+      income: 4800,
+      status: "new",
+      listingIndex: 1,
+      note: null,
+      shared: false,
+      daysAgo: 1,
+    },
+  ];
+
+  const applications: RentalApplication[] = APPLICANTS.map((a, i) => ({
+    id: id("a100", i + 1),
+    listing_id: listings[a.listingIndex]!.id,
+    organization_id: ORG_ID,
+    applicant_user_id: null,
+    applicant_name: a.name,
+    applicant_email: a.email,
+    applicant_phone: `(313) 555-1${String(100 + i).slice(-3)}`,
+    monthly_income: a.income,
+    move_in_date: dateOnly(21 + i * 5),
+    note: a.note,
+    status: a.status,
+    profile_shared: a.shared,
+    decided_at: a.status === "approved" || a.status === "denied" ? iso(-a.daysAgo + 2) : null,
+    created_at: iso(-a.daysAgo),
+    updated_at: iso(-a.daysAgo + 1),
+  }));
+
+  // ---- property-management owners + authority --------------------------
+  const OWNERS = [
+    {
+      name: "Whitfield Holdings LLC",
+      contact: "Avery Whitfield",
+      email: DEMO_ACCOUNTS.landlord.email,
+      fee: 8,
+      propertyIndexes: [0, 1],
+    },
+    {
+      name: "Northline Trust",
+      contact: "Rosa Lindqvist",
+      email: "rosa@northlinetrust.example.com",
+      fee: 7.5,
+      propertyIndexes: [2],
+    },
+    {
+      name: "Ada Family Trust",
+      contact: "Ben Ade",
+      email: "ben@adafamily.example.com",
+      fee: 9,
+      propertyIndexes: [3],
+    },
+  ];
+
+  const ownerAccounts: OwnerAccount[] = OWNERS.map((o, i) => ({
+    id: id("a200", i + 1),
+    organization_id: PM_ORG_ID,
+    name: o.name,
+    contact_name: o.contact,
+    contact_email: o.email,
+    contract_start: dateOnly(-360 + i * 40),
+    management_fee_pct: o.fee,
+    created_at: iso(-360 + i * 40),
+    updated_at: iso(-30),
+  }));
+
+  const managementAssignments: ManagementAssignment[] = [];
+  OWNERS.forEach((o, ownerIndex) => {
+    o.propertyIndexes.forEach((pi) => {
+      const property = properties[pi];
+      if (!property) return;
+      managementAssignments.push({
+        id: id("a300", managementAssignments.length + 1),
+        organization_id: PM_ORG_ID,
+        owner_account_id: ownerAccounts[ownerIndex]!.id,
+        property_id: property.id,
+        authority_status: "verified",
+        authorized_at: iso(-350 + ownerIndex * 40),
+        revoked_at: null,
+        created_at: iso(-350 + ownerIndex * 40),
+      });
+    });
+  });
+
+
   return {
     users: [
       { id: LANDLORD_ID, email: DEMO_ACCOUNTS.landlord.email, created_at: created, last_sign_in_at: iso(-1) },
