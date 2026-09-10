@@ -68,3 +68,27 @@ src/lib/mock/seed.ts       centralized demo portfolio + demo credentials
 Stripe / live payments / autopay, credit screening, background checks,
 reputation scoring, AI tenant scores, native apps, marketplace listings,
 QuickBooks.
+
+## Student-housing layer (business map §25-§38)
+
+The student vertical is a *category*, not a second product: `properties.management_category`
+switches it on, and everything else hangs off the same identity/property/lease/payment graph.
+
+When the backend is reachable:
+
+1. Apply `supabase/planned/0001_schema.sql` (includes the student tables at the end)
+   and then `0002_rls.sql` (includes `can_operate_property`, `is_my_occupancy` and the
+   student policies).
+2. Replace the bodies in `src/lib/services/student.ts` with queries. Signatures stay the
+   same, so no screen changes.
+3. Non-negotiables to preserve server-side:
+   - `ledger_events`, `approval_steps` and `payment_allocations` are insert-only.
+   - `charges` (obligation) stay separate from `payers` (funding source); paying never
+     makes someone a lease party.
+   - `student_payments.processed_by_rentid = false` is a *recorded* external payment and
+     must never be shown as processed by RentID.
+   - A lease change only becomes effective when approvals, documents, signatures and money
+     are all complete; `replacement_listing_enabled` gates any public replacement listing.
+   - A roommate must never read another roommate's charges, payments or ledger events.
+4. Verify with the student demo account (`student@rentid.demo`) that `/tenant/housing`
+   shows only that resident's money.
