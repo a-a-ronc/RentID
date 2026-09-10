@@ -26,6 +26,8 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReviewsRouteImport } from './routes/_authenticated/reviews'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTenantRouteImport } from './routes/_authenticated/tenant'
+import { Route as RentIndexRouteImport } from './routes/rent.index'
+import { Route as RentListingIdRouteImport } from './routes/rent.$listingId'
 import { Route as AuthenticatedLeasesIndexRouteImport } from './routes/_authenticated/leases.index'
 import { Route as AuthenticatedLeasesLeaseIdRouteImport } from './routes/_authenticated/leases.$leaseId'
 import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated/properties.index'
@@ -127,6 +129,16 @@ const AuthenticatedTenantRoute = AuthenticatedTenantRouteImport.update({
   path: '/tenant',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const RentIndexRoute = RentIndexRouteImport.update({
+  id: '/rent/',
+  path: '/rent/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentListingIdRoute = RentListingIdRouteImport.update({
+  id: '/rent/$listingId',
+  path: '/rent/$listingId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedLeasesIndexRoute =
   AuthenticatedLeasesIndexRouteImport.update({
     id: '/leases/',
@@ -227,6 +239,8 @@ export interface FileRoutesByFullPath {
   '/reviews': typeof AuthenticatedReviewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tenant': typeof AuthenticatedTenantRouteWithChildren
+  '/rent/$listingId': typeof RentListingIdRoute
+  '/rent/': typeof RentIndexRoute
   '/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenant/lease': typeof AuthenticatedTenantLeaseRoute
@@ -258,6 +272,8 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/reviews': typeof AuthenticatedReviewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/rent/$listingId': typeof RentListingIdRoute
+  '/rent': typeof RentIndexRoute
   '/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenant/lease': typeof AuthenticatedTenantLeaseRoute
@@ -292,6 +308,8 @@ export interface FileRoutesById {
   '/_authenticated/reviews': typeof AuthenticatedReviewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tenant': typeof AuthenticatedTenantRouteWithChildren
+  '/rent/$listingId': typeof RentListingIdRoute
+  '/rent/': typeof RentIndexRoute
   '/_authenticated/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
   '/_authenticated/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/_authenticated/tenant/lease': typeof AuthenticatedTenantLeaseRoute
@@ -326,6 +344,8 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/settings'
     | '/tenant'
+    | '/rent/$listingId'
+    | '/rent/'
     | '/leases/$leaseId'
     | '/properties/$propertyId'
     | '/tenant/lease'
@@ -357,6 +377,8 @@ export interface FileRouteTypes {
     | '/reports'
     | '/reviews'
     | '/settings'
+    | '/rent/$listingId'
+    | '/rent'
     | '/leases/$leaseId'
     | '/properties/$propertyId'
     | '/tenant/lease'
@@ -390,6 +412,8 @@ export interface FileRouteTypes {
     | '/_authenticated/reviews'
     | '/_authenticated/settings'
     | '/_authenticated/tenant'
+    | '/rent/$listingId'
+    | '/rent/'
     | '/_authenticated/leases/$leaseId'
     | '/_authenticated/properties/$propertyId'
     | '/_authenticated/tenant/lease'
@@ -413,6 +437,8 @@ export interface RootRouteChildren {
   ForLandlordsRoute: typeof ForLandlordsRoute
   ForPropertyManagersRoute: typeof ForPropertyManagersRoute
   ForTenantsRoute: typeof ForTenantsRoute
+  RentListingIdRoute: typeof RentListingIdRoute
+  RentIndexRoute: typeof RentIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -535,6 +561,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/tenant'
       preLoaderRoute: typeof AuthenticatedTenantRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/rent/': {
+      id: '/rent/'
+      path: '/rent'
+      fullPath: '/rent/'
+      preLoaderRoute: typeof RentIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rent/$listingId': {
+      id: '/rent/$listingId'
+      path: '/rent/$listingId'
+      fullPath: '/rent/$listingId'
+      preLoaderRoute: typeof RentListingIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/leases/': {
       id: '/_authenticated/leases/'
@@ -713,6 +753,8 @@ const rootRouteChildren: RootRouteChildren = {
   ForLandlordsRoute: ForLandlordsRoute,
   ForPropertyManagersRoute: ForPropertyManagersRoute,
   ForTenantsRoute: ForTenantsRoute,
+  RentListingIdRoute: RentListingIdRoute,
+  RentIndexRoute: RentIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
