@@ -971,6 +971,13 @@ export async function getResidentHousing(userId: UUID): Promise<ResidentHousing 
   const myChargeIds = myChargeRows.map((c) => c.id);
   const events = db.ledger_events
     .filter((e) => (e.charge_id && myChargeIds.includes(e.charge_id)) || e.occupancy_id === occupancy.id)
+    // A shared charge produces one event per roommate payment; only mine is mine.
+    .filter((e) => {
+      if (!e.payment_id) return true;
+      const payment = db.student_payments.find((p) => p.id === e.payment_id);
+      const payer = payment ? db.payers.find((x) => x.id === payment.payer_id) : null;
+      return !payer?.linked_occupancy_id || payer.linked_occupancy_id === occupancy.id;
+    })
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(0, 20);
 
