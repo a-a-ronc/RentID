@@ -67,7 +67,7 @@ export type MockDatabase = {
   management_assignments: ManagementAssignment[];
 };
 
-const STORAGE_KEY = "rentid.mock.db.v1";
+const STORAGE_KEY = "rentid.mock.db.v2";
 
 let db: MockDatabase | null = null;
 const listeners = new Set<() => void>();
