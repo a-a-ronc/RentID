@@ -84,9 +84,17 @@ function rosterRow(occupancyId: UUID): StudentRosterRow | null {
   let paid = 0;
   rows.forEach((r) => {
     charged += r.allocation.amount;
-    const chargePaid = paidOnCharge(r.charge.id);
-    const share = r.charge.amount === 0 ? 0 : r.allocation.amount / r.charge.amount;
-    paid += Math.min(r.allocation.amount, chargePaid * share);
+    // Credit only the money this resident's payers actually sent, so one
+    // roommate's payment never appears to settle another's share.
+    const mine = db.payment_allocations
+      .filter((a) => a.charge_id === r.charge.id)
+      .filter((a) => {
+        const payment = db.student_payments.find((p) => p.id === a.payment_id);
+        const payer = payment ? db.payers.find((x) => x.id === payment.payer_id) : null;
+        return !payer?.linked_occupancy_id || payer.linked_occupancy_id === occ.id;
+      })
+      .reduce((sum, a) => sum + a.amount, 0);
+    paid += Math.min(r.allocation.amount, mine);
   });
   const balance = Math.max(0, Math.round(charged - paid));
 
@@ -95,7 +103,11 @@ function rosterRow(occupancyId: UUID): StudentRosterRow | null {
     db.payment_allocations
       .filter((a) => rows.some((r) => r.charge.id === a.charge_id))
       .map((a) => db.student_payments.find((p) => p.id === a.payment_id)?.payer_id)
-      .filter(Boolean) as UUID[],
+      .filter((pid): pid is UUID => {
+        if (!pid) return false;
+        const payer = db.payers.find((p) => p.id === pid);
+        return !payer?.linked_occupancy_id || payer.linked_occupancy_id === occ.id;
+      }),
   );
   const payerNames = [...payerIds]
     .map((pid) => db.payers.find((p) => p.id === pid))
