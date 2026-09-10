@@ -533,3 +533,120 @@ begin
 end;
 $$;
 -- Trigger creation on auth.users is handled by the platform integration.
+
+-- =====================================================================
+-- Marketplace, ownership and management authority (business map §7-§9)
+-- Review only — not applied until the backend is reachable.
+-- =====================================================================
+
+-- Organizations are either landlord-operated or a property-management company,
+-- and each carries its own verification state (badges/listings gate on it).
+alter table public.organizations
+  add column if not exists kind text not null default 'landlord'
+    check (kind in ('landlord', 'property_manager')),
+  add column if not exists verification_status text not null default 'unverified'
+    check (verification_status in ('unverified', 'pending', 'verified', 'rejected'));
+
+-- ------------------------------ owner_accounts ------------------------
+-- The owners a property-management company works for. Ownership is recorded
+-- separately from management authority so an owner can change managers
+-- without losing property, lease or payment history.
+create table if not exists public.owner_accounts (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  name text not null,
+  contact_name text,
+  contact_email text,
+  contract_start date,
+  management_fee_pct numeric(5,2),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update, delete on public.owner_accounts to authenticated;
+grant all on public.owner_accounts to service_role;
+alter table public.owner_accounts enable row level security;
+create index if not exists owner_accounts_organization_id_idx on public.owner_accounts(organization_id);
+
+-- -------------------------- management_assignments --------------------
+-- Owner-granted authority for a PM organization to operate a property.
+-- Starts 'pending'; badges, listings and payout changes stay locked until
+-- the owner confirms it.
+create table if not exists public.management_assignments (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  owner_account_id uuid not null references public.owner_accounts(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  authority_status text not null default 'pending'
+    check (authority_status in ('pending', 'verified', 'disputed', 'revoked')),
+  authorized_at timestamptz,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (organization_id, property_id)
+);
+grant select, insert, update on public.management_assignments to authenticated;
+grant all on public.management_assignments to service_role;
+alter table public.management_assignments enable row level security;
+create index if not exists management_assignments_org_idx on public.management_assignments(organization_id);
+create index if not exists management_assignments_property_idx on public.management_assignments(property_id);
+
+-- --------------------------------- listings ---------------------------
+create table if not exists public.listings (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  unit_id uuid not null references public.units(id) on delete cascade,
+  headline text not null,
+  description text,
+  monthly_rent numeric(12,2) not null,
+  security_deposit numeric(12,2),
+  available_on date not null,
+  lease_term_months integer not null default 12,
+  amenities text[] not null default '{}',
+  photo_urls text[] not null default '{}',
+  requires_rentid_profile boolean not null default true,
+  syndicated_to text[] not null default '{}',
+  status text not null default 'draft'
+    check (status in ('draft', 'published', 'paused', 'leased', 'archived')),
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+grant select on public.listings to anon;            -- published listings are public
+grant select, insert, update, delete on public.listings to authenticated;
+grant all on public.listings to service_role;
+alter table public.listings enable row level security;
+create index if not exists listings_status_idx on public.listings(status);
+create index if not exists listings_organization_id_idx on public.listings(organization_id);
+
+-- ---------------------------- rental_applications ---------------------
+create table if not exists public.rental_applications (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  applicant_user_id uuid references auth.users(id) on delete set null,
+  applicant_name text not null,
+  applicant_email text not null,
+  applicant_phone text,
+  monthly_income numeric(12,2),
+  move_in_date date,
+  note text,
+  shares_rentid_profile boolean not null default false,
+  status text not null default 'new'
+    check (status in ('new', 'in_review', 'approved', 'denied', 'withdrawn')),
+  decided_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update on public.rental_applications to authenticated;
+grant all on public.rental_applications to service_role;
+alter table public.rental_applications enable row level security;
+create index if not exists rental_applications_listing_idx on public.rental_applications(listing_id);
+create index if not exists rental_applications_applicant_idx on public.rental_applications(applicant_user_id);
+
+create trigger owner_accounts_touch before update on public.owner_accounts
+  for each row execute function public.touch_updated_at();
+create trigger listings_touch before update on public.listings
+  for each row execute function public.touch_updated_at();
+create trigger rental_applications_touch before update on public.rental_applications
+  for each row execute function public.touch_updated_at();
