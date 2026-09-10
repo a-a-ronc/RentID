@@ -111,8 +111,10 @@ const RESIDENTS: ResidentSpec[] = [
 export function seedStudentHousing(input: {
   pmOrgId: UUID;
   managerId: UUID;
+  /** Demo student resident account linked to the first bed occupancy. */
+  residentUserId?: UUID;
 }): StudentSeed {
-  const { pmOrgId, managerId } = input;
+  const { pmOrgId, managerId, residentUserId } = input;
   const created = iso(-300);
 
   /* ------------------------------ properties ----------------------------- */
@@ -318,7 +320,7 @@ export function seedStudentHousing(input: {
       term_id: currentTermFor(property.id),
       resident_name: r.name,
       resident_email: r.email,
-      resident_user_id: null,
+      resident_user_id: r.name === "Alex Morgan" ? (residentUserId ?? null) : null,
       lease_model: r.leaseModel,
       share_pct: r.sharePct,
       start_date: day(-25),
