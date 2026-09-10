@@ -94,11 +94,11 @@ function ProviderProfilePage() {
               {data.name}
             </h1>
             {data.verification_status === "verified" ? (
-              <TrustBadge label="platform_verified" />
+              <TrustBadge kind="platform_verified" />
             ) : (
-              <TrustBadge label="unverified" />
+              <TrustBadge kind="unverified" />
             )}
-            {data.open_disputes > 0 ? <TrustBadge label="under_dispute" /> : null}
+            {data.open_disputes > 0 ? <TrustBadge kind="under_dispute" /> : null}
           </div>
           <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-muted-foreground">
             Every number below comes from a verified relationship or a recorded event in RentID. No
