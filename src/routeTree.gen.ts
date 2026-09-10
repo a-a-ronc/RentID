@@ -33,6 +33,7 @@ import { Route as RentListingIdRouteImport } from './routes/rent.$listingId'
 import { Route as AuthenticatedLeasesIndexRouteImport } from './routes/_authenticated/leases.index'
 import { Route as AuthenticatedLeasesLeaseIdRouteImport } from './routes/_authenticated/leases.$leaseId'
 import { Route as AuthenticatedManagerIndexRouteImport } from './routes/_authenticated/manager.index'
+import { Route as AuthenticatedManagerOwnersRouteImport } from './routes/_authenticated/manager.owners'
 import { Route as AuthenticatedManagerPortfolioRouteImport } from './routes/_authenticated/manager.portfolio'
 import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated/properties.index'
 import { Route as AuthenticatedPropertiesPropertyIdRouteImport } from './routes/_authenticated/properties.$propertyId'
@@ -171,6 +172,12 @@ const AuthenticatedManagerIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedManagerRoute,
   } as any)
+const AuthenticatedManagerOwnersRoute =
+  AuthenticatedManagerOwnersRouteImport.update({
+    id: '/owners',
+    path: '/owners',
+    getParentRoute: () => AuthenticatedManagerRoute,
+  } as any)
 const AuthenticatedManagerPortfolioRoute =
   AuthenticatedManagerPortfolioRouteImport.update({
     id: '/portfolio',
@@ -270,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent/': typeof RentIndexRoute
   '/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
+  '/manager/owners': typeof AuthenticatedManagerOwnersRoute
   '/manager/portfolio': typeof AuthenticatedManagerPortfolioRoute
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenant/lease': typeof AuthenticatedTenantLeaseRoute
@@ -306,6 +314,7 @@ export interface FileRoutesByTo {
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent': typeof RentIndexRoute
   '/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
+  '/manager/owners': typeof AuthenticatedManagerOwnersRoute
   '/manager/portfolio': typeof AuthenticatedManagerPortfolioRoute
   '/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/tenant/lease': typeof AuthenticatedTenantLeaseRoute
@@ -346,6 +355,7 @@ export interface FileRoutesById {
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent/': typeof RentIndexRoute
   '/_authenticated/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
+  '/_authenticated/manager/owners': typeof AuthenticatedManagerOwnersRoute
   '/_authenticated/manager/portfolio': typeof AuthenticatedManagerPortfolioRoute
   '/_authenticated/properties/$propertyId': typeof AuthenticatedPropertiesPropertyIdRoute
   '/_authenticated/tenant/lease': typeof AuthenticatedTenantLeaseRoute
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/rent/$listingId'
     | '/rent/'
     | '/leases/$leaseId'
+    | '/manager/owners'
     | '/manager/portfolio'
     | '/properties/$propertyId'
     | '/tenant/lease'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '/rent/$listingId'
     | '/rent'
     | '/leases/$leaseId'
+    | '/manager/owners'
     | '/manager/portfolio'
     | '/properties/$propertyId'
     | '/tenant/lease'
@@ -461,6 +473,7 @@ export interface FileRouteTypes {
     | '/rent/$listingId'
     | '/rent/'
     | '/_authenticated/leases/$leaseId'
+    | '/_authenticated/manager/owners'
     | '/_authenticated/manager/portfolio'
     | '/_authenticated/properties/$propertyId'
     | '/_authenticated/tenant/lease'
@@ -660,6 +673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManagerIndexRouteImport
       parentRoute: typeof AuthenticatedManagerRoute
     }
+    '/_authenticated/manager/owners': {
+      id: '/_authenticated/manager/owners'
+      path: '/owners'
+      fullPath: '/manager/owners'
+      preLoaderRoute: typeof AuthenticatedManagerOwnersRouteImport
+      parentRoute: typeof AuthenticatedManagerRoute
+    }
     '/_authenticated/manager/portfolio': {
       id: '/_authenticated/manager/portfolio'
       path: '/portfolio'
@@ -755,11 +775,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedManagerRouteChildren {
+  AuthenticatedManagerOwnersRoute: typeof AuthenticatedManagerOwnersRoute
   AuthenticatedManagerPortfolioRoute: typeof AuthenticatedManagerPortfolioRoute
   AuthenticatedManagerIndexRoute: typeof AuthenticatedManagerIndexRoute
 }
 
 const AuthenticatedManagerRouteChildren: AuthenticatedManagerRouteChildren = {
+  AuthenticatedManagerOwnersRoute: AuthenticatedManagerOwnersRoute,
   AuthenticatedManagerPortfolioRoute: AuthenticatedManagerPortfolioRoute,
   AuthenticatedManagerIndexRoute: AuthenticatedManagerIndexRoute,
 }
