@@ -38,6 +38,10 @@ export type Organization = {
   name: string;
   legal_entity_name: string | null;
   owner_id: UUID | null;
+  /** Landlord workspace or property-management company (business map §7). */
+  kind: OrganizationKind;
+  /** Business/ownership verification gate for badges and public listings. */
+  verification_status: VerificationStatus;
   is_demo: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
