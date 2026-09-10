@@ -27,6 +27,9 @@ import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; icon: typeof Home };
 
+/** Workspace kinds. The shell shows completely different navigation per role. */
+export type ShellRole = "landlord" | "tenant" | "manager";
+
 // Full landlord workspace, shown on the desktop sidebar.
 const LANDLORD_NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -34,12 +37,34 @@ const LANDLORD_NAV: NavItem[] = [
   { to: "/payments", label: "Payments", icon: Wallet },
   { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/tenants", label: "Tenants", icon: Users },
+  { to: "/listings", label: "Listings", icon: Megaphone },
   { to: "/maintenance", label: "Maintenance", icon: Wrench },
   { to: "/applications", label: "Applications", icon: ClipboardList },
   { to: "/reviews", label: "Reviews", icon: Star },
   { to: "/documents", label: "Documents", icon: FileText },
   { to: "/reports", label: "Reports", icon: LineChart },
   { to: "/settings", label: "Settings", icon: Settings },
+];
+
+// Property managers operate other people's portfolios — owners and
+// authority come first, and the ledger is reconciliation-shaped.
+const MANAGER_NAV: NavItem[] = [
+  { to: "/manager", label: "Overview", icon: LayoutGrid },
+  { to: "/manager/portfolio", label: "Portfolio", icon: Building2 },
+  { to: "/manager/owners", label: "Owners", icon: Briefcase },
+  { to: "/payments", label: "Rent ledger", icon: Wallet },
+  { to: "/maintenance", label: "Work orders", icon: Wrench },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/listings", label: "Leasing", icon: Megaphone },
+  { to: "/documents", label: "Documents", icon: FileText },
+  { to: "/settings", label: "Settings", icon: Settings },
+];
+
+const MANAGER_MOBILE: NavItem[] = [
+  { to: "/manager", label: "Home", icon: LayoutGrid },
+  { to: "/manager/portfolio", label: "Portfolio", icon: Building2 },
+  { to: "/maintenance", label: "Work", icon: Wrench },
+  { to: "/payments", label: "Ledger", icon: Wallet },
 ];
 
 // Exact mobile bottom-nav order for landlords: Home, Properties, Payments, Messages, More.
