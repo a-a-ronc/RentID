@@ -2,6 +2,7 @@
 import { clone, commit, getDb, latency, logAudit, nowIso, uuid } from "@/lib/mock/db";
 import type {
   Organization,
+  OrganizationKind,
   Property,
   PropertyType,
   PropertyWithUnits,
@@ -13,6 +14,7 @@ const notDeleted = <T extends { deleted_at: string | null }>(row: T) => row.dele
 
 /* ------------------------------ organizations ----------------------------- */
 
+/** Landlord workspaces. Property-management workspaces live in `management.ts`. */
 export async function getOrganizations(userId: UUID | null): Promise<Organization[]> {
   const db = getDb();
   const memberOrgIds = new Set(
@@ -20,6 +22,7 @@ export async function getOrganizations(userId: UUID | null): Promise<Organizatio
   );
   const rows = db.organizations
     .filter(notDeleted)
+    .filter((o) => o.kind === "landlord")
     .filter((o) => o.is_demo || o.owner_id === userId || memberOrgIds.has(o.id))
     .sort((a, b) => Number(a.is_demo) - Number(b.is_demo));
   return latency(clone(rows));
@@ -29,6 +32,7 @@ export async function createOrganization(input: {
   name: string;
   legalEntityName?: string | null;
   ownerId: UUID;
+  kind?: OrganizationKind;
 }): Promise<Organization> {
   const db = getDb();
   const now = nowIso();
@@ -37,6 +41,9 @@ export async function createOrganization(input: {
     name: input.name.trim(),
     legal_entity_name: input.legalEntityName?.trim() || null,
     owner_id: input.ownerId,
+    kind: input.kind ?? "landlord",
+    // Business/ownership verification is a separate gate; new workspaces start unverified.
+    verification_status: "unverified",
     is_demo: false,
     created_at: now,
     updated_at: now,

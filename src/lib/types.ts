@@ -38,6 +38,10 @@ export type Organization = {
   name: string;
   legal_entity_name: string | null;
   owner_id: UUID | null;
+  /** Landlord workspace or property-management company (business map §7). */
+  kind: OrganizationKind;
+  /** Business/ownership verification gate for badges and public listings. */
+  verification_status: VerificationStatus;
   is_demo: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -387,4 +391,152 @@ export type DashboardMetrics = {
   late_payments: number;
   open_maintenance: number;
   leases_expiring: number;
+};
+
+/* ---------------------------------------------------------------- *
+ * Verification, marketplace and property-management layer
+ * (business map sections 3A, 7, 8 and 16-19)
+ * ---------------------------------------------------------------- */
+
+export type OrganizationKind = "landlord" | "property_manager";
+
+/** Claim/verification state for people, businesses, properties and authority. */
+export type VerificationStatus = "unverified" | "pending" | "verified" | "disputed";
+
+export type ListingStatus = "draft" | "published" | "paused" | "leased";
+
+export type Listing = {
+  id: UUID;
+  organization_id: UUID;
+  property_id: UUID;
+  unit_id: UUID;
+  status: ListingStatus;
+  headline: string;
+  description: string | null;
+  monthly_rent: number;
+  security_deposit: number | null;
+  available_on: DateOnly;
+  lease_term_months: number;
+  amenities: string[];
+  screening_criteria: string | null;
+  syndicated_to: string[];
+  published_at: Timestamp | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+  deleted_at: Timestamp | null;
+};
+
+export type ApplicationStatus = "new" | "in_review" | "approved" | "denied" | "withdrawn";
+
+export type RentalApplication = {
+  id: UUID;
+  listing_id: UUID;
+  organization_id: UUID;
+  applicant_user_id: UUID | null;
+  applicant_name: string;
+  applicant_email: string;
+  applicant_phone: string | null;
+  monthly_income: number | null;
+  move_in_date: DateOnly | null;
+  note: string | null;
+  status: ApplicationStatus;
+  profile_shared: boolean;
+  decided_at: Timestamp | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+/** An owner whose properties a property-management company operates. */
+export type OwnerAccount = {
+  id: UUID;
+  organization_id: UUID; // the PM organization
+  name: string;
+  contact_name: string | null;
+  contact_email: string | null;
+  contract_start: DateOnly | null;
+  management_fee_pct: number | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+/**
+ * Owner → property → property-manager authority, stored separately from
+ * ownership so an owner can replace a PM without losing history.
+ */
+export type ManagementAssignment = {
+  id: UUID;
+  organization_id: UUID; // the PM organization
+  owner_account_id: UUID;
+  property_id: UUID;
+  authority_status: VerificationStatus;
+  authorized_at: Timestamp | null;
+  revoked_at: Timestamp | null;
+  created_at: Timestamp;
+};
+
+/* ------------------------------ read models ------------------------------- */
+
+export type ListingWithContext = Listing & {
+  property: Property | null;
+  unit: Unit | null;
+  provider: ProviderProfile | null;
+  application_count: number;
+};
+
+export type ApplicationWithContext = RentalApplication & {
+  listing: Listing | null;
+  property_name: string;
+  unit_name: string;
+  passport: TenantPassport | null;
+};
+
+/** Tenant "rental passport" — verified history only, no scoring. */
+export type TenantPassport = {
+  tenant_name: string;
+  verified_payments: number;
+  on_time_payments: number;
+  on_time_pct: number;
+  late_payments: number;
+  verified_tenancies: number;
+  months_of_history: number;
+  average_rent: number | null;
+  open_disputes: number;
+  reviews: Review[];
+};
+
+/** Public-facing landlord or property-manager profile. */
+export type ProviderProfile = {
+  organization_id: UUID;
+  name: string;
+  kind: OrganizationKind;
+  verification_status: VerificationStatus;
+  verified_properties: number;
+  verified_units: number;
+  owners_served: number;
+  median_first_response_hours: number;
+  resolved_under_72h_pct: number;
+  collection_rate_pct: number;
+  tenant_rating: number | null;
+  owner_rating: number | null;
+  reviews: Review[];
+  open_disputes: number;
+};
+
+export type PmPortfolioMetrics = {
+  units_managed: number;
+  owners: number;
+  collected_this_month: number;
+  open_work_orders: number;
+  urgent_work_orders: number;
+  median_first_response_hours: number;
+  resolved_under_72h_pct: number;
+  collection_rate_pct: number;
+};
+
+export type OwnerAccountWithContext = OwnerAccount & {
+  properties: Property[];
+  units_managed: number;
+  occupied_units: number;
+  collected_this_month: number;
+  authority_status: VerificationStatus;
 };

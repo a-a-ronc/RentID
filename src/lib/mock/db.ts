@@ -11,15 +11,19 @@ import type {
   Conversation,
   Document,
   Lease,
+  Listing,
   MaintenanceRequest,
+  ManagementAssignment,
   Message,
   Notification,
   Organization,
   OrganizationMember,
+  OwnerAccount,
   Payment,
   PaymentSchedule,
   Profile,
   Property,
+  RentalApplication,
   Review,
   ReviewDispute,
   Tenancy,
@@ -57,9 +61,13 @@ export type MockDatabase = {
   verification_records: VerificationRecord[];
   notifications: Notification[];
   audit_logs: AuditLog[];
+  listings: Listing[];
+  rental_applications: RentalApplication[];
+  owner_accounts: OwnerAccount[];
+  management_assignments: ManagementAssignment[];
 };
 
-const STORAGE_KEY = "rentid.mock.db.v1";
+const STORAGE_KEY = "rentid.mock.db.v2";
 
 let db: MockDatabase | null = null;
 const listeners = new Set<() => void>();

@@ -1,12 +1,14 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  Briefcase,
   Building2,
   ClipboardList,
   FileText,
   Home,
   LayoutGrid,
   LineChart,
+  Megaphone,
   MessageSquare,
   Settings,
   ShieldCheck,
@@ -27,6 +29,9 @@ import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; icon: typeof Home };
 
+/** Workspace kinds. The shell shows completely different navigation per role. */
+export type ShellRole = "landlord" | "tenant" | "manager";
+
 // Full landlord workspace, shown on the desktop sidebar.
 const LANDLORD_NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -34,12 +39,34 @@ const LANDLORD_NAV: NavItem[] = [
   { to: "/payments", label: "Payments", icon: Wallet },
   { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/tenants", label: "Tenants", icon: Users },
+  { to: "/listings", label: "Listings", icon: Megaphone },
   { to: "/maintenance", label: "Maintenance", icon: Wrench },
   { to: "/applications", label: "Applications", icon: ClipboardList },
   { to: "/reviews", label: "Reviews", icon: Star },
   { to: "/documents", label: "Documents", icon: FileText },
   { to: "/reports", label: "Reports", icon: LineChart },
   { to: "/settings", label: "Settings", icon: Settings },
+];
+
+// Property managers operate other people's portfolios — owners and
+// authority come first, and the ledger is reconciliation-shaped.
+const MANAGER_NAV: NavItem[] = [
+  { to: "/manager", label: "Overview", icon: LayoutGrid },
+  { to: "/manager/portfolio", label: "Portfolio", icon: Building2 },
+  { to: "/manager/owners", label: "Owners", icon: Briefcase },
+  { to: "/payments", label: "Rent ledger", icon: Wallet },
+  { to: "/maintenance", label: "Work orders", icon: Wrench },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/listings", label: "Leasing", icon: Megaphone },
+  { to: "/documents", label: "Documents", icon: FileText },
+  { to: "/settings", label: "Settings", icon: Settings },
+];
+
+const MANAGER_MOBILE: NavItem[] = [
+  { to: "/manager", label: "Home", icon: LayoutGrid },
+  { to: "/manager/portfolio", label: "Portfolio", icon: Building2 },
+  { to: "/maintenance", label: "Work", icon: Wrench },
+  { to: "/payments", label: "Ledger", icon: Wallet },
 ];
 
 // Exact mobile bottom-nav order for landlords: Home, Properties, Payments, Messages, More.
@@ -75,9 +102,11 @@ const TENANT_MOBILE: NavItem[] = [
 export function AppShell({
   children,
   subtitle = "Landlord",
+  role,
 }: {
   children: ReactNode;
   subtitle?: string;
+  role?: ShellRole;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const profile = useProfile();
@@ -86,11 +115,14 @@ export function AppShell({
   const queryClient = useQueryClient();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const isTenant = subtitle === "Tenant";
-  const desktopNav = isTenant ? TENANT_NAV : LANDLORD_NAV;
-  const mobilePrimary = isTenant ? TENANT_MOBILE : LANDLORD_MOBILE;
-  const moreItems = isTenant ? [] : LANDLORD_NAV.filter((item) => !mobilePrimary.some((m) => m.to === item.to));
-  const home = isTenant ? "/tenant" : "/dashboard";
+  const activeRole: ShellRole = role ?? (subtitle === "Tenant" ? "tenant" : "landlord");
+  const desktopNav =
+    activeRole === "tenant" ? TENANT_NAV : activeRole === "manager" ? MANAGER_NAV : LANDLORD_NAV;
+  const mobilePrimary =
+    activeRole === "tenant" ? TENANT_MOBILE : activeRole === "manager" ? MANAGER_MOBILE : LANDLORD_MOBILE;
+  const moreItems =
+    activeRole === "tenant" ? [] : desktopNav.filter((item) => !mobilePrimary.some((m) => m.to === item.to));
+  const home = activeRole === "tenant" ? "/tenant" : activeRole === "manager" ? "/manager" : "/dashboard";
 
   const name = profile.data?.full_name ?? user?.email ?? "";
 
@@ -101,7 +133,8 @@ export function AppShell({
     navigate({ to: "/auth", replace: true });
   }
 
-  const isActive = (to: string) => pathname === to || (to !== "/tenant" && pathname.startsWith(`${to}/`));
+  const isActive = (to: string) =>
+    pathname === to || (to !== "/tenant" && to !== "/manager" && pathname.startsWith(`${to}/`));
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-background text-foreground">

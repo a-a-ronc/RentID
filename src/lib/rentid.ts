@@ -9,6 +9,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import * as svc from "@/lib/services";
 import type {
+  ApplicationStatus,
+  ListingStatus,
   DocumentKind,
   MaintenanceRequest,
   MaintenanceStatus,
@@ -408,3 +410,196 @@ export function useReviews(tenancyIds: UUID[]) {
 }
 
 export { tenancyVerification } from "@/lib/services/tenancies";
+
+/* ------------------------ marketplace + management ------------------------ */
+
+const MARKETPLACE_KEYS = [
+  "listings",
+  "listing",
+  "public-listings",
+  "applications",
+  "my-applications",
+  "provider-profile",
+  "tenant-passport",
+  "pm-organizations",
+  "managed-properties",
+  "owner-accounts",
+  "pm-metrics",
+];
+
+export function useInvalidateMarketplace() {
+  const qc = useQueryClient();
+  return () => {
+    for (const key of [...KEYS, ...MARKETPLACE_KEYS]) void qc.invalidateQueries({ queryKey: [key] });
+  };
+}
+
+/** The property-management workspace the signed-in manager is acting in. */
+export function useManagementOrg() {
+  const { user } = useAuth();
+  const query = useQuery({
+    queryKey: ["pm-organizations", user?.id],
+    enabled: Boolean(user?.id),
+    queryFn: () => svc.getManagementOrganizations(user?.id ?? null),
+  });
+  const own = query.data?.find((o) => !o.is_demo);
+  const demo = query.data?.find((o) => o.is_demo);
+  const active = own ?? demo ?? null;
+  return { ...query, org: active, orgId: active?.id ?? null, isDemo: Boolean(active?.is_demo) };
+}
+
+export function useManagedProperties(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["managed-properties", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getManagedProperties(orgId),
+  });
+}
+
+export function useOwnerAccounts(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["owner-accounts", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getOwnerAccounts(orgId),
+  });
+}
+
+export function usePmMetrics(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["pm-metrics", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getPmPortfolioMetrics(orgId),
+  });
+}
+
+export function useCreateOwnerAccount() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: (input: Omit<Parameters<typeof svc.createOwnerAccount>[0], "actorId">) =>
+      svc.createOwnerAccount({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetManagementAuthority() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: ({
+      assignmentId,
+      status,
+    }: {
+      assignmentId: UUID;
+      status: "verified" | "disputed" | "revoked";
+    }) => svc.setManagementAuthority(assignmentId, status, user?.id ?? null),
+    onSuccess: invalidate,
+  });
+}
+
+export function useProviderProfile(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["provider-profile", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getProviderProfile(orgId),
+  });
+}
+
+export function useTenantPassport(input: { userId?: UUID | null; email?: string | null }) {
+  return useQuery({
+    queryKey: ["tenant-passport", input.userId ?? null, input.email ?? null],
+    enabled: Boolean(input.userId || input.email),
+    queryFn: () => svc.getTenantPassport(input),
+  });
+}
+
+/** Public marketplace search (no session required). */
+export function usePublicListings(filters?: {
+  query?: string;
+  minBeds?: number | null;
+  maxRent?: number | null;
+  city?: string | null;
+}) {
+  return useQuery({
+    queryKey: ["public-listings", filters ?? {}],
+    queryFn: () => svc.searchListings(filters),
+  });
+}
+
+export function useListing(listingId: UUID) {
+  return useQuery({ queryKey: ["listing", listingId], queryFn: () => svc.getListing(listingId) });
+}
+
+export function useListings(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["listings", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getListings(orgId),
+  });
+}
+
+export function useCreateListing() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: (input: Omit<Parameters<typeof svc.createListing>[0], "actorId">) =>
+      svc.createListing({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateListingStatus() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: ({ listingId, status }: { listingId: UUID; status: ListingStatus }) =>
+      svc.updateListingStatus(listingId, status, user?.id ?? null),
+    onSuccess: invalidate,
+  });
+}
+
+export function useToggleSyndication() {
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: ({ listingId, destination }: { listingId: UUID; destination: string }) =>
+      svc.toggleSyndication(listingId, destination),
+    onSuccess: invalidate,
+  });
+}
+
+export function useApplications(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["applications", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getApplications(orgId),
+  });
+}
+
+export function useMyApplications() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["my-applications", user?.id, user?.email],
+    enabled: Boolean(user?.id || user?.email),
+    queryFn: () => svc.getMyApplications({ userId: user?.id ?? null, email: user?.email ?? null }),
+  });
+}
+
+export function useApplyToListing() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: (input: Omit<Parameters<typeof svc.applyToListing>[0], "applicantUserId">) =>
+      svc.applyToListing({ ...input, applicantUserId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateApplicationStatus() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: ({ applicationId, status }: { applicationId: UUID; status: ApplicationStatus }) =>
+      svc.updateApplicationStatus(applicationId, status, user?.id ?? null),
+    onSuccess: invalidate,
+  });
+}
