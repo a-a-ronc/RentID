@@ -29,6 +29,7 @@ export async function createOrganization(input: {
   name: string;
   legalEntityName?: string | null;
   ownerId: UUID;
+  kind?: OrganizationKind;
 }): Promise<Organization> {
   const db = getDb();
   const now = nowIso();
@@ -37,6 +38,9 @@ export async function createOrganization(input: {
     name: input.name.trim(),
     legal_entity_name: input.legalEntityName?.trim() || null,
     owner_id: input.ownerId,
+    kind: input.kind ?? "landlord",
+    // Business/ownership verification is a separate gate; new workspaces start unverified.
+    verification_status: "unverified",
     is_demo: false,
     created_at: now,
     updated_at: now,
