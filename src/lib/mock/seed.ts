@@ -10,8 +10,12 @@ import type { MockDatabase } from "@/lib/mock/db";
 import type {
   Document,
   Lease,
+  Listing,
   MaintenanceRequest,
+  ManagementAssignment,
+  OwnerAccount,
   Payment,
+  RentalApplication,
   Tenancy,
   Unit,
 } from "@/lib/types";
@@ -21,12 +25,14 @@ const DEMO_PASSWORD = "demo1234";
 export const DEMO_ACCOUNTS = {
   landlord: { email: "landlord@rentid.demo", password: DEMO_PASSWORD },
   tenant: { email: "tenant@rentid.demo", password: DEMO_PASSWORD },
+  manager: { email: "manager@rentid.demo", password: DEMO_PASSWORD },
 };
 
 const LANDLORD_ID = "8f1c7a10-0000-4000-8000-000000000001";
 const TENANT_ID = "8f1c7a10-0000-4000-8000-000000000002";
 const MANAGER_ID = "8f1c7a10-0000-4000-8000-000000000003";
 const ORG_ID = "8f1c7a10-1000-4000-8000-000000000001";
+const PM_ORG_ID = "8f1c7a10-1000-4000-8000-000000000002";
 
 function id(prefix: string, n: number) {
   return `8f1c7a10-${prefix}-4000-8000-${String(n).padStart(12, "0")}`;
