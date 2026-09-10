@@ -87,7 +87,7 @@ function AuthPage() {
     }
   }
 
-  async function demoSignIn(kind: "landlord" | "tenant") {
+  async function demoSignIn(kind: "landlord" | "tenant" | "manager") {
     const account = DEMO_ACCOUNTS[kind];
     setBusy(true);
     try {
@@ -141,7 +141,7 @@ function AuthPage() {
                 </Field>
                 <div className="space-y-1.5">
                   <Eyebrow>I am a</Eyebrow>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {(
                       [
                         { value: "landlord", title: "Landlord", copy: "Manage properties and tenancies" },
@@ -189,12 +189,15 @@ function AuthPage() {
 
           <div className="mt-4 space-y-2">
             <Eyebrow>Explore the demo</Eyebrow>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button tone="secondary" size="sm" onClick={() => void demoSignIn("landlord")} disabled={busy}>
                 Landlord demo
               </Button>
               <Button tone="secondary" size="sm" onClick={() => void demoSignIn("tenant")} disabled={busy}>
                 Tenant demo
+              </Button>
+              <Button tone="secondary" size="sm" onClick={() => void demoSignIn("manager")} disabled={busy}>
+                Manager demo
               </Button>
             </div>
           </div>
