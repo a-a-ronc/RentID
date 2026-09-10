@@ -1,12 +1,14 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  Briefcase,
   Building2,
   ClipboardList,
   FileText,
   Home,
   LayoutGrid,
   LineChart,
+  Megaphone,
   MessageSquare,
   Settings,
   ShieldCheck,
@@ -131,7 +133,8 @@ export function AppShell({
     navigate({ to: "/auth", replace: true });
   }
 
-  const isActive = (to: string) => pathname === to || (to !== "/tenant" && pathname.startsWith(`${to}/`));
+  const isActive = (to: string) =>
+    pathname === to || (to !== "/tenant" && to !== "/manager" && pathname.startsWith(`${to}/`));
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-background text-foreground">
