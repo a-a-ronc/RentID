@@ -11,5 +11,7 @@ export * from "./portfolio";
 export * from "./tenancies";
 export * from "./finance";
 export * from "./operations";
+export * from "./marketplace";
+export * from "./management";
 export { resetDb as resetDemoData } from "@/lib/mock/db";
 export { DEMO_ACCOUNTS } from "@/lib/mock/seed";
