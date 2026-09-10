@@ -6,10 +6,12 @@
  */
 import { clone, commit, getDb, latency, logAudit, nowIso, uuid } from "@/lib/mock/db";
 import type {
+  MaintenanceWithContext,
   ManagementAssignment,
   Organization,
   OwnerAccount,
   OwnerAccountWithContext,
+  PaymentWithContext,
   PmPortfolioMetrics,
   Property,
   PropertyWithUnits,
@@ -223,4 +225,49 @@ export async function getPmPortfolioMetrics(orgId: UUID | null): Promise<PmPortf
     collection_rate_pct: profile?.collection_rate_pct ?? 0,
   };
   return latency(metrics, 160);
+}
+
+/* ----------------------- managed-portfolio operations ---------------------- */
+
+/**
+ * Rent ledger for the properties a PM is authorized to manage. Payments belong
+ * to the owning landlord organization, so they are scoped by property authority
+ * rather than by `organization_id`.
+ */
+export async function getManagedPayments(orgId: UUID | null): Promise<PaymentWithContext[]> {
+  if (!orgId) return [];
+  const db = getDb();
+  const propertyIds = new Set(assignmentsFor(orgId).map((m) => m.property_id));
+  const tenancies = db.tenancies.filter((t) => propertyIds.has(t.property_id));
+  const tenancyIds = new Set(tenancies.map((t) => t.id));
+  const rows: PaymentWithContext[] = db.payments
+    .filter((p) => tenancyIds.has(p.tenancy_id))
+    .map((payment) => {
+      const tenancy = tenancies.find((t) => t.id === payment.tenancy_id);
+      return {
+        ...payment,
+        tenant_name: tenancy?.tenant_name ?? "Tenant",
+        property_name: db.properties.find((p) => p.id === tenancy?.property_id)?.name ?? "—",
+        unit_name: db.units.find((u) => u.id === tenancy?.unit_id)?.name ?? "—",
+      };
+    })
+    .sort((a, b) => b.due_date.localeCompare(a.due_date));
+  return latency(clone(rows));
+}
+
+/** Work orders across the managed portfolio, newest first. */
+export async function getManagedWorkOrders(orgId: UUID | null): Promise<MaintenanceWithContext[]> {
+  if (!orgId) return [];
+  const db = getDb();
+  const propertyIds = new Set(assignmentsFor(orgId).map((m) => m.property_id));
+  const rows: MaintenanceWithContext[] = db.maintenance_requests
+    .filter((m) => propertyIds.has(m.property_id))
+    .map((row) => ({
+      ...row,
+      property_name: db.properties.find((p) => p.id === row.property_id)?.name ?? "—",
+      unit_name: db.units.find((u) => u.id === row.unit_id)?.name ?? "—",
+      tenant_name: db.tenancies.find((t) => t.id === row.tenancy_id)?.tenant_name ?? null,
+    }))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return latency(clone(rows));
 }
