@@ -699,6 +699,10 @@ export function seedDatabase(): MockDatabase {
         created_at: iso(-380),
       },
     ],
+    listings,
+    rental_applications: applications,
+    owner_accounts: ownerAccounts,
+    management_assignments: managementAssignments,
   };
 }
 
