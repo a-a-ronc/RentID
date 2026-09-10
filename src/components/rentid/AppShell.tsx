@@ -2,6 +2,9 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Briefcase,
+  CalendarClock,
+  GraduationCap,
+  Hammer,
   Building2,
   ClipboardList,
   FileText,
@@ -54,6 +57,10 @@ const MANAGER_NAV: NavItem[] = [
   { to: "/manager", label: "Overview", icon: LayoutGrid },
   { to: "/manager/portfolio", label: "Portfolio", icon: Building2 },
   { to: "/manager/owners", label: "Owners", icon: Briefcase },
+  { to: "/manager/student", label: "Student housing", icon: GraduationCap },
+  { to: "/manager/student/changes", label: "Lease changes", icon: ClipboardList },
+  { to: "/manager/student/preleasing", label: "Pre-leasing", icon: CalendarClock },
+  { to: "/manager/student/turnover", label: "Turnover", icon: Hammer },
   { to: "/payments", label: "Rent ledger", icon: Wallet },
   { to: "/maintenance", label: "Work orders", icon: Wrench },
   { to: "/messages", label: "Messages", icon: MessageSquare },
@@ -64,7 +71,7 @@ const MANAGER_NAV: NavItem[] = [
 
 const MANAGER_MOBILE: NavItem[] = [
   { to: "/manager", label: "Home", icon: LayoutGrid },
-  { to: "/manager/portfolio", label: "Portfolio", icon: Building2 },
+  { to: "/manager/student", label: "Students", icon: GraduationCap },
   { to: "/maintenance", label: "Work", icon: Wrench },
   { to: "/payments", label: "Ledger", icon: Wallet },
 ];

@@ -32,6 +32,23 @@ import type {
   User,
   UUID,
   VerificationRecord,
+  AcademicTerm,
+  ApprovalStep,
+  Charge,
+  ChargeAllocation,
+  GuarantorRelationship,
+  LeaseChangeRequest,
+  LedgerEvent,
+  Occupancy,
+  Payer,
+  PaymentAllocation,
+  RoomBed,
+  RoommateGroup,
+  RoommateGroupMember,
+  StudentHousingConfig,
+  StudentMaintenanceCase,
+  StudentPayment,
+  TurnTask,
 } from "@/lib/types";
 import { seedDatabase } from "@/lib/mock/seed";
 
@@ -65,9 +82,27 @@ export type MockDatabase = {
   rental_applications: RentalApplication[];
   owner_accounts: OwnerAccount[];
   management_assignments: ManagementAssignment[];
+  /* ---- student housing vertical (business map §25-§38) ---- */
+  student_housing_configs: StudentHousingConfig[];
+  academic_terms: AcademicTerm[];
+  room_beds: RoomBed[];
+  occupancies: Occupancy[];
+  roommate_groups: RoommateGroup[];
+  roommate_group_members: RoommateGroupMember[];
+  guarantor_relationships: GuarantorRelationship[];
+  charges: Charge[];
+  charge_allocations: ChargeAllocation[];
+  payers: Payer[];
+  student_payments: StudentPayment[];
+  payment_allocations: PaymentAllocation[];
+  ledger_events: LedgerEvent[];
+  lease_change_requests: LeaseChangeRequest[];
+  approval_steps: ApprovalStep[];
+  turn_tasks: TurnTask[];
+  student_maintenance_cases: StudentMaintenanceCase[];
 };
 
-const STORAGE_KEY = "rentid.mock.db.v2";
+const STORAGE_KEY = "rentid.mock.db.v3";
 
 let db: MockDatabase | null = null;
 const listeners = new Set<() => void>();

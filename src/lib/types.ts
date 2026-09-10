@@ -8,6 +8,12 @@
  */
 
 export type UUID = string;
+
+import type { ManagementCategory } from "@/lib/student-types";
+
+/** Student-housing vertical models live in their own module. */
+export type * from "@/lib/student-types";
+
 /** ISO-8601 timestamp, e.g. 2026-09-04T01:39:00.000Z */
 export type Timestamp = string;
 /** ISO date (no time), e.g. 2026-09-04 */
@@ -64,7 +70,10 @@ export type Property = {
   id: UUID;
   organization_id: UUID;
   name: string;
+  /** Physical asset type — kept separate from the operating model. */
   property_type: PropertyType;
+  /** Operating model: standard residential or student housing (business map §25). */
+  management_category: ManagementCategory;
   street_address: string;
   unit_label: string | null;
   city: string;

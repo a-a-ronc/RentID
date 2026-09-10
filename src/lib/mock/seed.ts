@@ -19,6 +19,7 @@ import type {
   Tenancy,
   Unit,
 } from "@/lib/types";
+import { seedStudentHousing } from "@/lib/mock/student-seed";
 
 const DEMO_PASSWORD = "demo1234";
 
@@ -144,6 +145,7 @@ export function seedDatabase(): MockDatabase {
       organization_id: ORG_ID,
       name: p.name,
       property_type: p.property_type,
+      management_category: "standard_residential",
       street_address: p.street_address,
       unit_label: null,
       city: p.city,
@@ -623,6 +625,13 @@ export function seedDatabase(): MockDatabase {
     });
   });
 
+  // Student-housing vertical lives in its own module so the standard
+  // residential demo metrics above stay exactly as tuned.
+  const student = seedStudentHousing({ pmOrgId: PM_ORG_ID, managerId: MANAGER_ID });
+  properties.push(...student.properties);
+  units.push(...student.units);
+  ownerAccounts.push(...student.owner_accounts);
+  managementAssignments.push(...student.management_assignments);
 
   return {
     users: [
@@ -929,6 +938,23 @@ export function seedDatabase(): MockDatabase {
     rental_applications: applications,
     owner_accounts: ownerAccounts,
     management_assignments: managementAssignments,
+    student_housing_configs: student.student_housing_configs,
+    academic_terms: student.academic_terms,
+    room_beds: student.room_beds,
+    occupancies: student.occupancies,
+    roommate_groups: student.roommate_groups,
+    roommate_group_members: student.roommate_group_members,
+    guarantor_relationships: student.guarantor_relationships,
+    charges: student.charges,
+    charge_allocations: student.charge_allocations,
+    payers: student.payers,
+    student_payments: student.student_payments,
+    payment_allocations: student.payment_allocations,
+    ledger_events: student.ledger_events,
+    lease_change_requests: student.lease_change_requests,
+    approval_steps: student.approval_steps,
+    turn_tasks: student.turn_tasks,
+    student_maintenance_cases: student.student_maintenance_cases,
   };
 }
 

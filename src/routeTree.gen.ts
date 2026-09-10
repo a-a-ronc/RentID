@@ -48,6 +48,11 @@ import { Route as AuthenticatedTenantTenancyRouteImport } from './routes/_authen
 import { Route as AuthenticatedTenantsIndexRouteImport } from './routes/_authenticated/tenants.index'
 import { Route as AuthenticatedTenantsTenancyIdRouteImport } from './routes/_authenticated/tenants.$tenancyId'
 import { Route as AuthenticatedUnitsIndexRouteImport } from './routes/_authenticated/units.index'
+import { Route as AuthenticatedManagerStudentIndexRouteImport } from './routes/_authenticated/manager.student.index'
+import { Route as AuthenticatedManagerStudentChangesRouteImport } from './routes/_authenticated/manager.student.changes'
+import { Route as AuthenticatedManagerStudentPreleasingRouteImport } from './routes/_authenticated/manager.student.preleasing'
+import { Route as AuthenticatedManagerStudentTurnoverRouteImport } from './routes/_authenticated/manager.student.turnover'
+import { Route as AuthenticatedManagerStudentUnitsUnitIdRouteImport } from './routes/_authenticated/manager.student.units.$unitId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -260,6 +265,36 @@ const AuthenticatedUnitsIndexRoute = AuthenticatedUnitsIndexRouteImport.update({
   path: '/units/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedManagerStudentIndexRoute =
+  AuthenticatedManagerStudentIndexRouteImport.update({
+    id: '/student/',
+    path: '/student/',
+    getParentRoute: () => AuthenticatedManagerRoute,
+  } as any)
+const AuthenticatedManagerStudentChangesRoute =
+  AuthenticatedManagerStudentChangesRouteImport.update({
+    id: '/student/changes',
+    path: '/student/changes',
+    getParentRoute: () => AuthenticatedManagerRoute,
+  } as any)
+const AuthenticatedManagerStudentPreleasingRoute =
+  AuthenticatedManagerStudentPreleasingRouteImport.update({
+    id: '/student/preleasing',
+    path: '/student/preleasing',
+    getParentRoute: () => AuthenticatedManagerRoute,
+  } as any)
+const AuthenticatedManagerStudentTurnoverRoute =
+  AuthenticatedManagerStudentTurnoverRouteImport.update({
+    id: '/student/turnover',
+    path: '/student/turnover',
+    getParentRoute: () => AuthenticatedManagerRoute,
+  } as any)
+const AuthenticatedManagerStudentUnitsUnitIdRoute =
+  AuthenticatedManagerStudentUnitsUnitIdRouteImport.update({
+    id: '/student/units/$unitId',
+    path: '/student/units/$unitId',
+    getParentRoute: () => AuthenticatedManagerRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -300,6 +335,11 @@ export interface FileRoutesByFullPath {
   '/tenant/': typeof AuthenticatedTenantIndexRoute
   '/tenants/': typeof AuthenticatedTenantsIndexRoute
   '/units/': typeof AuthenticatedUnitsIndexRoute
+  '/manager/student/changes': typeof AuthenticatedManagerStudentChangesRoute
+  '/manager/student/preleasing': typeof AuthenticatedManagerStudentPreleasingRoute
+  '/manager/student/turnover': typeof AuthenticatedManagerStudentTurnoverRoute
+  '/manager/student/': typeof AuthenticatedManagerStudentIndexRoute
+  '/manager/student/units/$unitId': typeof AuthenticatedManagerStudentUnitsUnitIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -338,6 +378,11 @@ export interface FileRoutesByTo {
   '/tenant': typeof AuthenticatedTenantIndexRoute
   '/tenants': typeof AuthenticatedTenantsIndexRoute
   '/units': typeof AuthenticatedUnitsIndexRoute
+  '/manager/student/changes': typeof AuthenticatedManagerStudentChangesRoute
+  '/manager/student/preleasing': typeof AuthenticatedManagerStudentPreleasingRoute
+  '/manager/student/turnover': typeof AuthenticatedManagerStudentTurnoverRoute
+  '/manager/student': typeof AuthenticatedManagerStudentIndexRoute
+  '/manager/student/units/$unitId': typeof AuthenticatedManagerStudentUnitsUnitIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -380,6 +425,11 @@ export interface FileRoutesById {
   '/_authenticated/tenant/': typeof AuthenticatedTenantIndexRoute
   '/_authenticated/tenants/': typeof AuthenticatedTenantsIndexRoute
   '/_authenticated/units/': typeof AuthenticatedUnitsIndexRoute
+  '/_authenticated/manager/student/changes': typeof AuthenticatedManagerStudentChangesRoute
+  '/_authenticated/manager/student/preleasing': typeof AuthenticatedManagerStudentPreleasingRoute
+  '/_authenticated/manager/student/turnover': typeof AuthenticatedManagerStudentTurnoverRoute
+  '/_authenticated/manager/student/': typeof AuthenticatedManagerStudentIndexRoute
+  '/_authenticated/manager/student/units/$unitId': typeof AuthenticatedManagerStudentUnitsUnitIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -422,6 +472,11 @@ export interface FileRouteTypes {
     | '/tenant/'
     | '/tenants/'
     | '/units/'
+    | '/manager/student/changes'
+    | '/manager/student/preleasing'
+    | '/manager/student/turnover'
+    | '/manager/student/'
+    | '/manager/student/units/$unitId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -460,6 +515,11 @@ export interface FileRouteTypes {
     | '/tenant'
     | '/tenants'
     | '/units'
+    | '/manager/student/changes'
+    | '/manager/student/preleasing'
+    | '/manager/student/turnover'
+    | '/manager/student'
+    | '/manager/student/units/$unitId'
   id:
     | '__root__'
     | '/'
@@ -501,6 +561,11 @@ export interface FileRouteTypes {
     | '/_authenticated/tenant/'
     | '/_authenticated/tenants/'
     | '/_authenticated/units/'
+    | '/_authenticated/manager/student/changes'
+    | '/_authenticated/manager/student/preleasing'
+    | '/_authenticated/manager/student/turnover'
+    | '/_authenticated/manager/student/'
+    | '/_authenticated/manager/student/units/$unitId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -790,6 +855,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUnitsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manager/student/': {
+      id: '/_authenticated/manager/student/'
+      path: '/student'
+      fullPath: '/manager/student/'
+      preLoaderRoute: typeof AuthenticatedManagerStudentIndexRouteImport
+      parentRoute: typeof AuthenticatedManagerRoute
+    }
+    '/_authenticated/manager/student/changes': {
+      id: '/_authenticated/manager/student/changes'
+      path: '/student/changes'
+      fullPath: '/manager/student/changes'
+      preLoaderRoute: typeof AuthenticatedManagerStudentChangesRouteImport
+      parentRoute: typeof AuthenticatedManagerRoute
+    }
+    '/_authenticated/manager/student/preleasing': {
+      id: '/_authenticated/manager/student/preleasing'
+      path: '/student/preleasing'
+      fullPath: '/manager/student/preleasing'
+      preLoaderRoute: typeof AuthenticatedManagerStudentPreleasingRouteImport
+      parentRoute: typeof AuthenticatedManagerRoute
+    }
+    '/_authenticated/manager/student/turnover': {
+      id: '/_authenticated/manager/student/turnover'
+      path: '/student/turnover'
+      fullPath: '/manager/student/turnover'
+      preLoaderRoute: typeof AuthenticatedManagerStudentTurnoverRouteImport
+      parentRoute: typeof AuthenticatedManagerRoute
+    }
+    '/_authenticated/manager/student/units/$unitId': {
+      id: '/_authenticated/manager/student/units/$unitId'
+      path: '/student/units/$unitId'
+      fullPath: '/manager/student/units/$unitId'
+      preLoaderRoute: typeof AuthenticatedManagerStudentUnitsUnitIdRouteImport
+      parentRoute: typeof AuthenticatedManagerRoute
+    }
   }
 }
 
@@ -797,12 +897,26 @@ interface AuthenticatedManagerRouteChildren {
   AuthenticatedManagerOwnersRoute: typeof AuthenticatedManagerOwnersRoute
   AuthenticatedManagerPortfolioRoute: typeof AuthenticatedManagerPortfolioRoute
   AuthenticatedManagerIndexRoute: typeof AuthenticatedManagerIndexRoute
+  AuthenticatedManagerStudentChangesRoute: typeof AuthenticatedManagerStudentChangesRoute
+  AuthenticatedManagerStudentPreleasingRoute: typeof AuthenticatedManagerStudentPreleasingRoute
+  AuthenticatedManagerStudentTurnoverRoute: typeof AuthenticatedManagerStudentTurnoverRoute
+  AuthenticatedManagerStudentIndexRoute: typeof AuthenticatedManagerStudentIndexRoute
+  AuthenticatedManagerStudentUnitsUnitIdRoute: typeof AuthenticatedManagerStudentUnitsUnitIdRoute
 }
 
 const AuthenticatedManagerRouteChildren: AuthenticatedManagerRouteChildren = {
   AuthenticatedManagerOwnersRoute: AuthenticatedManagerOwnersRoute,
   AuthenticatedManagerPortfolioRoute: AuthenticatedManagerPortfolioRoute,
   AuthenticatedManagerIndexRoute: AuthenticatedManagerIndexRoute,
+  AuthenticatedManagerStudentChangesRoute:
+    AuthenticatedManagerStudentChangesRoute,
+  AuthenticatedManagerStudentPreleasingRoute:
+    AuthenticatedManagerStudentPreleasingRoute,
+  AuthenticatedManagerStudentTurnoverRoute:
+    AuthenticatedManagerStudentTurnoverRoute,
+  AuthenticatedManagerStudentIndexRoute: AuthenticatedManagerStudentIndexRoute,
+  AuthenticatedManagerStudentUnitsUnitIdRoute:
+    AuthenticatedManagerStudentUnitsUnitIdRoute,
 }
 
 const AuthenticatedManagerRouteWithChildren =
