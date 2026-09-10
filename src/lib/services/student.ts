@@ -9,6 +9,10 @@
 import { clone, getDb, latency, logAudit, nowIso, uuid } from "@/lib/mock/db";
 import type {
   AcademicTerm,
+  GuarantorRelationship,
+  LedgerEvent,
+  Payer,
+  ResidentHousing,
   ApprovalStep,
   BedStatus,
   Charge,
@@ -906,3 +910,99 @@ export async function getStudentChargeContext(chargeId: UUID) {
 }
 
 export type { RoomBed };
+
+/* --------------------------- resident-side reads -------------------------- */
+
+/**
+ * Everything a student resident may see about their own housing: their bed,
+ * their roommates by name only, their own charges and payers, their lease
+ * change requests and the maintenance cases on their unit. A roommate's money
+ * is never included — the same boundary the planned RLS enforces server-side.
+ */
+export async function getResidentHousing(userId: UUID): Promise<ResidentHousing | null> {
+  const db = getDb();
+  const occupancy = db.occupancies.find((o) => o.resident_user_id === userId && o.stage !== "former");
+  if (!occupancy) return latency(null);
+  const config = db.student_housing_configs.find((c) => c.property_id === occupancy.property_id);
+  const bed = db.room_beds.find((b) => b.id === occupancy.bed_id) ?? null;
+  const term = currentTerm(occupancy.property_id);
+
+  const myChargeRows: StudentChargeRow[] = db.charges
+    .filter((charge) => {
+      if (charge.occupancy_id === occupancy.id) return true;
+      return db.charge_allocations.some((a) => a.charge_id === charge.id && a.occupancy_id === occupancy.id);
+    })
+    .map((charge) => {
+      const allocation = db.charge_allocations.find(
+        (a) => a.charge_id === charge.id && a.occupancy_id === occupancy.id,
+      );
+      const amount = allocation?.amount ?? charge.amount;
+      const mine = db.payment_allocations
+        .filter((a) => a.charge_id === charge.id)
+        .filter((a) => {
+          const payment = db.student_payments.find((p) => p.id === a.payment_id);
+          const payer = payment ? db.payers.find((x) => x.id === payment.payer_id) : null;
+          return !payer?.linked_occupancy_id || payer.linked_occupancy_id === occupancy.id;
+        })
+        .reduce((sum, a) => sum + a.amount, 0);
+      const paid = Math.min(amount, mine);
+      const sources = db.payment_allocations
+        .filter((a) => a.charge_id === charge.id)
+        .map((a) => db.student_payments.find((p) => p.id === a.payment_id))
+        .filter(Boolean);
+      return {
+        ...charge,
+        amount,
+        assigned_to: allocation?.label ?? occupancy.resident_name,
+        paid,
+        balance: Math.max(0, amount - paid),
+        source_status: charge.gated_on_request_id
+          ? "Not collectible until approval"
+          : sources.length === 0
+            ? "No payment recorded"
+            : sources.every((p) => p!.processed_by_rentid)
+              ? "Paid through RentID"
+              : "External payment recorded",
+      };
+    })
+    .sort((a, b) => a.due_date.localeCompare(b.due_date));
+
+  const myPayers = db.payers.filter((p) => p.linked_occupancy_id === occupancy.id);
+  const myChargeIds = myChargeRows.map((c) => c.id);
+  const events = db.ledger_events
+    .filter((e) => (e.charge_id && myChargeIds.includes(e.charge_id)) || e.occupancy_id === occupancy.id)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 20);
+
+  const roommates = db.occupancies
+    .filter((o) => o.unit_id === occupancy.unit_id && o.id !== occupancy.id && o.stage !== "former")
+    .map((o) => ({
+      name: o.resident_name,
+      bed_label: db.room_beds.find((b) => b.id === o.bed_id)?.bed_label ?? null,
+      share_pct: o.share_pct,
+      verified: o.verified,
+    }));
+
+  return latency(
+    clone({
+      occupancy,
+      bed,
+      property_name: propertyName(occupancy.property_id),
+      unit_name: unitName(occupancy.unit_id),
+      campus: config?.campus ?? null,
+      lease_model: occupancy.lease_model,
+      term_label: term?.label ?? null,
+      renewal_deadline: term?.renewal_deadline ?? null,
+      sublease_policy: config?.sublease_policy ?? "conditional",
+      replacement_policy: config?.replacement_policy ?? "conditional",
+      roommates,
+      charges: myChargeRows,
+      balance: myChargeRows.reduce((sum, c) => sum + c.balance, 0),
+      payers: myPayers,
+      guarantors: db.guarantor_relationships.filter((g) => g.occupancy_id === occupancy.id),
+      requests: db.lease_change_requests.filter((r) => r.occupancy_id === occupancy.id).map(withContext),
+      maintenance: db.student_maintenance_cases.filter((c) => c.unit_id === occupancy.unit_id),
+      events,
+    }),
+  );
+}

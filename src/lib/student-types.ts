@@ -532,3 +532,25 @@ export type TurnoverSummary = {
   move_in_blocked: number;
   tasks: (TurnTask & { property_name: string; unit_name: string; bed_label: string | null })[];
 };
+
+/** Resident-side read model — never contains another roommate's money. */
+export type ResidentHousing = {
+  occupancy: Occupancy;
+  bed: RoomBed | null;
+  property_name: string;
+  unit_name: string;
+  campus: string | null;
+  lease_model: StudentLeaseModel;
+  term_label: string | null;
+  renewal_deadline: DateOnly | null;
+  sublease_policy: PolicyMode;
+  replacement_policy: PolicyMode;
+  roommates: { name: string; bed_label: string | null; share_pct: number | null; verified: boolean }[];
+  charges: StudentChargeRow[];
+  balance: number;
+  payers: Payer[];
+  guarantors: GuarantorRelationship[];
+  requests: LeaseChangeRequestWithContext[];
+  maintenance: StudentMaintenanceCase[];
+  events: LedgerEvent[];
+};
