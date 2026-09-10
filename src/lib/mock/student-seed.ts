@@ -772,6 +772,18 @@ export function seedStudentHousing(input: {
   ];
   beds.push(...pipelineBeds);
 
+  // Renewal / pipeline signal for the next term.
+  const renewingNames = ["Alex Morgan", "Ivy Salazar"];
+  renewingNames.forEach((name) => {
+    const occ = occupancies.find((o) => o.resident_name === name);
+    const bed = beds.find((b) => b.id === occ?.bed_id);
+    if (bed) bed.status = "renewing";
+  });
+  const noticeOcc = occupancies.find((o) => o.resident_name === "Ben Carter");
+  const noticeBed = beds.find((b) => b.id === noticeOcc?.bed_id);
+  if (noticeBed) noticeBed.status = "notice_given";
+  pipelineBeds[0]!.status = "applied";
+
   const groups: RoommateGroup[] = [
     {
       id: sid("c100", 1),
