@@ -19,6 +19,7 @@ import type {
   Tenancy,
   Unit,
 } from "@/lib/types";
+import { seedStudentHousing } from "@/lib/mock/student-seed";
 
 const DEMO_PASSWORD = "demo1234";
 
@@ -26,11 +27,13 @@ export const DEMO_ACCOUNTS = {
   landlord: { email: "landlord@rentid.demo", password: DEMO_PASSWORD },
   tenant: { email: "tenant@rentid.demo", password: DEMO_PASSWORD },
   manager: { email: "manager@rentid.demo", password: DEMO_PASSWORD },
+  student: { email: "student@rentid.demo", password: DEMO_PASSWORD },
 };
 
 const LANDLORD_ID = "8f1c7a10-0000-4000-8000-000000000001";
 const TENANT_ID = "8f1c7a10-0000-4000-8000-000000000002";
 const MANAGER_ID = "8f1c7a10-0000-4000-8000-000000000003";
+const STUDENT_ID = "8f1c7a10-0000-4000-8000-000000000004";
 const ORG_ID = "8f1c7a10-1000-4000-8000-000000000001";
 const PM_ORG_ID = "8f1c7a10-1000-4000-8000-000000000002";
 
@@ -144,6 +147,7 @@ export function seedDatabase(): MockDatabase {
       organization_id: ORG_ID,
       name: p.name,
       property_type: p.property_type,
+      management_category: "standard_residential",
       street_address: p.street_address,
       unit_label: null,
       city: p.city,
@@ -623,17 +627,26 @@ export function seedDatabase(): MockDatabase {
     });
   });
 
+  // Student-housing vertical lives in its own module so the standard
+  // residential demo metrics above stay exactly as tuned.
+  const student = seedStudentHousing({ pmOrgId: PM_ORG_ID, managerId: MANAGER_ID, residentUserId: STUDENT_ID });
+  properties.push(...student.properties);
+  units.push(...student.units);
+  ownerAccounts.push(...student.owner_accounts);
+  managementAssignments.push(...student.management_assignments);
 
   return {
     users: [
       { id: LANDLORD_ID, email: DEMO_ACCOUNTS.landlord.email, created_at: created, last_sign_in_at: iso(-1) },
       { id: TENANT_ID, email: DEMO_ACCOUNTS.tenant.email, created_at: created, last_sign_in_at: iso(-1) },
       { id: MANAGER_ID, email: "manager@rentid.demo", created_at: created, last_sign_in_at: null },
+      { id: STUDENT_ID, email: DEMO_ACCOUNTS.student.email, created_at: created, last_sign_in_at: iso(-1) },
     ],
     credentials: [
       { user_id: LANDLORD_ID, email: DEMO_ACCOUNTS.landlord.email, password: DEMO_PASSWORD },
       { user_id: TENANT_ID, email: DEMO_ACCOUNTS.tenant.email, password: DEMO_PASSWORD },
       { user_id: MANAGER_ID, email: "manager@rentid.demo", password: DEMO_PASSWORD },
+      { user_id: STUDENT_ID, email: DEMO_ACCOUNTS.student.email, password: DEMO_PASSWORD },
     ],
     profiles: [
       {
@@ -666,11 +679,22 @@ export function seedDatabase(): MockDatabase {
         created_at: created,
         updated_at: created,
       },
+      {
+        id: STUDENT_ID,
+        full_name: "Alex Morgan",
+        email: DEMO_ACCOUNTS.student.email,
+        phone: "(734) 555-0188",
+        avatar_url: null,
+        onboarded: true,
+        created_at: created,
+        updated_at: created,
+      },
     ],
     user_roles: [
       { id: id("1100", 1), user_id: LANDLORD_ID, role: "landlord", created_at: created },
       { id: id("1100", 2), user_id: TENANT_ID, role: "tenant", created_at: created },
       { id: id("1100", 3), user_id: MANAGER_ID, role: "property_manager", created_at: created },
+      { id: id("1100", 4), user_id: STUDENT_ID, role: "tenant", created_at: created },
     ],
     organizations: [
       {
@@ -929,6 +953,23 @@ export function seedDatabase(): MockDatabase {
     rental_applications: applications,
     owner_accounts: ownerAccounts,
     management_assignments: managementAssignments,
+    student_housing_configs: student.student_housing_configs,
+    academic_terms: student.academic_terms,
+    room_beds: student.room_beds,
+    occupancies: student.occupancies,
+    roommate_groups: student.roommate_groups,
+    roommate_group_members: student.roommate_group_members,
+    guarantor_relationships: student.guarantor_relationships,
+    charges: student.charges,
+    charge_allocations: student.charge_allocations,
+    payers: student.payers,
+    student_payments: student.student_payments,
+    payment_allocations: student.payment_allocations,
+    ledger_events: student.ledger_events,
+    lease_change_requests: student.lease_change_requests,
+    approval_steps: student.approval_steps,
+    turn_tasks: student.turn_tasks,
+    student_maintenance_cases: student.student_maintenance_cases,
   };
 }
 

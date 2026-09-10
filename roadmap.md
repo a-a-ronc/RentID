@@ -28,6 +28,26 @@
 - [x] Planned SQL + RLS for organizations.kind/verification, owner_accounts,
       management_assignments, listings, rental_applications (review only)
 
+## Milestone 3 — Student housing category (business map §25-§38, mock data)
+- [x] `management_category` on properties: student housing is a configuration on the
+      same identity/property/lease/payment graph, not a separate product
+- [x] Bed/room inventory, academic terms, occupancies, roommate groups, guarantors
+- [x] Money separated into charge/obligation, payer/funding source and payment record;
+      external payments are recorded and reconciled, never presented as RentID-processed
+- [x] Append-only ledger for every charge, payment, allocation and reminder
+- [x] Approval-first lease changes: sublease, assignment, replacement, transfers,
+      renewal, early termination, guarantor change — with PM/owner approval steps,
+      documents, signatures, fees and effective dates
+- [x] Replacement listings stay private until a request is explicitly allowed
+- [x] Manager surfaces: /manager/student, /manager/student/units/$unitId,
+      /manager/student/changes, /manager/student/preleasing, /manager/student/turnover
+- [x] Resident surface: /tenant/housing — own bed, roommates by name only, own charges,
+      payers/guarantor, requests, unit maintenance and own payment history
+- [x] Turnover readiness with blockers, and maintenance/damage allocation with
+      evidence and lease basis before it affects verified history
+- [x] Student demo sign-in (student@rentid.demo)
+- [x] Planned SQL + RLS for the full student layer (review only, not applied)
+
 ## Next — when the backend is reachable
 - [ ] Apply schema migration, then RLS migration
 - [ ] Enable email/password + Google auth; move invitation acceptance to a server function

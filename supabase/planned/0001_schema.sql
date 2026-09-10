@@ -650,3 +650,422 @@ create trigger listings_touch before update on public.listings
   for each row execute function public.touch_updated_at();
 create trigger rental_applications_touch before update on public.rental_applications
   for each row execute function public.touch_updated_at();
+
+-- =====================================================================
+-- Student-housing vertical (business map §25-§38)
+--
+-- Student housing is a *category* on the same graph, not a separate app:
+-- properties gain `management_category`, and the tables below add bed-level
+-- inventory, roommate/guarantor structure, an immutable money ledger and
+-- approval-first lease changes.
+-- =====================================================================
+
+alter table public.properties
+  add column if not exists management_category text not null default 'standard_residential'
+    check (management_category in ('standard_residential', 'student_housing'));
+create index if not exists properties_management_category_idx
+  on public.properties(management_category);
+
+-- ------------------------- student_housing_configs ---------------------
+create table if not exists public.student_housing_configs (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null unique references public.properties(id) on delete cascade,
+  campus text not null,
+  campus_distance_miles numeric(5,2),
+  lease_model text not null default 'individual_by_bed'
+    check (lease_model in ('individual_by_bed', 'joint_household', 'mixed')),
+  occupancy_limit_per_unit int,
+  guarantor_required boolean not null default true,
+  sublease_policy text not null default 'conditional'
+    check (sublease_policy in ('allowed', 'conditional', 'prohibited')),
+  assignment_policy text not null default 'conditional'
+    check (assignment_policy in ('allowed', 'conditional', 'prohibited')),
+  replacement_policy text not null default 'conditional'
+    check (replacement_policy in ('allowed', 'conditional', 'prohibited')),
+  early_termination_policy text not null default 'conditional'
+    check (early_termination_policy in ('allowed', 'conditional', 'prohibited')),
+  requires_owner_approval boolean not null default false,
+  approval_sla_hours int not null default 48,
+  lease_change_fee numeric(12,2),
+  required_documents text[] not null default '{}',
+  accepted_payment_rails text[] not null default '{}',
+  external_payment_recording boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update on public.student_housing_configs to authenticated;
+grant all on public.student_housing_configs to service_role;
+alter table public.student_housing_configs enable row level security;
+
+-- ------------------------------ academic_terms -------------------------
+create table if not exists public.academic_terms (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  label text not null,
+  campus text,
+  application_opens_on date,
+  renewal_deadline date,
+  move_out_on date,
+  turn_starts_on date,
+  move_in_on date,
+  term_rent numeric(12,2),
+  is_current boolean not null default false,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update on public.academic_terms to authenticated;
+grant all on public.academic_terms to service_role;
+alter table public.academic_terms enable row level security;
+create index if not exists academic_terms_property_idx on public.academic_terms(property_id);
+
+-- --------------------------------- room_beds ---------------------------
+create table if not exists public.room_beds (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  unit_id uuid not null references public.units(id) on delete cascade,
+  room_label text not null,
+  bed_label text not null,
+  monthly_rent numeric(12,2) not null,
+  status text not null default 'available'
+    check (status in ('occupied','renewing','notice_given','available','held','applied','approved','leased','offline')),
+  ready boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (unit_id, room_label, bed_label)
+);
+grant select, insert, update, delete on public.room_beds to authenticated;
+grant all on public.room_beds to service_role;
+alter table public.room_beds enable row level security;
+create index if not exists room_beds_unit_idx on public.room_beds(unit_id);
+
+-- -------------------------------- occupancies --------------------------
+create table if not exists public.occupancies (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  unit_id uuid not null references public.units(id) on delete cascade,
+  bed_id uuid references public.room_beds(id) on delete set null,
+  term_id uuid references public.academic_terms(id) on delete set null,
+  tenancy_id uuid references public.tenancies(id) on delete set null,
+  resident_user_id uuid references auth.users(id) on delete set null,
+  resident_name text not null,
+  resident_email text,
+  lease_model text not null default 'individual_by_bed',
+  share_pct numeric(5,2),
+  start_date date not null,
+  end_date date,
+  stage text not null default 'current' check (stage in ('upcoming','current','former')),
+  verified boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update on public.occupancies to authenticated;
+grant all on public.occupancies to service_role;
+alter table public.occupancies enable row level security;
+create index if not exists occupancies_unit_idx on public.occupancies(unit_id);
+create index if not exists occupancies_resident_idx on public.occupancies(resident_user_id);
+
+-- ------------------------- roommate groups + members -------------------
+create table if not exists public.roommate_groups (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  unit_id uuid references public.units(id) on delete set null,
+  term_id uuid references public.academic_terms(id) on delete set null,
+  label text not null,
+  stage text not null default 'invited',
+  created_by_name text,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update on public.roommate_groups to authenticated;
+grant all on public.roommate_groups to service_role;
+alter table public.roommate_groups enable row level security;
+
+create table if not exists public.roommate_group_members (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.roommate_groups(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  name text not null,
+  email text,
+  state text not null default 'invited'
+    check (state in ('invited','profile_incomplete','guarantor_incomplete','complete','approved','denied')),
+  identity_verified boolean not null default false,
+  passport_shared boolean not null default false,
+  first_time_renter boolean not null default false,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update on public.roommate_group_members to authenticated;
+grant all on public.roommate_group_members to service_role;
+alter table public.roommate_group_members enable row level security;
+create index if not exists roommate_group_members_group_idx on public.roommate_group_members(group_id);
+
+-- --------------------------- guarantor_relationships -------------------
+create table if not exists public.guarantor_relationships (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  occupancy_id uuid references public.occupancies(id) on delete cascade,
+  group_member_id uuid references public.roommate_group_members(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  name text not null,
+  email text,
+  role text not null default 'guarantor'
+    check (role in ('guarantor','authorized_payer','contact_only')),
+  identity_verified boolean not null default false,
+  signed_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (occupancy_id is not null or group_member_id is not null)
+);
+grant select, insert, update on public.guarantor_relationships to authenticated;
+grant all on public.guarantor_relationships to service_role;
+alter table public.guarantor_relationships enable row level security;
+
+-- ------------------------- charges + allocations -----------------------
+-- A charge is the obligation. Who *pays* it is a separate record, so a
+-- parent or third party never becomes a lease party by paying.
+create table if not exists public.charges (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  unit_id uuid not null references public.units(id) on delete cascade,
+  occupancy_id uuid references public.occupancies(id) on delete set null,
+  term_id uuid references public.academic_terms(id) on delete set null,
+  charge_type text not null
+    check (charge_type in ('rent','deposit','application','utilities','parking','pet','damage','late_fee','lease_change_fee')),
+  scope text not null default 'resident' check (scope in ('resident','roommate_group','unit','lease')),
+  label text not null,
+  amount numeric(12,2) not null,
+  credits numeric(12,2) not null default 0,
+  due_date date not null,
+  late_fee_rule text,
+  state text not null default 'open'
+    check (state in ('open','partial','paid','waived','reversed','not_yet_due')),
+  gated_on_request_id uuid,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update on public.charges to authenticated;
+grant all on public.charges to service_role;
+alter table public.charges enable row level security;
+create index if not exists charges_unit_idx on public.charges(unit_id);
+create index if not exists charges_occupancy_idx on public.charges(occupancy_id);
+
+create table if not exists public.charge_allocations (
+  id uuid primary key default gen_random_uuid(),
+  charge_id uuid not null references public.charges(id) on delete cascade,
+  occupancy_id uuid references public.occupancies(id) on delete cascade,
+  label text not null,
+  amount numeric(12,2) not null,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update on public.charge_allocations to authenticated;
+grant all on public.charge_allocations to service_role;
+alter table public.charge_allocations enable row level security;
+create index if not exists charge_allocations_charge_idx on public.charge_allocations(charge_id);
+
+-- --------------------------- payers + payments -------------------------
+create table if not exists public.payers (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  linked_occupancy_id uuid references public.occupancies(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  name text not null,
+  kind text not null check (kind in ('resident','guarantor','third_party','institution')),
+  email text,
+  authorized boolean not null default false,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update on public.payers to authenticated;
+grant all on public.payers to service_role;
+alter table public.payers enable row level security;
+
+create table if not exists public.student_payments (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  payer_id uuid not null references public.payers(id) on delete restrict,
+  amount numeric(12,2) not null,
+  method text not null
+    check (method in ('rentid_ach','card','check','cash','money_order','bank_billpay','other_external')),
+  -- Recorded external payments are never presented as processed by RentID.
+  processed_by_rentid boolean not null default false,
+  reference text,
+  proof_label text,
+  state text not null
+    check (state in ('initiated','pending','settled','returned','recorded','proof_attached','reconciled','rejected')),
+  received_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+grant select, insert, update on public.student_payments to authenticated;
+grant all on public.student_payments to service_role;
+alter table public.student_payments enable row level security;
+
+create table if not exists public.payment_allocations (
+  id uuid primary key default gen_random_uuid(),
+  payment_id uuid not null references public.student_payments(id) on delete cascade,
+  charge_id uuid not null references public.charges(id) on delete cascade,
+  amount numeric(12,2) not null,
+  created_at timestamptz not null default now()
+);
+grant select, insert on public.payment_allocations to authenticated;
+grant all on public.payment_allocations to service_role;
+alter table public.payment_allocations enable row level security;
+
+-- --------------------------------- ledger ------------------------------
+-- Append-only: no update/delete grant, ever.
+create table if not exists public.ledger_events (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  charge_id uuid references public.charges(id) on delete set null,
+  payment_id uuid references public.student_payments(id) on delete set null,
+  occupancy_id uuid references public.occupancies(id) on delete set null,
+  kind text not null
+    check (kind in ('charge_created','payment_recorded','payment_allocated','credit_applied','charge_waived','charge_reversed','reminder_sent')),
+  amount numeric(12,2) not null,
+  balance_after numeric(12,2) not null,
+  note text,
+  actor_id uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+grant select, insert on public.ledger_events to authenticated;
+grant all on public.ledger_events to service_role;
+alter table public.ledger_events enable row level security;
+create index if not exists ledger_events_charge_idx on public.ledger_events(charge_id);
+
+-- ------------------- approval-first lease changes ----------------------
+create table if not exists public.lease_change_requests (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  unit_id uuid not null references public.units(id) on delete cascade,
+  occupancy_id uuid not null references public.occupancies(id) on delete cascade,
+  bed_id uuid references public.room_beds(id) on delete set null,
+  requested_by uuid references auth.users(id) on delete set null,
+  request_type text not null
+    check (request_type in ('sublease','assignment','replacement_resident','add_occupant','remove_occupant','bed_transfer','room_transfer','renewal','early_termination','guarantor_change','payment_plan','addendum')),
+  state text not null default 'submitted'
+    check (state in ('draft','submitted','under_review','owner_review','approved','denied','documents_pending','signatures_pending','payment_pending','scheduled','effective','completed','withdrawn','expired','cancelled')),
+  policy_mode text not null default 'conditional'
+    check (policy_mode in ('allowed','conditional','prohibited')),
+  reason text not null,
+  requested_start date,
+  requested_end date,
+  candidate_name text,
+  candidate_email text,
+  -- A replacement listing must never go public on submission alone.
+  replacement_listing_enabled boolean not null default false,
+  requires_owner_approval boolean not null default false,
+  fee_amount numeric(12,2),
+  documents_complete boolean not null default false,
+  signatures_complete boolean not null default false,
+  payment_complete boolean not null default false,
+  effective_date date,
+  sla_hours int not null default 48,
+  submitted_at timestamptz,
+  decided_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update on public.lease_change_requests to authenticated;
+grant all on public.lease_change_requests to service_role;
+alter table public.lease_change_requests enable row level security;
+create index if not exists lease_change_requests_state_idx on public.lease_change_requests(state);
+
+alter table public.charges
+  add constraint charges_gated_request_fk
+  foreign key (gated_on_request_id) references public.lease_change_requests(id) on delete set null;
+
+-- Approval steps are an immutable trail: insert + select only.
+create table if not exists public.approval_steps (
+  id uuid primary key default gen_random_uuid(),
+  request_id uuid not null references public.lease_change_requests(id) on delete cascade,
+  role text not null check (role in ('pm','owner','resident','guarantor')),
+  label text not null,
+  state text not null default 'pending' check (state in ('pending','approved','denied','skipped')),
+  actor_id uuid references auth.users(id) on delete set null,
+  actor_name text,
+  note text,
+  decided_at timestamptz,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update on public.approval_steps to authenticated;
+grant all on public.approval_steps to service_role;
+alter table public.approval_steps enable row level security;
+
+-- --------------------------------- turnover ----------------------------
+create table if not exists public.turn_tasks (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  unit_id uuid not null references public.units(id) on delete cascade,
+  bed_id uuid references public.room_beds(id) on delete set null,
+  term_id uuid references public.academic_terms(id) on delete set null,
+  area text not null check (area in ('bed','room','unit','shared')),
+  label text not null,
+  category text not null
+    check (category in ('inspection','cleaning','repair','paint','flooring','keys','documents','money')),
+  vendor text,
+  due_date date not null,
+  state text not null default 'not_started'
+    check (state in ('not_started','in_progress','blocked','complete')),
+  outgoing_occupancy_id uuid references public.occupancies(id) on delete set null,
+  incoming_occupancy_id uuid references public.occupancies(id) on delete set null,
+  blocker_reason text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update on public.turn_tasks to authenticated;
+grant all on public.turn_tasks to service_role;
+alter table public.turn_tasks enable row level security;
+
+-- --------------------- student maintenance + damage --------------------
+create table if not exists public.student_maintenance_cases (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  property_id uuid not null references public.properties(id) on delete cascade,
+  unit_id uuid not null references public.units(id) on delete cascade,
+  bed_id uuid references public.room_beds(id) on delete set null,
+  requester_occupancy_id uuid references public.occupancies(id) on delete set null,
+  requester_name text not null,
+  area text not null check (area in ('private_room','shared_area','unit','unknown')),
+  area_label text not null,
+  issue text not null,
+  category text,
+  priority text not null default 'normal' check (priority in ('low','normal','high','emergency')),
+  status text not null default 'open'
+    check (status in ('open','in_progress','resolved','disputed','closed')),
+  assignment text,
+  entry_permission boolean not null default false,
+  evidence text[] not null default '{}',
+  first_response_at timestamptz,
+  resolved_at timestamptz,
+  damage_allocation text not null default 'unassigned'
+    check (damage_allocation in ('unassigned','single_resident','multiple_residents','household','owner')),
+  damage_amount numeric(12,2),
+  lease_basis text,
+  tenant_response text,
+  -- Only evidence-backed, resolved events may feed verified history.
+  affects_verified_history boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert, update on public.student_maintenance_cases to authenticated;
+grant all on public.student_maintenance_cases to service_role;
+alter table public.student_maintenance_cases enable row level security;
+
+create trigger student_housing_configs_touch before update on public.student_housing_configs
+  for each row execute function public.touch_updated_at();
+create trigger room_beds_touch before update on public.room_beds
+  for each row execute function public.touch_updated_at();
+create trigger occupancies_touch before update on public.occupancies
+  for each row execute function public.touch_updated_at();
+create trigger charges_touch before update on public.charges
+  for each row execute function public.touch_updated_at();
+create trigger lease_change_requests_touch before update on public.lease_change_requests
+  for each row execute function public.touch_updated_at();
+create trigger turn_tasks_touch before update on public.turn_tasks
+  for each row execute function public.touch_updated_at();
+create trigger student_maintenance_cases_touch before update on public.student_maintenance_cases
+  for each row execute function public.touch_updated_at();

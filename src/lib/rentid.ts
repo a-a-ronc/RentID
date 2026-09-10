@@ -16,6 +16,7 @@ import type {
   MaintenanceStatus,
   Organization,
   PropertyType,
+  RoommateGroupStage,
   UUID,
 } from "@/lib/types";
 
@@ -621,5 +622,196 @@ export function useManagedWorkOrders(orgId: UUID | null) {
     queryKey: ["managed-work-orders", orgId],
     enabled: Boolean(orgId),
     queryFn: () => svc.getManagedWorkOrders(orgId),
+  });
+}
+
+/* ------------------------ student housing (§25-§38) ----------------------- */
+
+function useInvalidateStudent() {
+  const qc = useQueryClient();
+  return () => {
+    [
+      "student-properties",
+      "student-roster",
+      "student-metrics",
+      "student-unit",
+      "student-ledger-events",
+      "student-requests",
+      "student-request",
+      "student-preleasing",
+      "student-turnover",
+      "student-maintenance",
+      "student-charge",
+      "resident-housing",
+    ].forEach((key) => qc.invalidateQueries({ queryKey: [key] }));
+  };
+}
+
+export function useStudentProperties(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["student-properties", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getStudentProperties(orgId!),
+  });
+}
+
+export function useStudentMetrics(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["student-metrics", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getStudentMetrics(orgId!),
+  });
+}
+
+export function useStudentRoster(orgId: UUID | null, filters?: { propertyId?: UUID; unitId?: UUID }) {
+  return useQuery({
+    queryKey: ["student-roster", orgId, filters?.propertyId ?? null, filters?.unitId ?? null],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getStudentRoster(orgId!, filters),
+  });
+}
+
+export function useStudentUnitLedger(unitId: UUID | null) {
+  return useQuery({
+    queryKey: ["student-unit", unitId],
+    enabled: Boolean(unitId),
+    queryFn: () => svc.getStudentUnitLedger(unitId!),
+  });
+}
+
+export function useStudentLedgerEvents(unitId: UUID | null) {
+  return useQuery({
+    queryKey: ["student-ledger-events", unitId],
+    enabled: Boolean(unitId),
+    queryFn: () => svc.getUnitLedgerEvents(unitId!),
+  });
+}
+
+export function useLeaseChangeRequests(orgId: UUID | null, state: "open" | "all" = "open") {
+  return useQuery({
+    queryKey: ["student-requests", orgId, state],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.listLeaseChangeRequests(orgId!, { state }),
+  });
+}
+
+export function useDecideLeaseChange() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateStudent();
+  return useMutation({
+    mutationFn: (input: Omit<Parameters<typeof svc.decideLeaseChange>[0], "actorId">) =>
+      svc.decideLeaseChange({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCreateLeaseChangeRequest() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateStudent();
+  return useMutation({
+    mutationFn: (input: Omit<Parameters<typeof svc.createLeaseChangeRequest>[0], "actorId">) =>
+      svc.createLeaseChangeRequest({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRecordStudentPayment() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateStudent();
+  return useMutation({
+    mutationFn: (input: Omit<Parameters<typeof svc.recordStudentPayment>[0], "actorId">) =>
+      svc.recordStudentPayment({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useStudentPreLeasing(orgId: UUID | null, propertyId?: UUID) {
+  return useQuery({
+    queryKey: ["student-preleasing", orgId, propertyId ?? null],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getPreLeasing(orgId!, propertyId),
+  });
+}
+
+export function useUpdateRoommateGroupStage() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateStudent();
+  return useMutation({
+    mutationFn: ({ groupId, stage }: { groupId: UUID; stage: RoommateGroupStage }) =>
+      svc.updateRoommateGroupStage(groupId, stage, user?.id ?? null),
+    onSuccess: invalidate,
+  });
+}
+
+export function useStudentTurnover(orgId: UUID | null, propertyId?: UUID) {
+  return useQuery({
+    queryKey: ["student-turnover", orgId, propertyId ?? null],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getTurnover(orgId!, propertyId),
+  });
+}
+
+export function useUpdateTurnTask() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateStudent();
+  return useMutation({
+    mutationFn: ({ taskId, patch }: { taskId: UUID; patch: Parameters<typeof svc.updateTurnTask>[1] }) =>
+      svc.updateTurnTask(taskId, patch, user?.id ?? null),
+    onSuccess: invalidate,
+  });
+}
+
+export function useStudentMaintenance(orgId: UUID | null, propertyId?: UUID) {
+  return useQuery({
+    queryKey: ["student-maintenance", orgId, propertyId ?? null],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.listStudentMaintenance(orgId!, propertyId),
+  });
+}
+
+export function useAllocateDamage() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateStudent();
+  return useMutation({
+    mutationFn: (input: Omit<Parameters<typeof svc.allocateDamage>[0], "actorId">) =>
+      svc.allocateDamage({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useStudentChargeContext(chargeId: UUID | null) {
+  return useQuery({
+    queryKey: ["student-charge", chargeId],
+    enabled: Boolean(chargeId),
+    queryFn: () => svc.getStudentChargeContext(chargeId!),
+  });
+}
+
+export function useUpdateStudentConfig() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateStudent();
+  return useMutation({
+    mutationFn: ({ propertyId, patch }: { propertyId: UUID; patch: Parameters<typeof svc.updateStudentConfig>[1] }) =>
+      svc.updateStudentConfig(propertyId, patch, user?.id ?? null),
+    onSuccess: invalidate,
+  });
+}
+
+export function useEnableStudentHousing() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateStudent();
+  return useMutation({
+    mutationFn: (input: Omit<Parameters<typeof svc.enableStudentHousing>[0], "actorId">) =>
+      svc.enableStudentHousing({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+/** Student resident's own housing view (bed, roommates, own money only). */
+export function useResidentHousing(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["resident-housing", userId],
+    queryFn: () => svc.getResidentHousing(userId!),
+    enabled: Boolean(userId),
   });
 }

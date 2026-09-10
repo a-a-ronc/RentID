@@ -442,3 +442,231 @@ create policy "applications_update_org" on public.rental_applications
 -- Anonymous applications (a renter applying before signing up) must go
 -- through a server function with the service role, which creates the user
 -- record first and writes an audit_logs row.
+
+-- =====================================================================
+-- Student-housing policies (business map §25-§38)
+--
+-- Two access shapes: the operator side (org members plus verified management
+-- authority on the property) and the resident side (their own occupancy).
+-- A roommate never reads another roommate's money or documents.
+-- =====================================================================
+
+create or replace function public.can_operate_property(_property_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.properties p
+    where p.id = _property_id
+      and (public.is_org_member(p.organization_id) or public.has_management_authority(p.id))
+  )
+$$;
+
+create or replace function public.is_my_occupancy(_occupancy_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.occupancies o
+    where o.id = _occupancy_id and o.resident_user_id = auth.uid()
+  )
+$$;
+
+-- configuration + terms + beds: operators write, residents read their property
+create policy "student_config_select" on public.student_housing_configs
+  for select to authenticated using (
+    public.can_operate_property(property_id)
+    or exists (select 1 from public.occupancies o
+               where o.property_id = student_housing_configs.property_id
+                 and o.resident_user_id = auth.uid())
+  );
+create policy "student_config_write" on public.student_housing_configs
+  for all to authenticated using (public.can_operate_property(property_id))
+  with check (public.can_operate_property(property_id));
+
+create policy "academic_terms_select" on public.academic_terms
+  for select to authenticated using (
+    public.can_operate_property(property_id)
+    or exists (select 1 from public.occupancies o
+               where o.property_id = academic_terms.property_id and o.resident_user_id = auth.uid())
+  );
+create policy "academic_terms_write" on public.academic_terms
+  for all to authenticated using (public.can_operate_property(property_id))
+  with check (public.can_operate_property(property_id));
+
+create policy "room_beds_select" on public.room_beds
+  for select to authenticated using (
+    public.can_operate_property(property_id)
+    or exists (select 1 from public.occupancies o
+               where o.unit_id = room_beds.unit_id and o.resident_user_id = auth.uid())
+  );
+create policy "room_beds_write" on public.room_beds
+  for all to authenticated using (public.can_operate_property(property_id))
+  with check (public.can_operate_property(property_id));
+
+-- occupancies: a resident sees only their own record; operators see the property
+create policy "occupancies_select" on public.occupancies
+  for select to authenticated using (
+    resident_user_id = auth.uid() or public.can_operate_property(property_id)
+  );
+create policy "occupancies_write_operator" on public.occupancies
+  for all to authenticated using (public.can_operate_property(property_id))
+  with check (public.can_operate_property(property_id));
+
+-- roommate groups: a member sees their own group, operators see the property
+create policy "roommate_groups_select" on public.roommate_groups
+  for select to authenticated using (
+    public.can_operate_property(property_id)
+    or exists (select 1 from public.roommate_group_members m
+               where m.group_id = roommate_groups.id and m.user_id = auth.uid())
+  );
+create policy "roommate_groups_write_operator" on public.roommate_groups
+  for all to authenticated using (public.can_operate_property(property_id))
+  with check (public.can_operate_property(property_id));
+
+create policy "roommate_members_select" on public.roommate_group_members
+  for select to authenticated using (
+    user_id = auth.uid()
+    or exists (select 1 from public.roommate_groups g
+               where g.id = group_id and public.can_operate_property(g.property_id))
+  );
+create policy "roommate_members_write_operator" on public.roommate_group_members
+  for all to authenticated using (
+    exists (select 1 from public.roommate_groups g
+            where g.id = group_id and public.can_operate_property(g.property_id))
+  ) with check (
+    exists (select 1 from public.roommate_groups g
+            where g.id = group_id and public.can_operate_property(g.property_id))
+  );
+
+-- guarantors: the guarantor, the resident they back, and the operator
+create policy "guarantors_select" on public.guarantor_relationships
+  for select to authenticated using (
+    user_id = auth.uid()
+    or public.is_my_occupancy(occupancy_id)
+    or public.is_org_member(organization_id)
+    or exists (select 1 from public.occupancies o
+               where o.id = occupancy_id and public.can_operate_property(o.property_id))
+  );
+create policy "guarantors_write_operator" on public.guarantor_relationships
+  for all to authenticated using (public.is_org_member(organization_id))
+  with check (public.is_org_member(organization_id));
+
+-- money: a resident reads only charges allocated to them, never a roommate's
+create policy "charges_select" on public.charges
+  for select to authenticated using (
+    public.can_operate_property(property_id)
+    or public.is_my_occupancy(occupancy_id)
+    or exists (select 1 from public.charge_allocations a
+               where a.charge_id = charges.id and public.is_my_occupancy(a.occupancy_id))
+  );
+create policy "charges_write_operator" on public.charges
+  for all to authenticated using (public.can_operate_property(property_id))
+  with check (public.can_operate_property(property_id));
+
+create policy "charge_allocations_select" on public.charge_allocations
+  for select to authenticated using (
+    public.is_my_occupancy(occupancy_id)
+    or exists (select 1 from public.charges c
+               where c.id = charge_id and public.can_operate_property(c.property_id))
+  );
+create policy "charge_allocations_write_operator" on public.charge_allocations
+  for all to authenticated using (
+    exists (select 1 from public.charges c
+            where c.id = charge_id and public.can_operate_property(c.property_id))
+  ) with check (
+    exists (select 1 from public.charges c
+            where c.id = charge_id and public.can_operate_property(c.property_id))
+  );
+
+-- payers: a resident sees their own payers (self, parent, guarantor)
+create policy "payers_select" on public.payers
+  for select to authenticated using (
+    user_id = auth.uid()
+    or public.is_my_occupancy(linked_occupancy_id)
+    or public.is_org_member(organization_id)
+  );
+create policy "payers_write_operator" on public.payers
+  for all to authenticated using (public.is_org_member(organization_id))
+  with check (public.is_org_member(organization_id));
+
+create policy "student_payments_select" on public.student_payments
+  for select to authenticated using (
+    public.is_org_member(organization_id)
+    or exists (select 1 from public.payers p
+               where p.id = payer_id
+                 and (p.user_id = auth.uid() or public.is_my_occupancy(p.linked_occupancy_id)))
+  );
+create policy "student_payments_insert" on public.student_payments
+  for insert to authenticated with check (
+    public.is_org_member(organization_id)
+    or exists (select 1 from public.payers p
+               where p.id = payer_id and p.authorized
+                 and (p.user_id = auth.uid() or public.is_my_occupancy(p.linked_occupancy_id)))
+  );
+create policy "student_payments_update_operator" on public.student_payments
+  for update to authenticated using (public.is_org_member(organization_id));
+
+create policy "payment_allocations_select" on public.payment_allocations
+  for select to authenticated using (
+    exists (select 1 from public.charges c
+            where c.id = charge_id
+              and (public.can_operate_property(c.property_id) or public.is_my_occupancy(c.occupancy_id)))
+  );
+create policy "payment_allocations_insert_operator" on public.payment_allocations
+  for insert to authenticated with check (
+    exists (select 1 from public.charges c
+            where c.id = charge_id and public.can_operate_property(c.property_id))
+  );
+
+-- ledger: readable by the parties, insert-only, never updated or deleted
+create policy "ledger_events_select" on public.ledger_events
+  for select to authenticated using (
+    public.is_org_member(organization_id) or public.is_my_occupancy(occupancy_id)
+  );
+create policy "ledger_events_insert" on public.ledger_events
+  for insert to authenticated with check (public.is_org_member(organization_id));
+
+-- lease changes: the resident may request; only operators may decide
+create policy "lease_changes_select" on public.lease_change_requests
+  for select to authenticated using (
+    public.can_operate_property(property_id) or public.is_my_occupancy(occupancy_id)
+  );
+create policy "lease_changes_insert_resident" on public.lease_change_requests
+  for insert to authenticated with check (
+    public.is_my_occupancy(occupancy_id) or public.can_operate_property(property_id)
+  );
+create policy "lease_changes_update_operator" on public.lease_change_requests
+  for update to authenticated using (public.can_operate_property(property_id));
+
+create policy "approval_steps_select" on public.approval_steps
+  for select to authenticated using (
+    exists (select 1 from public.lease_change_requests r
+            where r.id = request_id
+              and (public.can_operate_property(r.property_id) or public.is_my_occupancy(r.occupancy_id)))
+  );
+create policy "approval_steps_write_operator" on public.approval_steps
+  for all to authenticated using (
+    exists (select 1 from public.lease_change_requests r
+            where r.id = request_id and public.can_operate_property(r.property_id))
+  ) with check (
+    exists (select 1 from public.lease_change_requests r
+            where r.id = request_id and public.can_operate_property(r.property_id))
+  );
+
+-- turnover is operator-only
+create policy "turn_tasks_all_operator" on public.turn_tasks
+  for all to authenticated using (public.can_operate_property(property_id))
+  with check (public.can_operate_property(property_id));
+
+-- maintenance: residents see their own unit's cases (shared areas included)
+create policy "student_cases_select" on public.student_maintenance_cases
+  for select to authenticated using (
+    public.can_operate_property(property_id)
+    or exists (select 1 from public.occupancies o
+               where o.unit_id = student_maintenance_cases.unit_id and o.resident_user_id = auth.uid())
+  );
+create policy "student_cases_insert_resident" on public.student_maintenance_cases
+  for insert to authenticated with check (
+    public.can_operate_property(property_id) or public.is_my_occupancy(requester_occupancy_id)
+  );
+-- Damage allocation is an operator decision; the resident's dispute response
+-- is written through a server function that appends an audit_logs row.
+create policy "student_cases_update_operator" on public.student_maintenance_cases
+  for update to authenticated using (public.can_operate_property(property_id));

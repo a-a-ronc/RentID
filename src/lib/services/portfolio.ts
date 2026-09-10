@@ -1,6 +1,7 @@
 /** Organizations, properties and units. Mock-backed; Supabase-shaped. */
 import { clone, commit, getDb, latency, logAudit, nowIso, uuid } from "@/lib/mock/db";
 import type {
+  ManagementCategory,
   Organization,
   OrganizationKind,
   Property,
@@ -116,6 +117,8 @@ export async function createProperty(input: {
   actorId?: UUID | null;
   name: string;
   propertyType: PropertyType;
+  /** Operating model — defaults to standard residential. */
+  managementCategory?: ManagementCategory;
   streetAddress: string;
   city: string;
   state: string;
@@ -129,6 +132,7 @@ export async function createProperty(input: {
     organization_id: input.organizationId,
     name: input.name.trim(),
     property_type: input.propertyType,
+    management_category: input.managementCategory ?? "standard_residential",
     street_address: input.streetAddress.trim(),
     unit_label: null,
     city: input.city.trim(),
