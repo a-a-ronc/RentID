@@ -906,4 +906,4 @@ export function seedDatabase(): MockDatabase {
   };
 }
 
-export const DEMO_IDS = { LANDLORD_ID, TENANT_ID, MANAGER_ID, ORG_ID };
+export const DEMO_IDS = { LANDLORD_ID, TENANT_ID, MANAGER_ID, ORG_ID, PM_ORG_ID };
