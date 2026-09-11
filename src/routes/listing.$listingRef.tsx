@@ -7,7 +7,11 @@ import { EmptyState, Eyebrow, Glass, Pill } from "@/components/rentid/Surface";
 import { Button, LoadingCard } from "@/components/rentid/kit";
 import { money, fullDate } from "@/lib/format";
 import { recordListingView } from "@/lib/services/syndication";
-import { useListingByRef } from "@/lib/rentid";
+import { useListingByRef, usePropertyVerification } from "@/lib/rentid";
+import {
+  OwnershipNotice,
+  PropertyVerificationBadgeButton,
+} from "@/components/rentid/verification-ui";
 
 export const Route = createFileRoute("/listing/$listingRef")({
   head: () => ({
@@ -34,6 +38,7 @@ export const Route = createFileRoute("/listing/$listingRef")({
 function PublicListing() {
   const { listingRef } = useParams({ from: "/listing/$listingRef" });
   const listing = useListingByRef(listingRef);
+  const verification = usePropertyVerification(listing.data?.property_id ?? null);
   const id = listing.data?.id;
 
   useEffect(() => {
@@ -106,6 +111,7 @@ function PublicListing() {
         </p>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
+          <PropertyVerificationBadgeButton verification={verification.data} />
           {l.provider?.verification_status === "verified" ? (
             <Pill tone="success">
               <ShieldCheck className="size-3" /> Platform verified provider
@@ -114,6 +120,12 @@ function PublicListing() {
           <Pill tone="accent">{money(l.monthly_rent)} / month</Pill>
           <Pill>Available {fullDate(l.available_on)}</Pill>
         </div>
+
+        {verification.data && !verification.data.badge ? (
+          <div className="mt-3">
+            <OwnershipNotice />
+          </div>
+        ) : null}
 
         <div className="mt-5 flex flex-wrap gap-2">
           <Link to="/apply/$listingRef" params={{ listingRef: l.public_ref ?? l.id }}

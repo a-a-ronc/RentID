@@ -18,6 +18,11 @@ import type {
   PropertyType,
   RoommateGroupStage,
   UUID,
+  DisclosureContext,
+  PropertyClaimRelationship,
+  PropertyPermission,
+  PropertyRelationshipKind,
+  VerificationProposition,
 } from "@/lib/types";
 
 export type { Organization };
@@ -46,6 +51,10 @@ const KEYS = [
   "audit",
   "managed-payments",
   "managed-work-orders",
+  "property-verification",
+  "property-badges",
+  "verification-queue",
+  "disclosure",
 ];
 
 export function useInvalidateRentId() {
@@ -133,6 +142,12 @@ export function useCreateProperty() {
       zip: string;
       yearBuilt?: number | null;
       notes?: string | null;
+      county?: string | null;
+      parcelNumber?: string | null;
+      recordingJurisdiction?: string | null;
+      /** Opens a property-specific ownership claim; grants nothing by itself. */
+      claimRelationship?: PropertyClaimRelationship;
+      claimedOwnerName?: string | null;
     }) => svc.createProperty({ ...input, actorId: user?.id ?? null }),
     onSuccess: invalidate,
   });
@@ -894,4 +909,125 @@ export function useResidentHousing(userId: string | undefined) {
     queryFn: () => svc.getResidentHousing(userId!),
     enabled: Boolean(userId),
   });
+}
+
+/* ------------------- property ownership verification ---------------------- */
+
+export function usePropertyVerification(propertyId: UUID | null) {
+  return useQuery({
+    queryKey: ["property-verification", propertyId],
+    enabled: Boolean(propertyId),
+    queryFn: () => svc.getPropertyVerification(propertyId),
+  });
+}
+
+/** Badges for a set of properties — listing cards and lists. */
+export function usePropertyBadges(propertyIds: UUID[]) {
+  const key = [...propertyIds].sort().join(",");
+  return useQuery({
+    queryKey: ["property-badges", key],
+    enabled: propertyIds.length > 0,
+    queryFn: () => svc.getPropertyBadges(propertyIds),
+  });
+}
+
+export function useStartPropertyClaim() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateVerification();
+  return useMutation({
+    mutationFn: (input: {
+      propertyId: UUID;
+      relationship: PropertyClaimRelationship;
+      claimantName?: string | null;
+    }) => svc.startPropertyClaim({ ...input, claimantUserId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSubmitVerificationEvidence() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateVerification();
+  return useMutation({
+    mutationFn: (input: {
+      caseId: UUID;
+      proposition: VerificationProposition;
+      evidenceType: string;
+      summary: string;
+    }) => svc.submitEvidence({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useVerificationQueue() {
+  return useQuery({ queryKey: ["verification-queue"], queryFn: () => svc.getVerificationQueue() });
+}
+
+export function useDecideVerificationCase() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateVerification();
+  return useMutation({
+    mutationFn: (input: { caseId: UUID; decision: svc.ReviewDecision; reason: string }) =>
+      svc.decideVerificationCase({ ...input, reviewerId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useAuthorizeRepresentative() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateVerification();
+  return useMutation({
+    mutationFn: (input: {
+      propertyId: UUID;
+      ownerName: string;
+      representativeName: string;
+      representativeOrganizationId?: UUID | null;
+      role?: PropertyRelationshipKind;
+      permissions?: PropertyPermission[];
+      expiresAt?: string | null;
+    }) => svc.authorizeRepresentative({ ...input, ownerUserId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRevokeAuthorization() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateVerification();
+  return useMutation({
+    mutationFn: (input: { authorizationId: UUID; reason: string }) =>
+      svc.revokeAuthorization({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+/**
+ * Whether this tenant still owes a one-time ownership disclosure for a
+ * high-trust action on this property.
+ */
+export function useDisclosureRequirement(propertyId: UUID | null, context: DisclosureContext) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["disclosure", propertyId, context, user?.id ?? null],
+    enabled: Boolean(propertyId),
+    queryFn: () =>
+      svc.getDisclosureRequirement({ tenantUserId: user?.id ?? null, propertyId, context }),
+  });
+}
+
+export function useAcknowledgeDisclosure() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { propertyId: UUID; context: DisclosureContext }) =>
+      svc.acknowledgeDisclosure({ ...input, tenantUserId: user!.id }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["disclosure"] }),
+  });
+}
+
+function useInvalidateVerification() {
+  const qc = useQueryClient();
+  return () => {
+    for (const key of ["property-verification", "property-badges", "verification-queue", "properties", "disclosure"]) {
+      void qc.invalidateQueries({ queryKey: [key] });
+    }
+  };
 }

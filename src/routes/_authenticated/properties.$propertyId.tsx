@@ -20,6 +20,8 @@ import {
   TextInput,
   ToolbarButton,
 } from "@/components/rentid/patterns";
+import { PropertyVerificationCard } from "@/components/rentid/PropertyVerificationCard";
+import { PropertyVerificationBadgeButton } from "@/components/rentid/verification-ui";
 import { money, shortDate } from "@/lib/format";
 import {
   useActiveOrg,
@@ -27,6 +29,7 @@ import {
   useInvitations,
   useInviteTenant,
   useProperty,
+  usePropertyVerification,
   useTenancies,
   useUpdateUnit,
 } from "@/lib/rentid";
@@ -262,6 +265,7 @@ function PropertyDetail() {
   const property = useProperty(propertyId);
   const tenancies = useTenancies(active.orgId);
   const invitations = useInvitations(active.orgId);
+  const verification = usePropertyVerification(propertyId);
 
   if (property.isError) {
     return (
@@ -310,6 +314,12 @@ function PropertyDetail() {
         subtitle={`${p.street_address}, ${p.city}, ${p.state} ${p.zip} · ${occupied}/${units.length} occupied`}
         action={<AddUnitModal propertyId={p.id} organizationId={active.orgId} />}
       />
+
+      <div className="mt-3">
+        <PropertyVerificationBadgeButton verification={verification.data} size="md" />
+      </div>
+
+      <PropertyVerificationCard propertyId={p.id} className="mt-4" />
 
       <SectionCard title="Units" aside={`${units.length} total`} className="mt-5">
         {units.length === 0 ? (

@@ -106,3 +106,54 @@ When the backend is reachable:
    existing published listings then resync through the same code path.
 5. Lead capture on public pages moves to a server function using the service role
    (no anon insert policy on `listing_leads`).
+
+## Property ownership & authorized representative verification
+Files: `supabase/planned/0003_property_verification.sql`,
+`0004_property_verification_rls.sql`, `src/lib/verification-types.ts`,
+`src/lib/verification/address.ts`, `src/lib/verification/providers.ts`,
+`src/lib/services/verification.ts`.
+
+1. Apply `0003_property_verification.sql`, then `0004_property_verification_rls.sql`.
+2. Create the PRIVATE storage bucket `verification-evidence`. No public access; the
+   app serves documents through short-lived signed URLs after
+   `can_view_property_verification()` passes.
+3. Configure providers in `src/lib/verification/providers.ts` — each one is
+   `not_configured` today and every provider returns `ok: false`, which makes claims
+   fail closed into manual review:
+   - recorded documents (PRIMARY ownership evidence) from the recording authority;
+   - assessor / parcel / GIS datasets (SUPPORTING only, never sufficient alone);
+   - business registry lookups for entity ownership;
+   - identity verification for the claimant;
+   - document authenticity checks for uploads.
+   Official APIs, licensed data, or manual review only — no scraping and no
+   circumvention of access controls.
+4. Non-negotiables to preserve server-side:
+   - Verification is per property. A verified property never verifies another
+     property, another user, or a whole portfolio.
+   - Three propositions (property identity, claimant identity, authority) stay
+     separate; never combine them into a single score.
+   - Only two positive public badges exist: `Property Ownership Verified` and
+     `Authorized Representative for Property`. Absence of a badge shows the neutral
+     line "Property ownership has not been verified by RentID." — never an
+     "Unverified" badge.
+   - Claimants can open a case and submit evidence; only admin review or a
+     verified provider chain can move a case to a verified status.
+   - Uploaded documents are `user_upload` / `unverified` until a reviewer checks them.
+   - Recent-purchase precedence: the most recently recorded deed wins over stale
+     assessor data.
+   - Trustee/executor capacity contradicts a personal-ownership claim — hard
+     contradiction, manual review, no badge.
+   - Representative authorizations are property-specific, permission-scoped,
+     revocable and optionally expiring; revocation removes badge and permissions
+     immediately while history is retained.
+   - The tenant disclosure is shown once per tenant + property + payee +
+     disclosure version + verification version, before application, lease or
+     payment. A payee or verification change re-triggers it.
+   - Evidence, identity data and risk events are never readable by tenants or
+     anonymous callers.
+   - **Never issue a production badge from mock or sandbox data.** The demo records in
+     `src/lib/mock/verification-seed.ts` exist only for the local demo workspace.
+5. Reverification: `verification_cases.reverify_after` drives periodic checks; a
+   deed change, payout change or ownership dispute suspends the badge until review.
+6. Admin review queue is `/admin/verification` (admin role only, every decision
+   stored with reviewer id and reason plus an append-only status history).

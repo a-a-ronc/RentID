@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { AppShell, DataTable, PageHeader, SectionCard, StatusPill, TrustBadge } from "@/components/rentid/patterns";
 import { DemoNotice, EmptyState } from "@/components/rentid/patterns";
+import { DisclosureNotice } from "@/components/rentid/verification-ui";
 import { money, shortDate } from "@/lib/format";
 import { useMyTenancies } from "@/lib/rentid";
 import type { Payment } from "@/lib/types";
@@ -30,7 +31,11 @@ function PayPage() {
     <AppShell subtitle="Tenant">
       <PageHeader title="Payments" subtitle={active?.property?.name} />
 
-      <div className="mt-5">
+      <div className="mt-4">
+        <DisclosureNotice propertyId={active?.property?.id ?? null} context="payment" />
+      </div>
+
+      <div className="mt-4">
         <DemoNotice>
           Online rent payments arrive with Stripe. For now, rent is recorded by your landlord once
           received — this page shows that record, not a place to pay.

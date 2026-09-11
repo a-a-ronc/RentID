@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { AppShell, ListRow, PageHeader, SectionCard, StatusPill } from "@/components/rentid/patterns";
 import { EmptyState } from "@/components/rentid/Surface";
+import { DisclosureNotice } from "@/components/rentid/verification-ui";
 import { money, shortDate } from "@/lib/format";
 import { useMyTenancies } from "@/lib/rentid";
 
@@ -19,6 +20,9 @@ function LeasePage() {
   return (
     <AppShell subtitle="Tenant">
       <PageHeader title="Lease" subtitle={active?.property?.name} />
+      <div className="mt-4">
+        <DisclosureNotice propertyId={active?.property?.id ?? null} context="lease" />
+      </div>
       {tenancies.isLoading ? (
         <div className="mt-5"><EmptyState title="Loading…" description="Fetching your lease." /></div>
       ) : !lease ? (
