@@ -60,3 +60,20 @@
 Stripe and live payments, autopay, credit screening, background checks,
 reputation scoring, AI tenant scores, native apps, QuickBooks,
 partner listing syndication feeds, marketplace lease fees.
+
+## Listing Syndication (mock mode, shipped)
+- One listing created in RentID is the source of truth: full home details, terms,
+  requirements, photos, contact and showing instructions.
+- Permanent public URLs per listing: `/listing/{ref}` and `/apply/{ref}`.
+- Channels: RentID is live. Zillow Network and Apartments.com Network are
+  `Integration Pending` — no external posting, scraping, or unofficial calls.
+- Adapter registry at `src/lib/syndication/adapters.ts` — approved partners plug in
+  behind the same interface once RentID has official API/feed access.
+- Leads, source attribution (source/UTM/referrer), applicant pipeline and
+  rental-resume prefill are wired end to end.
+- Manager leasing desk at `/manager/listings` with property, owner, status,
+  marketplace, employee and availability filters.
+
+### Still deferred
+Live external posting until partner approval; Stripe/live payments; screening and
+background checks; reputation scoring.

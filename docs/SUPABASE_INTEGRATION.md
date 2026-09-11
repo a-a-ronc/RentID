@@ -92,3 +92,17 @@ When the backend is reachable:
    - A roommate must never read another roommate's charges, payments or ledger events.
 4. Verify with the student demo account (`student@rentid.demo`) that `/tenant/housing`
    shows only that resident's money.
+
+## Listing syndication when partner access is approved
+1. Apply the listing/channel/lead/sync tables from `supabase/planned/0001_schema.sql`
+   and the policies from `0002_rls.sql`.
+2. Store partner credentials as project secrets (never in code): one secret per
+   marketplace, plus a feed URL where the partner uses feed ingestion.
+3. Implement the partner adapter in `src/lib/syndication/adapters.ts` — replace the
+   pending stub's `pending_integration` result with real API/feed calls made from a
+   server function only. Only official APIs and approved feeds; no scraping and no
+   unofficial posting.
+4. Flip the channel's `connection_status` to `connected` once credentials verify;
+   existing published listings then resync through the same code path.
+5. Lead capture on public pages moves to a server function using the service role
+   (no anon insert policy on `listing_leads`).
