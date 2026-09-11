@@ -9,7 +9,7 @@ import { MARKETPLACE_ADAPTERS, marketplaceName } from "@/lib/syndication/adapter
 import { money, shortDate } from "@/lib/format";
 import {
   useListingSources,
-  useListings,
+  useManagedListings,
   useManagementOrg,
 } from "@/lib/rentid";
 
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/manager/listings")({
 function ManagerListingsPage() {
   const management = useManagementOrg();
   const orgId = management.orgId;
-  const listings = useListings(orgId);
+  const listings = useManagedListings(orgId);
   const sources = useListingSources(orgId);
 
   const [property, setProperty] = useState("all");

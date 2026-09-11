@@ -455,6 +455,14 @@ export function useManagementOrg() {
   return { ...query, org: active, orgId: active?.id ?? null, isDemo: Boolean(active?.is_demo) };
 }
 
+export function useManagedListings(pmOrgId: UUID | null) {
+  return useQuery({
+    queryKey: ["managed-listings", pmOrgId],
+    enabled: Boolean(pmOrgId),
+    queryFn: () => svc.getManagedListings(pmOrgId),
+  });
+}
+
 export function useManagedProperties(orgId: UUID | null) {
   return useQuery({
     queryKey: ["managed-properties", orgId],
