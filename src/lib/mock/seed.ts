@@ -454,7 +454,7 @@ export function seedDatabase(): MockDatabase {
       unit: vacant[0] ?? units[17]!,
       ref: "10241",
       status: "published",
-      headline: "Renovated 2-bed with in-unit laundry",
+      headline: `Renovated ${(vacant[0] ?? units[17]!).bedrooms ?? 2}-bed with in-unit laundry`,
       description:
         "Bright corner unit with new appliances, in-unit laundry and off-street parking. Heat and water included.",
       amenities: ["In-unit laundry", "Off-street parking", "Dishwasher", "Heat included"],
