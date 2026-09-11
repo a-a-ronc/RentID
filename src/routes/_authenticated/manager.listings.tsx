@@ -27,7 +27,8 @@ function ManagerListingsPage() {
   const management = useManagementOrg();
   const orgId = management.orgId;
   const listings = useManagedListings(orgId);
-  const sources = useListingSources(orgId);
+  const listingIds = (listings.data ?? []).map((l) => l.id);
+  const sources = useListingSources(orgId, listingIds);
 
   const [property, setProperty] = useState("all");
   const [owner, setOwner] = useState("all");
@@ -37,6 +38,7 @@ function ManagerListingsPage() {
   const [availableBy, setAvailableBy] = useState("");
 
   const rows = listings.data ?? [];
+
 
   const options = useMemo(() => {
     const uniq = (values: (string | null | undefined)[]) =>

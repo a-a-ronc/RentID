@@ -625,11 +625,11 @@ export function useListingLeads(orgId: UUID | null) {
   });
 }
 
-export function useListingSources(orgId: UUID | null) {
+export function useListingSources(orgId: UUID | null, listingIds?: UUID[]) {
   return useQuery({
-    queryKey: ["listing-sources", orgId],
+    queryKey: ["listing-sources", orgId, listingIds ?? null],
     enabled: Boolean(orgId),
-    queryFn: () => svc.getSourceBreakdown(orgId),
+    queryFn: () => svc.getSourceBreakdown(orgId, listingIds),
   });
 }
 

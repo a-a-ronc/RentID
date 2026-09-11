@@ -272,6 +272,7 @@ export function buildPipeline(listingId: UUID): ListingPipeline {
 /** Which channels are producing leads and signed tenants. */
 export async function getSourceBreakdown(
   orgId: UUID | null,
+  listingIds?: UUID[],
 ): Promise<{ source: LeadSource; leads: number; applications: number; signed: number }[]> {
   if (!orgId) return [];
   const db = getDb();
@@ -281,9 +282,14 @@ export async function getSourceBreakdown(
     row[key] += 1;
     sources.set(source, row);
   };
-  db.listing_leads.filter((l) => l.organization_id === orgId).forEach((l) => bump(l.source, "leads"));
+  // A property manager's desk covers listings across owner organizations, so an
+  // explicit listing set takes precedence over the organization filter.
+  const ids = listingIds && listingIds.length > 0 ? new Set(listingIds) : null;
+  const inScope = (row: { organization_id: UUID; listing_id?: UUID }) =>
+    ids ? Boolean(row.listing_id && ids.has(row.listing_id)) : row.organization_id === orgId;
+  db.listing_leads.filter(inScope).forEach((l) => bump(l.source, "leads"));
   db.rental_applications
-    .filter((a) => a.organization_id === orgId)
+    .filter(inScope)
     .forEach((a) => {
       bump(a.source ?? "rentid", "applications");
       if (a.status === "lease_signed") bump(a.source ?? "rentid", "signed");
