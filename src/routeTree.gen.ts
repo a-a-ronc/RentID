@@ -27,6 +27,7 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReviewsRouteImport } from './routes/_authenticated/reviews'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTenantRouteImport } from './routes/_authenticated/tenant'
+import { Route as ApplyListingRefRouteImport } from './routes/apply.$listingRef'
 import { Route as ListingListingRefRouteImport } from './routes/listing.$listingRef'
 import { Route as ProvidersOrgIdRouteImport } from './routes/providers.$orgId'
 import { Route as RentIndexRouteImport } from './routes/rent.index'
@@ -148,6 +149,11 @@ const AuthenticatedTenantRoute = AuthenticatedTenantRouteImport.update({
   id: '/tenant',
   path: '/tenant',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApplyListingRefRoute = ApplyListingRefRouteImport.update({
+  id: '/apply/$listingRef',
+  path: '/apply/$listingRef',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ListingListingRefRoute = ListingListingRefRouteImport.update({
   id: '/listing/$listingRef',
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/reviews': typeof AuthenticatedReviewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tenant': typeof AuthenticatedTenantRouteWithChildren
+  '/apply/$listingRef': typeof ApplyListingRefRoute
   '/listing/$listingRef': typeof ListingListingRefRoute
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
@@ -389,6 +396,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/reviews': typeof AuthenticatedReviewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/apply/$listingRef': typeof ApplyListingRefRoute
   '/listing/$listingRef': typeof ListingListingRefRoute
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
@@ -440,6 +448,7 @@ export interface FileRoutesById {
   '/_authenticated/reviews': typeof AuthenticatedReviewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tenant': typeof AuthenticatedTenantRouteWithChildren
+  '/apply/$listingRef': typeof ApplyListingRefRoute
   '/listing/$listingRef': typeof ListingListingRefRoute
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/settings'
     | '/tenant'
+    | '/apply/$listingRef'
     | '/listing/$listingRef'
     | '/providers/$orgId'
     | '/rent/$listingId'
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/reviews'
     | '/settings'
+    | '/apply/$listingRef'
     | '/listing/$listingRef'
     | '/providers/$orgId'
     | '/rent/$listingId'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reviews'
     | '/_authenticated/settings'
     | '/_authenticated/tenant'
+    | '/apply/$listingRef'
     | '/listing/$listingRef'
     | '/providers/$orgId'
     | '/rent/$listingId'
@@ -627,6 +639,7 @@ export interface RootRouteChildren {
   ForLandlordsRoute: typeof ForLandlordsRoute
   ForPropertyManagersRoute: typeof ForPropertyManagersRoute
   ForTenantsRoute: typeof ForTenantsRoute
+  ApplyListingRefRoute: typeof ApplyListingRefRoute
   ListingListingRefRoute: typeof ListingListingRefRoute
   ProvidersOrgIdRoute: typeof ProvidersOrgIdRoute
   RentListingIdRoute: typeof RentListingIdRoute
@@ -760,6 +773,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tenant'
       preLoaderRoute: typeof AuthenticatedTenantRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/apply/$listingRef': {
+      id: '/apply/$listingRef'
+      path: '/apply/$listingRef'
+      fullPath: '/apply/$listingRef'
+      preLoaderRoute: typeof ApplyListingRefRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/listing/$listingRef': {
       id: '/listing/$listingRef'
@@ -1089,6 +1109,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForLandlordsRoute: ForLandlordsRoute,
   ForPropertyManagersRoute: ForPropertyManagersRoute,
   ForTenantsRoute: ForTenantsRoute,
+  ApplyListingRefRoute: ApplyListingRefRoute,
   ListingListingRefRoute: ListingListingRefRoute,
   ProvidersOrgIdRoute: ProvidersOrgIdRoute,
   RentListingIdRoute: RentListingIdRoute,
