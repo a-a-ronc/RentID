@@ -30,12 +30,12 @@ const FEATURES = [
   {
     icon: BadgeCheck,
     title: "Verified tenancies",
-    body: "Both sides confirm the lease before it counts. Every trust signal names its source and evidence.",
+    body: "Upload your lease, verify your identity, and start building your RentID.",
   },
   {
     icon: Building2,
     title: "Portfolio clarity",
-    body: "Properties, units, leases and documents in one ledger — every unit has a status and a number.",
+    body: "Properties, units, leases, documents, maintenance requests, and deductions all organized in a simple way to manage.",
   },
   {
     icon: Wallet,
@@ -62,7 +62,7 @@ const AUDIENCES = [
   },
   {
     to: "/for-property-managers",
-    label: "I manage for owners",
+    label: "I am a property manager",
     body: "Owner-granted authority, portfolio KPIs and reporting your owners can see for themselves.",
   },
 ] as const;
