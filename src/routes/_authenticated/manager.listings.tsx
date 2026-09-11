@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/manager/listings")({
 
 function ManagerListingsPage() {
   const management = useManagementOrg();
-  const orgId = management.data?.id ?? null;
+  const orgId = management.orgId;
   const listings = useListings(orgId);
   const sources = useListingSources(orgId);
 
@@ -75,7 +75,7 @@ function ManagerListingsPage() {
     <AppShell role="manager" subtitle="Property management">
       <PageHeader
         title="Leasing & distribution"
-        subtitle={management.data?.name ?? "Managed portfolio"}
+        subtitle={management.org?.name ?? "Managed portfolio"}
       />
 
       <div className="mt-5">

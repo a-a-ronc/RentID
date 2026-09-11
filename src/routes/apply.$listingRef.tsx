@@ -19,19 +19,22 @@ import { useApplyToListing, useListingByRef, useRecordLead, useTenantPassport } 
 import type { LeadSource } from "@/lib/types";
 
 type ApplySearch = {
-  source?: string;
-  utm_source?: string;
-  utm_campaign?: string;
-  utm_medium?: string;
+  source: string | null;
+  utm_source: string | null;
+  utm_campaign: string | null;
+  utm_medium: string | null;
 };
 
 export const Route = createFileRoute("/apply/$listingRef")({
-  validateSearch: (search: Record<string, unknown>): ApplySearch => ({
-    source: typeof search.source === "string" ? search.source : undefined,
-    utm_source: typeof search.utm_source === "string" ? search.utm_source : undefined,
-    utm_campaign: typeof search.utm_campaign === "string" ? search.utm_campaign : undefined,
-    utm_medium: typeof search.utm_medium === "string" ? search.utm_medium : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): ApplySearch => {
+    const str = (key: string) => (typeof search[key] === "string" ? (search[key] as string) : null);
+    return {
+      source: str("source"),
+      utm_source: str("utm_source"),
+      utm_campaign: str("utm_campaign"),
+      utm_medium: str("utm_medium"),
+    };
+  },
   head: () => ({
     meta: [
       { title: "Apply for this rental — RentID" },
@@ -72,9 +75,10 @@ function ApplyPage() {
   const apply = useApplyToListing();
   const recordLead = useRecordLead();
 
-  const source: LeadSource = (SOURCES as string[]).includes(search.source ?? "")
-    ? (search.source as LeadSource)
-    : search.source
+  const rawSource = search.source ?? "";
+  const source: LeadSource = (SOURCES as string[]).includes(rawSource)
+    ? (rawSource as LeadSource)
+    : rawSource
       ? "other"
       : "direct_link";
 
@@ -258,7 +262,7 @@ function ApplyPage() {
             <Field label="Phone">
               <TextInput value={phone} onChange={(e) => setPhone(e.target.value)} />
             </Field>
-            <Field label="Monthly income" hint={l.income_requirement ?? undefined}>
+            <Field label="Monthly income" {...(l.income_requirement ? { hint: l.income_requirement } : {})}>
               <TextInput
                 type="number"
                 inputMode="numeric"
