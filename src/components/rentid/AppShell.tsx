@@ -64,7 +64,7 @@ const MANAGER_NAV: NavItem[] = [
   { to: "/payments", label: "Rent ledger", icon: Wallet },
   { to: "/maintenance", label: "Work orders", icon: Wrench },
   { to: "/messages", label: "Messages", icon: MessageSquare },
-  { to: "/listings", label: "Leasing", icon: Megaphone },
+  { to: "/manager/listings", label: "Leasing", icon: Megaphone },
   { to: "/documents", label: "Documents", icon: FileText },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

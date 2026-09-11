@@ -414,8 +414,14 @@ export type VerificationStatus = "unverified" | "pending" | "verified" | "disput
 
 export type ListingStatus = "draft" | "published" | "paused" | "leased";
 
+/**
+ * A RentID listing is the master record. Every distribution channel is a copy
+ * that RentID keeps in sync — see `ListingChannel`.
+ */
 export type Listing = {
   id: UUID;
+  /** Short permanent public reference: rentid.online/listing/<public_ref>. */
+  public_ref?: string;
   organization_id: UUID;
   property_id: UUID;
   unit_id: UUID;
@@ -428,14 +434,128 @@ export type Listing = {
   lease_term_months: number;
   amenities: string[];
   screening_criteria: string | null;
+  /** Legacy display field; the source of truth is `listing_channels`. */
   syndicated_to: string[];
   published_at: Timestamp | null;
   created_at: Timestamp;
   updated_at: Timestamp;
   deleted_at: Timestamp | null;
+
+  /* ---- listing detail (added with Listing Syndication) ---- */
+  property_type?: PropertyType | null;
+  street_address?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  square_feet?: number | null;
+  photos?: string[];
+  utilities_included?: string[];
+  pet_policy?: string | null;
+  parking?: string | null;
+  application_requirements?: string[];
+  income_requirement?: string | null;
+  credit_requirement?: string | null;
+  occupancy_limit?: number | null;
+  move_in_fees?: string | null;
+  application_fee?: number | null;
+  contact_name?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  showing_instructions?: string | null;
+  /** Assigned leasing agent / employee (property-manager workflows). */
+  assigned_to?: string | null;
+  /** Public listing-page views, used for the applicant funnel. */
+  view_count?: number;
 };
 
-export type ApplicationStatus = "new" | "in_review" | "approved" | "denied" | "withdrawn";
+/* ------------------------- listing syndication layer ---------------------- */
+
+/** Registered distribution channels. New networks are added as adapters. */
+export type MarketplaceId = "rentid" | "zillow" | "apartments_com" | (string & {});
+
+/** Whether RentID has an approved API/feed partnership with the marketplace. */
+export type ChannelConnectionStatus = "connected" | "integration_pending" | "error";
+
+/** The listing's state on that specific marketplace. */
+export type ChannelListingStatus =
+  | "not_published"
+  | "queued"
+  | "pending_integration"
+  | "live"
+  | "pending_sync"
+  | "removal_queued"
+  | "removed"
+  | "error";
+
+export type ListingChannel = {
+  id: UUID;
+  listing_id: UUID;
+  organization_id: UUID;
+  marketplace_id: MarketplaceId;
+  /** Landlord's publish choice for this channel. */
+  enabled: boolean;
+  connection_status: ChannelConnectionStatus;
+  listing_status: ChannelListingStatus;
+  external_listing_id: string | null;
+  last_synced_at: Timestamp | null;
+  last_error: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type SyncAction = "create" | "update" | "remove" | "resync";
+export type SyncResult = "queued" | "succeeded" | "pending_integration" | "failed";
+
+export type ListingSyncEvent = {
+  id: UUID;
+  listing_id: UUID;
+  marketplace_id: MarketplaceId;
+  action: SyncAction;
+  result: SyncResult;
+  message: string;
+  created_at: Timestamp;
+};
+
+/** Where a lead or application came from. */
+export type LeadSource =
+  | "rentid"
+  | "zillow"
+  | "apartments_com"
+  | "direct_link"
+  | "qr_code"
+  | "facebook"
+  | "other";
+
+export type ListingLead = {
+  id: UUID;
+  listing_id: UUID;
+  organization_id: UUID;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  message: string | null;
+  source: LeadSource;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  referrer: string | null;
+  application_id: UUID | null;
+  created_at: Timestamp;
+};
+
+export type ApplicationStatus =
+  | "new"
+  | "started"
+  | "submitted"
+  | "in_review"
+  | "under_review"
+  | "more_info_requested"
+  | "screening"
+  | "qualified"
+  | "approved"
+  | "denied"
+  | "withdrawn"
+  | "lease_sent"
+  | "lease_signed";
 
 export type RentalApplication = {
   id: UUID;
@@ -453,6 +573,27 @@ export type RentalApplication = {
   decided_at: Timestamp | null;
   created_at: Timestamp;
   updated_at: Timestamp;
+  /* ---- syndication attribution + resume autofill ---- */
+  source?: LeadSource;
+  utm_source?: string | null;
+  utm_campaign?: string | null;
+  referrer?: string | null;
+  /** How much of the form came from the applicant's RentID rental resume. */
+  prefilled_from_resume?: boolean;
+  employer?: string | null;
+  current_address?: string | null;
+  references?: string | null;
+};
+
+/** Funnel counters for one listing. */
+export type ListingPipeline = {
+  listing_id: UUID;
+  views: number;
+  leads: number;
+  started: number;
+  completed: number;
+  qualified: number;
+  approved: number;
 };
 
 /** An owner whose properties a property-management company operates. */
@@ -490,6 +631,9 @@ export type ListingWithContext = Listing & {
   unit: Unit | null;
   provider: ProviderProfile | null;
   application_count: number;
+  channels: ListingChannel[];
+  pipeline: ListingPipeline;
+  owner_name: string | null;
 };
 
 export type ApplicationWithContext = RentalApplication & {

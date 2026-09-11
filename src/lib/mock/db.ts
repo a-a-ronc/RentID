@@ -12,6 +12,9 @@ import type {
   Document,
   Lease,
   Listing,
+  ListingChannel,
+  ListingLead,
+  ListingSyncEvent,
   MaintenanceRequest,
   ManagementAssignment,
   Message,
@@ -80,6 +83,10 @@ export type MockDatabase = {
   audit_logs: AuditLog[];
   listings: Listing[];
   rental_applications: RentalApplication[];
+  /* ---- listing syndication (create once, distribute everywhere) ---- */
+  listing_channels: ListingChannel[];
+  listing_sync_events: ListingSyncEvent[];
+  listing_leads: ListingLead[];
   owner_accounts: OwnerAccount[];
   management_assignments: ManagementAssignment[];
   /* ---- student housing vertical (business map §25-§38) ---- */
@@ -102,7 +109,7 @@ export type MockDatabase = {
   student_maintenance_cases: StudentMaintenanceCase[];
 };
 
-const STORAGE_KEY = "rentid.mock.db.v3";
+const STORAGE_KEY = "rentid.mock.db.v4";
 
 let db: MockDatabase | null = null;
 const listeners = new Set<() => void>();

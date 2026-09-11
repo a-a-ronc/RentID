@@ -5,10 +5,18 @@
  * Mock-backed but Supabase-shaped — the UI never touches the mock db.
  */
 import { clone, commit, getDb, latency, logAudit, nowIso, uuid } from "@/lib/mock/db";
+import {
+  buildPipeline,
+  channelsFor,
+  ensureChannels,
+  propagateListingChange,
+  withdrawEverywhere,
+} from "@/lib/services/syndication";
 import type {
   ApplicationStatus,
   ApplicationWithContext,
   Listing,
+  LeadSource,
   ListingStatus,
   ListingWithContext,
   ProviderProfile,
@@ -180,6 +188,17 @@ function hydrateListing(listing: Listing): ListingWithContext {
     unit: db.units.find((u) => u.id === listing.unit_id) ?? null,
     provider: buildProviderProfile(listing.organization_id),
     application_count: db.rental_applications.filter((a) => a.listing_id === listing.id).length,
+    channels: channelsFor(listing.id),
+    pipeline: buildPipeline(listing.id),
+    owner_name:
+      db.owner_accounts.find((o) =>
+        db.management_assignments.some(
+          (m) =>
+            m.property_id === listing.property_id &&
+            m.owner_account_id === o.id &&
+            m.revoked_at === null,
+        ),
+      )?.name ?? null,
   };
 }
 
@@ -230,6 +249,24 @@ export async function getListings(orgId: UUID | null): Promise<ListingWithContex
   return latency(clone(rows));
 }
 
+export async function getManagedListings(pmOrgId: UUID | null): Promise<ListingWithContext[]> {
+  if (!pmOrgId) return [];
+  const db = getDb();
+  // A manager's leasing desk covers every property assigned to them, whichever
+  // owner organization the listing itself belongs to.
+  const managedPropertyIds = new Set(
+    db.management_assignments
+      .filter((a) => a.organization_id === pmOrgId && !a.revoked_at)
+      .map((a) => a.property_id),
+  );
+  const rows = db.listings
+    .filter(alive)
+    .filter((l) => l.organization_id === pmOrgId || managedPropertyIds.has(l.property_id))
+    .map(hydrateListing)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return latency(clone(rows));
+}
+
 export async function createListing(input: {
   organizationId: UUID;
   propertyId: UUID;
@@ -245,6 +282,8 @@ export async function createListing(input: {
   syndicatedTo?: string[];
   publish?: boolean;
   actorId?: UUID | null;
+  detail?: Partial<Listing>;
+  channels?: string[];
 }): Promise<Listing> {
   const now = nowIso();
   const listing: Listing = {
@@ -266,8 +305,20 @@ export async function createListing(input: {
     created_at: now,
     updated_at: now,
     deleted_at: null,
+    public_ref: nextPublicRef(),
+    photos: [],
+    view_count: 0,
+    ...(input.detail ?? {}),
   };
   getDb().listings.unshift(listing);
+  ensureChannels(listing);
+  for (const marketplaceId of input.channels ?? []) {
+    const channel = getDb().listing_channels.find(
+      (c) => c.listing_id === listing.id && c.marketplace_id === marketplaceId,
+    );
+    if (channel) channel.enabled = true;
+  }
+  if (input.publish) await propagateListingChange(listing, "create");
   logAudit({
     organization_id: input.organizationId,
     actor_id: input.actorId ?? null,
@@ -290,6 +341,11 @@ export async function updateListingStatus(
   listing.status = status;
   listing.published_at = status === "published" ? (listing.published_at ?? nowIso()) : listing.published_at;
   listing.updated_at = nowIso();
+  if (status === "leased" || status === "paused") {
+    await withdrawEverywhere(listing);
+  } else if (status === "published") {
+    await propagateListingChange(listing, "create");
+  }
   logAudit({
     organization_id: listing.organization_id,
     actor_id: actorId ?? null,
@@ -311,6 +367,45 @@ export async function toggleSyndication(listingId: UUID, destination: string): P
   listing.updated_at = nowIso();
   commit();
   return latency(clone(listing), 140);
+}
+
+/** Short permanent public reference used in rentid.online/listing/<ref>. */
+function nextPublicRef() {
+  const used = new Set(getDb().listings.map((l) => l.public_ref));
+  let ref = 10_000 + getDb().listings.length + 244;
+  while (used.has(String(ref))) ref += 1;
+  return String(ref);
+}
+
+/** Public listing lookup by short reference (or raw id, for older links). */
+export async function getListingByRef(ref: string): Promise<ListingWithContext | null> {
+  const listing = getDb().listings.find((l) => l.public_ref === ref || l.id === ref);
+  return latency(listing ? clone(hydrateListing(listing)) : null);
+}
+
+/**
+ * Edit the master listing. Any change to rent, photos, availability,
+ * description, amenities or lease terms is queued out to every enabled channel.
+ */
+export async function updateListing(input: {
+  listingId: UUID;
+  patch: Partial<Listing>;
+  actorId?: UUID | null;
+}): Promise<Listing> {
+  const listing = getDb().listings.find((l) => l.id === input.listingId);
+  if (!listing) throw new Error("Listing not found.");
+  Object.assign(listing, input.patch, { id: listing.id, updated_at: nowIso() });
+  await propagateListingChange(listing, "update");
+  logAudit({
+    organization_id: listing.organization_id,
+    actor_id: input.actorId ?? null,
+    action: "listing.updated",
+    entity_type: "listing",
+    entity_id: listing.id,
+    metadata: { fields: Object.keys(input.patch) },
+  });
+  commit();
+  return latency(clone(listing), 200);
 }
 
 /* ------------------------------ applications ------------------------------ */
@@ -386,6 +481,14 @@ export async function applyToListing(input: {
   moveInDate?: string | null;
   note?: string | null;
   shareProfile: boolean;
+  source?: LeadSource;
+  utmSource?: string | null;
+  utmCampaign?: string | null;
+  referrer?: string | null;
+  prefilledFromResume?: boolean;
+  employer?: string | null;
+  currentAddress?: string | null;
+  references?: string | null;
 }): Promise<RentalApplication> {
   const db = getDb();
   const listing = db.listings.find((l) => l.id === input.listingId);
@@ -402,8 +505,16 @@ export async function applyToListing(input: {
     monthly_income: input.monthlyIncome ?? null,
     move_in_date: input.moveInDate ?? null,
     note: input.note?.trim() || null,
-    status: "new",
+    status: "submitted",
     profile_shared: input.shareProfile,
+    source: input.source ?? "rentid",
+    utm_source: input.utmSource ?? null,
+    utm_campaign: input.utmCampaign ?? null,
+    referrer: input.referrer ?? null,
+    prefilled_from_resume: input.prefilledFromResume ?? false,
+    employer: input.employer?.trim() || null,
+    current_address: input.currentAddress?.trim() || null,
+    references: input.references?.trim() || null,
     decided_at: null,
     created_at: now,
     updated_at: now,

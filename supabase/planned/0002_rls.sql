@@ -670,3 +670,43 @@ create policy "student_cases_insert_resident" on public.student_maintenance_case
 -- is written through a server function that appends an audit_logs row.
 create policy "student_cases_update_operator" on public.student_maintenance_cases
   for update to authenticated using (public.can_operate_property(property_id));
+
+-- ============================================================
+-- Listing syndication policies (review only, not applied)
+-- ============================================================
+
+-- Distribution state of a published listing is public information;
+-- drafts and paused listings stay inside the operating organization.
+create policy "listing_channels_select_public" on public.listing_channels
+  for select to anon using (
+    exists (select 1 from public.listings l
+            where l.id = listing_channels.listing_id and l.status = 'published')
+  );
+create policy "listing_channels_select_member" on public.listing_channels
+  for select to authenticated using (public.is_org_member(organization_id));
+create policy "listing_channels_write_member" on public.listing_channels
+  for all to authenticated using (public.is_org_member(organization_id))
+  with check (public.is_org_member(organization_id));
+
+-- Sync history is an operator audit trail: never public, never editable.
+create policy "listing_sync_events_select_member" on public.listing_sync_events
+  for select to authenticated using (
+    exists (select 1 from public.listings l
+            where l.id = listing_sync_events.listing_id and public.is_org_member(l.organization_id))
+  );
+create policy "listing_sync_events_insert_member" on public.listing_sync_events
+  for insert to authenticated with check (
+    exists (select 1 from public.listings l
+            where l.id = listing_sync_events.listing_id and public.is_org_member(l.organization_id))
+  );
+
+-- Leads belong to the organization that owns the listing. Applicants never
+-- read the lead table; their own record is the rental_applications row.
+create policy "listing_leads_select_member" on public.listing_leads
+  for select to authenticated using (public.is_org_member(organization_id));
+create policy "listing_leads_update_member" on public.listing_leads
+  for update to authenticated using (public.is_org_member(organization_id));
+-- Lead capture on a public listing page runs through a server function using
+-- the service role, so no anon insert policy is granted here.
+create policy "listing_leads_insert_member" on public.listing_leads
+  for insert to authenticated with check (public.is_org_member(organization_id));

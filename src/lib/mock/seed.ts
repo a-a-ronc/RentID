@@ -11,6 +11,9 @@ import type {
   Document,
   Lease,
   Listing,
+  ListingChannel,
+  ListingLead,
+  ListingSyncEvent,
   MaintenanceRequest,
   ManagementAssignment,
   OwnerAccount,
@@ -429,67 +432,231 @@ export function seedDatabase(): MockDatabase {
   const conversation2 = id("9000", 2);
 
   // ---- marketplace listings + applications ----------------------------
+  // A RentID listing is the master record; channels below are copies RentID
+  // keeps in sync once a marketplace partnership is approved.
   const vacant = units.filter((u) => u.occupancy_status === "vacant");
   const listingSpecs: {
     unit: Unit;
+    ref: string;
     status: Listing["status"];
     headline: string;
     description: string;
     amenities: string[];
+    utilities: string[];
     syndicated: string[];
     availableIn: number;
+    pets: string;
+    parking: string;
+    agent: string;
+    views: number;
   }[] = [
     {
       unit: vacant[0] ?? units[17]!,
+      ref: "10241",
       status: "published",
-      headline: "Renovated 2-bed with in-unit laundry",
+      headline: `Renovated ${(vacant[0] ?? units[17]!).bedrooms ?? 2}-bed with in-unit laundry`,
       description:
         "Bright corner unit with new appliances, in-unit laundry and off-street parking. Heat and water included.",
       amenities: ["In-unit laundry", "Off-street parking", "Dishwasher", "Heat included"],
-      syndicated: ["Zillow", "RentID Marketplace"],
+      utilities: ["Heat", "Water", "Trash"],
+      syndicated: ["RentID", "Zillow Network"],
       availableIn: 14,
+      pets: "Cats and dogs under 40 lbs. $25/month pet rent, no breed restrictions.",
+      parking: "One off-street space included, second space $50/month.",
+      agent: "Avery Whitfield",
+      views: 212,
     },
     {
       unit: vacant[1] ?? units[18]!,
+      ref: "10242",
       status: "published",
       headline: "Top-floor loft near downtown",
       description:
         "Exposed brick, large windows and a secure entry. Walking distance to transit and the riverfront.",
       amenities: ["Secure entry", "Central air", "Pet friendly", "Bike storage"],
-      syndicated: ["RentID Marketplace"],
+      utilities: ["Water", "Trash"],
+      syndicated: ["RentID"],
       availableIn: 30,
+      pets: "Pet friendly, 2 pet maximum. $300 refundable pet deposit.",
+      parking: "Street permit parking; garage available nearby for $95/month.",
+      agent: "Jordan Reyes",
+      views: 96,
     },
     {
       unit: units[0]!,
+      ref: "10243",
       status: "draft",
       headline: "Garden-level 1-bed, available at lease end",
       description: "Pre-listing draft while the current lease is being renewed.",
       amenities: ["Shared yard", "Laundry on site"],
+      utilities: ["Water"],
       syndicated: [],
       availableIn: 45,
+      pets: "No pets.",
+      parking: "Street parking.",
+      agent: "Avery Whitfield",
+      views: 0,
     },
   ];
 
-  const listings: Listing[] = listingSpecs.map((spec, i) => ({
-    id: id("a000", i + 1),
+  const listings: Listing[] = listingSpecs.map((spec, i) => {
+    const property = properties.find((p) => p.id === spec.unit.property_id) ?? null;
+    return {
+      id: id("a000", i + 1),
+      public_ref: spec.ref,
+      organization_id: ORG_ID,
+      property_id: spec.unit.property_id,
+      unit_id: spec.unit.id,
+      status: spec.status,
+      headline: spec.headline,
+      description: spec.description,
+      monthly_rent: spec.unit.monthly_rent ?? 1250,
+      security_deposit: spec.unit.security_deposit ?? spec.unit.monthly_rent ?? 1250,
+      available_on: dateOnly(spec.availableIn),
+      lease_term_months: 12,
+      amenities: spec.amenities,
+      screening_criteria:
+        "Verified RentID profile, income 3x rent, no unresolved move-out balance in the last 24 months.",
+      syndicated_to: spec.syndicated,
+      published_at: spec.status === "published" ? iso(-9 + i) : null,
+      created_at: iso(-12 + i),
+      updated_at: iso(-2),
+      deleted_at: null,
+      property_type: property?.property_type ?? "apartment",
+      street_address: property
+        ? `${property.street_address}, ${property.city}, ${property.state} ${property.zip}`
+        : null,
+      bedrooms: spec.unit.bedrooms ?? 2,
+      bathrooms: spec.unit.bathrooms ?? 1,
+      square_feet: spec.unit.square_feet ?? 850,
+      photos: [],
+      utilities_included: spec.utilities,
+      pet_policy: spec.pets,
+      parking: spec.parking,
+      application_requirements: [
+        "Government photo ID",
+        "Two most recent pay stubs or offer letter",
+        "RentID rental resume or two prior landlord references",
+      ],
+      income_requirement: "Household income of at least 3x the monthly rent.",
+      credit_requirement: "No minimum score; verified on-time rent history is weighted first.",
+      occupancy_limit: (spec.unit.bedrooms ?? 2) * 2,
+      move_in_fees: "First month plus security deposit. No administrative fee.",
+      application_fee: 40,
+      contact_name: spec.agent,
+      contact_email: DEMO_ACCOUNTS.landlord.email,
+      contact_phone: "(313) 555-0142",
+      showing_instructions:
+        "Self-guided tours Monday to Saturday, 9am-6pm. Confirm through RentID messages first.",
+      assigned_to: spec.agent,
+      view_count: spec.views,
+    };
+  });
+
+  // Distribution channels. RentID is live; partner feeds stay pending until the
+  // partnership is approved — nothing is ever posted externally today.
+  const CHANNEL_PLAN: {
+    listingIndex: number;
+    marketplace: string;
+    enabled: boolean;
+    connection: ListingChannel["connection_status"];
+    listing_status: ListingChannel["listing_status"];
+    external: string | null;
+    error: string | null;
+    syncedDaysAgo: number | null;
+  }[] = [
+    { listingIndex: 0, marketplace: "rentid", enabled: true, connection: "connected", listing_status: "live", external: "10241", error: null, syncedDaysAgo: -2 },
+    { listingIndex: 0, marketplace: "zillow", enabled: true, connection: "integration_pending", listing_status: "pending_integration", external: null, error: null, syncedDaysAgo: null },
+    { listingIndex: 0, marketplace: "apartments_com", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
+    { listingIndex: 1, marketplace: "rentid", enabled: true, connection: "connected", listing_status: "live", external: "10242", error: null, syncedDaysAgo: -3 },
+    { listingIndex: 1, marketplace: "zillow", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
+    { listingIndex: 1, marketplace: "apartments_com", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
+    { listingIndex: 2, marketplace: "rentid", enabled: false, connection: "connected", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
+    { listingIndex: 2, marketplace: "zillow", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
+    { listingIndex: 2, marketplace: "apartments_com", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
+  ];
+
+  const listingChannels: ListingChannel[] = CHANNEL_PLAN.map((c, i) => ({
+    id: id("a200", i + 1),
+    listing_id: listings[c.listingIndex]!.id,
     organization_id: ORG_ID,
-    property_id: spec.unit.property_id,
-    unit_id: spec.unit.id,
-    status: spec.status,
-    headline: spec.headline,
-    description: spec.description,
-    monthly_rent: spec.unit.monthly_rent ?? 1250,
-    security_deposit: spec.unit.security_deposit ?? spec.unit.monthly_rent ?? 1250,
-    available_on: dateOnly(spec.availableIn),
-    lease_term_months: 12,
-    amenities: spec.amenities,
-    screening_criteria:
-      "Verified RentID profile, income 3× rent, no unresolved move-out balance in the last 24 months.",
-    syndicated_to: spec.syndicated,
-    published_at: spec.status === "published" ? iso(-9 + i) : null,
-    created_at: iso(-12 + i),
+    marketplace_id: c.marketplace,
+    enabled: c.enabled,
+    connection_status: c.connection,
+    listing_status: c.listing_status,
+    external_listing_id: c.external,
+    last_synced_at: c.syncedDaysAgo === null ? null : iso(c.syncedDaysAgo),
+    last_error: c.error,
+    created_at: iso(-12),
     updated_at: iso(-2),
-    deleted_at: null,
+  }));
+
+  const listingSyncEvents: ListingSyncEvent[] = [
+    {
+      id: id("a300", 1),
+      listing_id: listings[0]!.id,
+      marketplace_id: "rentid",
+      action: "create",
+      result: "succeeded",
+      message: "Published on the RentID marketplace.",
+      created_at: iso(-9),
+    },
+    {
+      id: id("a300", 2),
+      listing_id: listings[0]!.id,
+      marketplace_id: "zillow",
+      action: "create",
+      result: "pending_integration",
+      message:
+        "Zillow Network: create held in the outbound queue - awaiting partner approval of the RentID feed. Nothing was posted.",
+      created_at: iso(-9),
+    },
+    {
+      id: id("a300", 3),
+      listing_id: listings[0]!.id,
+      marketplace_id: "rentid",
+      action: "update",
+      result: "succeeded",
+      message: "RentID listing updated (rent and availability).",
+      created_at: iso(-2),
+    },
+    {
+      id: id("a300", 4),
+      listing_id: listings[1]!.id,
+      marketplace_id: "rentid",
+      action: "create",
+      result: "succeeded",
+      message: "Published on the RentID marketplace.",
+      created_at: iso(-8),
+    },
+  ];
+
+  const LEAD_PLAN: { listingIndex: number; name: string; source: ListingLead["source"]; daysAgo: number }[] = [
+    { listingIndex: 0, name: "Alicia Diaz", source: "rentid", daysAgo: 4 },
+    { listingIndex: 0, name: "Marcus Webb", source: "zillow", daysAgo: 2 },
+    { listingIndex: 0, name: "Tessa Moore", source: "zillow", daysAgo: 2 },
+    { listingIndex: 0, name: "Ray Colton", source: "qr_code", daysAgo: 5 },
+    { listingIndex: 0, name: "Devon Hart", source: "direct_link", daysAgo: 6 },
+    { listingIndex: 1, name: "Nia Fletcher", source: "rentid", daysAgo: 9 },
+    { listingIndex: 1, name: "Owen Petrov", source: "apartments_com", daysAgo: 11 },
+    { listingIndex: 1, name: "Sasha Kim", source: "facebook", daysAgo: 1 },
+  ];
+
+  const listingLeads: ListingLead[] = LEAD_PLAN.map((l, i) => ({
+    id: id("a400", i + 1),
+    listing_id: listings[l.listingIndex]!.id,
+    organization_id: ORG_ID,
+    name: l.name,
+    email: `${l.name.split(" ")[0]!.toLowerCase()}@example.com`,
+    phone: null,
+    message: null,
+    source: l.source,
+    utm_source: l.source === "rentid" ? null : l.source,
+    utm_medium: l.source === "qr_code" ? "print" : l.source === "rentid" ? null : "listing",
+    utm_campaign: null,
+    referrer: null,
+    application_id: null,
+    created_at: iso(-l.daysAgo),
   }));
 
   const APPLICANTS: {
@@ -567,6 +734,14 @@ export function seedDatabase(): MockDatabase {
     note: a.note,
     status: a.status,
     profile_shared: a.shared,
+    source: (["rentid", "zillow", "rentid", "apartments_com", "facebook"] as const)[i] ?? "rentid",
+    utm_source: null,
+    utm_campaign: null,
+    referrer: null,
+    prefilled_from_resume: a.shared,
+    employer: a.shared ? "Declared on the RentID resume" : null,
+    current_address: null,
+    references: null,
     decided_at: a.status === "approved" || a.status === "denied" ? iso(-a.daysAgo + 2) : null,
     created_at: iso(-a.daysAgo),
     updated_at: iso(-a.daysAgo + 1),
@@ -951,6 +1126,9 @@ export function seedDatabase(): MockDatabase {
     ],
     listings,
     rental_applications: applications,
+    listing_channels: listingChannels,
+    listing_sync_events: listingSyncEvents,
+    listing_leads: listingLeads,
     owner_accounts: ownerAccounts,
     management_assignments: managementAssignments,
     student_housing_configs: student.student_housing_configs,

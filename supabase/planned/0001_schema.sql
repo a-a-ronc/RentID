@@ -1069,3 +1069,111 @@ create trigger turn_tasks_touch before update on public.turn_tasks
   for each row execute function public.touch_updated_at();
 create trigger student_maintenance_cases_touch before update on public.student_maintenance_cases
   for each row execute function public.touch_updated_at();
+
+-- ============================================================
+-- Listing syndication (review only, not applied)
+-- One listing inside RentID is the source of truth; each supported
+-- marketplace gets a channel row describing its distribution state.
+-- ============================================================
+
+alter table public.listings
+  add column if not exists public_ref text unique,
+  add column if not exists property_type text,
+  add column if not exists street_address text,
+  add column if not exists city text,
+  add column if not exists state text,
+  add column if not exists zip text,
+  add column if not exists bedrooms numeric(4,1),
+  add column if not exists bathrooms numeric(4,1),
+  add column if not exists square_feet integer,
+  add column if not exists photos text[] not null default '{}',
+  add column if not exists utilities_included text[] not null default '{}',
+  add column if not exists pet_policy text,
+  add column if not exists parking text,
+  add column if not exists application_requirements text[] not null default '{}',
+  add column if not exists income_requirement text,
+  add column if not exists credit_requirement text,
+  add column if not exists occupancy_limit integer,
+  add column if not exists application_fee numeric(10,2),
+  add column if not exists move_in_fees text,
+  add column if not exists contact_name text,
+  add column if not exists contact_email text,
+  add column if not exists contact_phone text,
+  add column if not exists showing_instructions text,
+  add column if not exists assigned_to uuid references auth.users(id),
+  add column if not exists view_count integer not null default 0;
+
+create index if not exists listings_public_ref_idx on public.listings (public_ref);
+
+create table if not exists public.listing_channels (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  channel text not null check (channel in ('rentid','zillow','apartments_com','other')),
+  -- 'integration_pending' means RentID has no authorized API/feed yet:
+  -- nothing is ever posted to that marketplace from this row.
+  connection_status text not null default 'integration_pending'
+    check (connection_status in ('connected','integration_pending','disconnected','error')),
+  listing_status text not null default 'not_published'
+    check (listing_status in ('not_published','queued','live','paused','removed','error')),
+  enabled boolean not null default false,
+  external_listing_id text,
+  external_url text,
+  last_synced_at timestamptz,
+  last_error text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (listing_id, channel)
+);
+grant select, insert, update, delete on public.listing_channels to authenticated;
+grant select on public.listing_channels to anon;
+grant all on public.listing_channels to service_role;
+alter table public.listing_channels enable row level security;
+
+create table if not exists public.listing_sync_events (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  channel text not null,
+  action text not null check (action in ('create','update','pause','resume','remove','resync')),
+  result text not null check (result in ('success','pending_integration','failed','skipped')),
+  message text,
+  created_at timestamptz not null default now()
+);
+grant select, insert on public.listing_sync_events to authenticated;
+grant all on public.listing_sync_events to service_role;
+alter table public.listing_sync_events enable row level security;
+
+create table if not exists public.listing_leads (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  source text not null default 'direct_link',
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  referrer text,
+  email text,
+  phone text,
+  converted_application_id uuid references public.rental_applications(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update on public.listing_leads to authenticated;
+grant all on public.listing_leads to service_role;
+alter table public.listing_leads enable row level security;
+create index if not exists listing_leads_listing_idx on public.listing_leads (listing_id, created_at desc);
+
+alter table public.rental_applications
+  add column if not exists source text not null default 'rentid',
+  add column if not exists utm_source text,
+  add column if not exists utm_campaign text,
+  add column if not exists referrer text,
+  add column if not exists prefilled_from_resume boolean not null default false,
+  add column if not exists employer text,
+  add column if not exists current_address text,
+  add column if not exists references_text text;
+
+create index if not exists listing_channels_listing_idx on public.listing_channels (listing_id);
+create index if not exists listing_sync_events_listing_idx on public.listing_sync_events (listing_id, created_at desc);
+
+create trigger listing_channels_touch before update on public.listing_channels
+  for each row execute function public.touch_updated_at();

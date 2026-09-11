@@ -12,6 +12,7 @@ export * from "./tenancies";
 export * from "./finance";
 export * from "./operations";
 export * from "./marketplace";
+export * from "./syndication";
 export * from "./management";
 export * from "./student";
 export { resetDb as resetDemoData } from "@/lib/mock/db";
