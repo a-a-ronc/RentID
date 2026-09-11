@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { PublicGrid, PublicHero, PublicShell } from "@/components/rentid/PublicShell";
 
-const TITLE = "RentID for landlords — make your life cheaper, and easier. Rent through RentID";
+const TITLE = "RentID for landlords — simplify your portfolio, maximize your potential";
 const DESCRIPTION =
   "Every property, every unit, neatly organized and monitored for free. Easily manage your entire portfolio, even from your phone.";
 
@@ -25,7 +25,12 @@ function ForLandlords() {
     <PublicShell>
       <PublicHero
         eyebrow="For landlords"
-        title="Make your life cheaper, and easier. Rent through RentID"
+        title={
+          <>
+            Simplify your portfolio, maximize your potential. Rent through{" "}
+            <span className="text-accent">RentID</span>
+          </>
+        }
         body="Every property, every unit, neatly organized and monitored for free. Easily manage your entire portfolio, even from your phone."
         primary={{ to: "/auth", label: "Start with a demo portfolio" }}
         secondary={{ to: "/for-property-managers", label: "I manage for owners" }}
@@ -46,7 +51,7 @@ function ForLandlords() {
               },
               {
                 title: "Listings and applications",
-                body: "Publish a vacancy through RentID and RentID will publish to all the major sites. Then applications come back through RentID, so you can receive applicants with verified rental history and income and make your decision, all in one place.",
+                body: "Publish a vacancy through RentID, and RentID will publish your listing to other the major sites. Then applications come back through RentID, so you can receive applicants with verified rental history and income and make your decision, all in one place.",
               },
               {
                 title: "Maintenance and evidence",
