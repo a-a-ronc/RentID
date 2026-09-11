@@ -116,7 +116,9 @@ function PublicListing() {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <Link to="/apply/$listingRef" params={{ listingRef: l.public_ref ?? l.id }}>
+          <Link to="/apply/$listingRef" params={{ listingRef: l.public_ref ?? l.id }}
+            search={{ source: "rentid", utm_source: null, utm_campaign: null, utm_medium: null }}
+          >
             <Button>Apply for this property</Button>
           </Link>
           {l.provider ? (
@@ -206,7 +208,9 @@ function PublicListing() {
             application — verified rent payments, past addresses, landlord history and income.
           </p>
           <div className="mt-3">
-            <Link to="/apply/$listingRef" params={{ listingRef: l.public_ref ?? l.id }}>
+            <Link to="/apply/$listingRef" params={{ listingRef: l.public_ref ?? l.id }}
+            search={{ source: "rentid", utm_source: null, utm_campaign: null, utm_medium: null }}
+          >
               <Button>Apply for this property</Button>
             </Link>
           </div>
