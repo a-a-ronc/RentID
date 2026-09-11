@@ -1,7 +1,10 @@
 /** Organizations, properties and units. Mock-backed; Supabase-shaped. */
 import { clone, commit, getDb, latency, logAudit, nowIso, uuid } from "@/lib/mock/db";
+import { openPropertyClaim } from "@/lib/services/verification";
+import { findDuplicateProperty, normalizeAddress } from "@/lib/verification/address";
 import type {
   ManagementCategory,
+  PropertyClaimRelationship,
   Organization,
   OrganizationKind,
   Property,
@@ -125,8 +128,25 @@ export async function createProperty(input: {
   zip: string;
   yearBuilt?: number | null;
   notes?: string | null;
+  /* ---- property identification for ownership verification ---- */
+  county?: string | null;
+  parcelNumber?: string | null;
+  recordingJurisdiction?: string | null;
+  /**
+   * Answer to "What is your relationship to this property?". Opens a
+   * property-specific verification case; it never grants a badge by itself.
+   */
+  claimRelationship?: PropertyClaimRelationship;
+  claimedOwnerName?: string | null;
 }): Promise<Property> {
   const now = nowIso();
+  const db = getDb();
+  // Reuse the canonical property when the same address already exists.
+  const duplicate = findDuplicateProperty(
+    db.properties.filter(notDeleted).filter((p) => p.organization_id === input.organizationId),
+    { street_address: input.streetAddress, city: input.city, state: input.state, zip: input.zip },
+  );
+  if (duplicate) throw new Error(`That address already exists in this workspace as "${duplicate.name}".`);
   const property: Property = {
     id: uuid(),
     organization_id: input.organizationId,
@@ -140,6 +160,16 @@ export async function createProperty(input: {
     zip: input.zip.trim(),
     year_built: input.yearBuilt ?? null,
     notes: input.notes?.trim() || null,
+    normalized_address: normalizeAddress({
+      street_address: input.streetAddress,
+      city: input.city,
+      state: input.state,
+      zip: input.zip,
+    }),
+    county: input.county?.trim() || null,
+    parcel_number: input.parcelNumber?.trim() || null,
+    recording_jurisdiction: input.recordingJurisdiction?.trim() || null,
+    legal_description: null,
     created_at: now,
     updated_at: now,
     deleted_at: null,
@@ -153,6 +183,16 @@ export async function createProperty(input: {
     entity_id: property.id,
     metadata: { name: property.name },
   });
+
+  if (input.claimRelationship) {
+    openPropertyClaim({
+      property,
+      claimantUserId: input.actorId ?? null,
+      claimantName: input.claimedOwnerName?.trim() || null,
+      relationship: input.claimRelationship,
+      organizationId: input.organizationId,
+    });
+  }
   commit();
   return latency(clone(property), 240);
 }

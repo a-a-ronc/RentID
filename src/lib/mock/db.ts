@@ -52,6 +52,15 @@ import type {
   StudentMaintenanceCase,
   StudentPayment,
   TurnTask,
+  PropertyOwnershipRecord,
+  PropertyPartyRelationship,
+  RepresentativeAuthorization,
+  VerificationCase,
+  VerificationDisclosureAck,
+  VerificationEvidence,
+  VerificationRiskEvent,
+  VerificationStatusEvent,
+  VerifiedEntity,
 } from "@/lib/types";
 import { seedDatabase } from "@/lib/mock/seed";
 
@@ -107,9 +116,19 @@ export type MockDatabase = {
   approval_steps: ApprovalStep[];
   turn_tasks: TurnTask[];
   student_maintenance_cases: StudentMaintenanceCase[];
+  /* ---- property ownership & authorized-representative verification ---- */
+  verified_entities: VerifiedEntity[];
+  property_ownership_records: PropertyOwnershipRecord[];
+  property_party_relationships: PropertyPartyRelationship[];
+  verification_cases: VerificationCase[];
+  verification_evidence: VerificationEvidence[];
+  representative_authorizations: RepresentativeAuthorization[];
+  verification_acknowledgements: VerificationDisclosureAck[];
+  verification_risk_events: VerificationRiskEvent[];
+  verification_status_events: VerificationStatusEvent[];
 };
 
-const STORAGE_KEY = "rentid.mock.db.v4";
+const STORAGE_KEY = "rentid.mock.db.v5";
 
 let db: MockDatabase | null = null;
 const listeners = new Set<() => void>();

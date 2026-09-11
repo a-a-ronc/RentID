@@ -16,6 +16,7 @@ import { SOURCE_LABELS } from "@/components/rentid/listing-ui";
 import { useAuth, useProfile } from "@/lib/auth";
 import { money, fullDate } from "@/lib/format";
 import { useApplyToListing, useListingByRef, useRecordLead, useTenantPassport } from "@/lib/rentid";
+import { OwnershipNotice, useTrustGate } from "@/components/rentid/verification-ui";
 import type { LeadSource } from "@/lib/types";
 
 type ApplySearch = {
@@ -74,6 +75,7 @@ function ApplyPage() {
   const passport = useTenantPassport({ userId: user?.id ?? null, email: user?.email ?? null });
   const apply = useApplyToListing();
   const recordLead = useRecordLead();
+  const trust = useTrustGate(listing.data?.property_id ?? null, "application");
 
   const rawSource = search.source ?? "";
   const source: LeadSource = (SOURCES as string[]).includes(rawSource)
@@ -119,8 +121,15 @@ function ApplyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId]);
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!listing.data) return;
+    // A property with no verified ownership chain requires the one-time
+    // disclosure before the application is sent.
+    trust.guard(() => void send());
+  }
+
+  async function send() {
     if (!listing.data) return;
     await apply.mutateAsync({
       listingId: listing.data.id,
@@ -303,12 +312,19 @@ function ApplyPage() {
             </span>
           </label>
 
+          {trust.notice ? (
+            <div className="mt-4 rounded-2xl border border-border/70 px-3.5 py-3">
+              <OwnershipNotice />
+            </div>
+          ) : null}
+
           <div className="mt-5 flex justify-end">
             <Button type="submit" loading={apply.isPending} disabled={apply.isPending}>
               Submit application
             </Button>
           </div>
         </form>
+        {trust.dialog}
       </div>
     </PublicShell>
   );

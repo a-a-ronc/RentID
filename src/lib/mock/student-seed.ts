@@ -5,6 +5,7 @@
  * `seed.ts` stay exactly as tuned. Student properties are operated by the
  * property-management workspace under verified owner authority.
  */
+import { normalizeAddress } from "@/lib/verification/address";
 import type {
   AcademicTerm,
   ApprovalStep,
@@ -157,6 +158,11 @@ export function seedStudentHousing(input: {
     zip: p.zip,
     year_built: 1978 + i * 20,
     notes: null,
+    normalized_address: normalizeAddress(p),
+    county: "Washtenaw",
+    parcel_number: null,
+    recording_jurisdiction: "Washtenaw County Register of Deeds",
+    legal_description: null,
     created_at: created,
     updated_at: created,
     deleted_at: null,

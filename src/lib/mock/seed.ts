@@ -23,6 +23,8 @@ import type {
   Unit,
 } from "@/lib/types";
 import { seedStudentHousing } from "@/lib/mock/student-seed";
+import { normalizeAddress } from "@/lib/verification/address";
+import { seedVerification } from "@/lib/mock/verification-seed";
 
 const DEMO_PASSWORD = "demo1234";
 
@@ -77,6 +79,8 @@ const PROPERTIES = [
     zip: "48220",
     year_built: 1996,
     unitCount: 6,
+    county: "Oakland",
+    parcel_number: "25-24-101-004",
   },
   {
     name: "Cedar & Vine",
@@ -87,6 +91,8 @@ const PROPERTIES = [
     zip: "48067",
     year_built: 2004,
     unitCount: 5,
+    county: "Oakland",
+    parcel_number: "25-12-330-018",
   },
   {
     name: "Harbor Lofts",
@@ -97,6 +103,8 @@ const PROPERTIES = [
     zip: "48207",
     year_built: 2015,
     unitCount: 5,
+    county: "Wayne",
+    parcel_number: "13-002456.001",
   },
   {
     name: "Maple Court",
@@ -107,6 +115,8 @@ const PROPERTIES = [
     zip: "48072",
     year_built: 1988,
     unitCount: 3,
+    county: "Oakland",
+    parcel_number: "18-07-215-009",
   },
 ];
 
@@ -158,6 +168,11 @@ export function seedDatabase(): MockDatabase {
       zip: p.zip,
       year_built: p.year_built,
       notes: null,
+      normalized_address: normalizeAddress(p),
+      county: p.county,
+      parcel_number: p.parcel_number,
+      recording_jurisdiction: `${p.county} County Register of Deeds`,
+      legal_description: null,
       created_at: created,
       updated_at: created,
       deleted_at: null,
@@ -1148,6 +1163,13 @@ export function seedDatabase(): MockDatabase {
     approval_steps: student.approval_steps,
     turn_tasks: student.turn_tasks,
     student_maintenance_cases: student.student_maintenance_cases,
+    ...seedVerification({
+      landlordId: LANDLORD_ID,
+      managerId: MANAGER_ID,
+      orgId: ORG_ID,
+      pmOrgId: PM_ORG_ID,
+      propertyIds: properties.map((p) => p.id),
+    }),
   };
 }
 

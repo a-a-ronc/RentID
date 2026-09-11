@@ -77,3 +77,27 @@ partner listing syndication feeds, marketplace lease fees.
 ### Still deferred
 Live external posting until partner approval; Stripe/live payments; screening and
 background checks; reputation scoring.
+
+## Property Ownership & Authorized Representative Verification (mock mode, shipped)
+- Property-specific claims opened from the existing add-property flow (relationship,
+  legal owner name, county, parcel/APN, recording jurisdiction) with normalized-address
+  de-duplication so one address cannot be claimed twice in a workspace.
+- Three independent propositions tracked separately: property identity, claimant
+  identity, authority. No combined trust score.
+- Two positive public badges only: `Property Ownership Verified`,
+  `Authorized Representative for Property`. No "Unverified" badge — neutral text instead.
+- Providers (recorded documents, assessor/parcel, business registry, identity, document
+  authenticity) are abstracted and currently `not_configured`, so claims fail closed
+  into RentID review. Official APIs / manual review only.
+- Property-specific, permission-scoped, revocable representative authorizations.
+- One-time tenant disclosure before application, lease or payment on properties with no
+  verified chain; re-triggered when the payee or verification state changes.
+- Admin review queue `/admin/verification` with reasons, append-only history and risk
+  signals (rapid claims, reused documents) that suspend badges.
+- Planned SQL/RLS: `supabase/planned/0003_property_verification.sql` and
+  `0004_property_verification_rls.sql`. Evidence lives in a private bucket.
+- Tenancy verification stays a separate concept from ownership and authority.
+
+### Still deferred
+Live provider integrations, production badges (never from mock data), Stripe/live
+payments, screening and background checks, reputation scoring.

@@ -14,6 +14,9 @@ import type { ManagementCategory } from "@/lib/student-types";
 /** Student-housing vertical models live in their own module. */
 export type * from "@/lib/student-types";
 
+/** Property ownership / authorized-representative verification models. */
+export type * from "@/lib/verification-types";
+
 /** ISO-8601 timestamp, e.g. 2026-09-04T01:39:00.000Z */
 export type Timestamp = string;
 /** ISO date (no time), e.g. 2026-09-04 */
@@ -81,6 +84,14 @@ export type Property = {
   zip: string;
   year_built: number | null;
   notes: string | null;
+  /* ---- property identification for ownership verification (additive) ---- */
+  /** Canonical address key so "Alger Ave" and "Alger Avenue" resolve as one. */
+  normalized_address: string | null;
+  county: string | null;
+  /** Parcel / APN / PIN / folio number. */
+  parcel_number: string | null;
+  recording_jurisdiction: string | null;
+  legal_description: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
   deleted_at: Timestamp | null;

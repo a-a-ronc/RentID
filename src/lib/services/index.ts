@@ -15,5 +15,6 @@ export * from "./marketplace";
 export * from "./syndication";
 export * from "./management";
 export * from "./student";
+export * from "./verification";
 export { resetDb as resetDemoData } from "@/lib/mock/db";
 export { DEMO_ACCOUNTS } from "@/lib/mock/seed";

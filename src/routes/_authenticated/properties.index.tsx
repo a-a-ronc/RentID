@@ -21,7 +21,8 @@ import {
 } from "@/components/rentid/patterns";
 import { money } from "@/lib/format";
 import { useActiveOrg, useCreateProperty, useProperties } from "@/lib/rentid";
-import type { PropertyType } from "@/lib/types";
+import { CLAIM_LABELS } from "@/lib/services/verification";
+import type { PropertyClaimRelationship, PropertyType } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/properties/")({
   head: () => ({
@@ -49,6 +50,11 @@ function AddPropertyModal({ orgId }: { orgId: string | null }) {
     state: "",
     zip: "",
     propertyType: "multi_family" as PropertyType,
+    relationship: "individual_owner" as PropertyClaimRelationship,
+    county: "",
+    parcelNumber: "",
+    recordingJurisdiction: "",
+    claimedOwnerName: "",
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -64,10 +70,27 @@ function AddPropertyModal({ orgId }: { orgId: string | null }) {
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
         zip: form.zip.trim(),
+        county: form.county.trim() || null,
+        parcelNumber: form.parcelNumber.trim() || null,
+        recordingJurisdiction: form.recordingJurisdiction.trim() || null,
+        claimRelationship: form.relationship,
+        claimedOwnerName: form.claimedOwnerName.trim() || null,
       });
       toast.success("Property added.");
       setOpen(false);
-      setForm({ name: "", streetAddress: "", city: "", state: "", zip: "", propertyType: "multi_family" });
+      setForm({
+        name: "",
+        streetAddress: "",
+        city: "",
+        state: "",
+        zip: "",
+        propertyType: "multi_family",
+        relationship: "individual_owner",
+        county: "",
+        parcelNumber: "",
+        recordingJurisdiction: "",
+        claimedOwnerName: "",
+      });
       void navigate({ to: "/properties/$propertyId", params: { propertyId: property.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not add the property.");
@@ -124,6 +147,53 @@ function AddPropertyModal({ orgId }: { orgId: string | null }) {
               ))}
             </Select>
           </Field>
+          <Field
+            label="Your relationship to this property"
+            htmlFor="p-rel"
+            hint="RentID verifies ownership property by property. Nothing is claimed on your behalf."
+          >
+            <Select id="p-rel" value={form.relationship} onChange={(e) => set("relationship", e.target.value)}>
+              {(Object.keys(CLAIM_LABELS) as PropertyClaimRelationship[]).map((key) => (
+                <option key={key} value={key}>
+                  {CLAIM_LABELS[key]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field
+            label={
+              form.relationship === "individual_owner"
+                ? "Name as it appears on the deed"
+                : "Legal owner name (entity, trust or person)"
+            }
+            htmlFor="p-owner"
+          >
+            <TextInput
+              id="p-owner"
+              value={form.claimedOwnerName}
+              onChange={(e) => set("claimedOwnerName", e.target.value)}
+              placeholder={form.relationship === "individual_owner" ? "Jordan A. Lucas" : "Lucas Holding Co. LLC"}
+            />
+          </Field>
+          <FormGrid>
+            <Field label="County" htmlFor="p-county" hint="Used to locate the recorded deed">
+              <TextInput id="p-county" value={form.county} onChange={(e) => set("county", e.target.value)} />
+            </Field>
+            <Field label="Parcel / APN / PIN / folio" htmlFor="p-parcel">
+              <TextInput id="p-parcel" value={form.parcelNumber} onChange={(e) => set("parcelNumber", e.target.value)} />
+            </Field>
+          </FormGrid>
+          <Field label="Recording jurisdiction" htmlFor="p-jur" hint="Optional — register of deeds or recorder's office">
+            <TextInput
+              id="p-jur"
+              value={form.recordingJurisdiction}
+              onChange={(e) => set("recordingJurisdiction", e.target.value)}
+            />
+          </Field>
+          <p className="text-[12px] text-muted-foreground">
+            Adding a property does not verify ownership. RentID reviews the recorded deed and supporting
+            records before any public badge appears.
+          </p>
           <Button type="submit" loading={createProperty.isPending} className="w-full">
             Save property
           </Button>

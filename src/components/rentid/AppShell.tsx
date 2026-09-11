@@ -118,14 +118,18 @@ export function AppShell({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const profile = useProfile();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const activeRole: ShellRole = role ?? (subtitle === "Tenant" ? "tenant" : "landlord");
-  const desktopNav =
+  const baseNav =
     activeRole === "tenant" ? TENANT_NAV : activeRole === "manager" ? MANAGER_NAV : LANDLORD_NAV;
+  // Administrators get the ownership review queue alongside their workspace.
+  const desktopNav = roles.includes("admin")
+    ? [...baseNav, { to: "/admin/verification", label: "Ownership review", icon: ShieldCheck } as NavItem]
+    : baseNav;
   const mobilePrimary =
     activeRole === "tenant" ? TENANT_MOBILE : activeRole === "manager" ? MANAGER_MOBILE : LANDLORD_MOBILE;
   const moreItems =
