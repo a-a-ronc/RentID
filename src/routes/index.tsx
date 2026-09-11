@@ -30,12 +30,12 @@ const FEATURES = [
   {
     icon: BadgeCheck,
     title: "Verified tenancies",
-    body: "Both sides confirm the lease before it counts. Every trust signal names its source and evidence.",
+    body: "Upload your lease, verify your identity, and start building your RentID.",
   },
   {
     icon: Building2,
     title: "Portfolio clarity",
-    body: "Properties, units, leases and documents in one ledger — every unit has a status and a number.",
+    body: "Properties, units, leases, documents, maintenance requests, and deductions all organized in a simple way to manage.",
   },
   {
     icon: Wallet,
@@ -62,7 +62,7 @@ const AUDIENCES = [
   },
   {
     to: "/for-property-managers",
-    label: "I manage for owners",
+    label: "I am a property manager",
     body: "Owner-granted authority, portfolio KPIs and reporting your owners can see for themselves.",
   },
 ] as const;
@@ -73,11 +73,17 @@ function Landing() {
       <section className="pt-6 pb-14 sm:pt-14">
         <Eyebrow>Rental trust, built in</Eyebrow>
         <h1 className="mt-3 max-w-2xl font-display text-[40px] leading-[1.05] font-bold tracking-tight sm:text-6xl">
-          Every renter deserves a <span className="text-accent">verified</span> record.
+          Everything renting in one place.
         </h1>
         <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-          RentID is the rental identity network. Verified tenancies, leases and rent history —
-          shared between renters, landlords and managers, not locked in anyone's inbox.
+          RentID is the free, all-in-one rental platform built to make life easier for tenants,
+          landlords, and property managers.
+        </p>
+        <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+          Build a verified rental history that goes beyond your credit score and creates a rental
+          resume you can carry from home to home. Pay rent, build credit through positive rent
+          reporting, submit maintenance requests, split rent and utilities with roommates, and keep
+          your leases, payments, and rental records organized in one place.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link
