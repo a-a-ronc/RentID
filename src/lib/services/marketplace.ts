@@ -249,6 +249,24 @@ export async function getListings(orgId: UUID | null): Promise<ListingWithContex
   return latency(clone(rows));
 }
 
+export async function getManagedListings(pmOrgId: UUID | null): Promise<ListingWithContext[]> {
+  if (!pmOrgId) return [];
+  const db = getDb();
+  // A manager's leasing desk covers every property assigned to them, whichever
+  // owner organization the listing itself belongs to.
+  const managedPropertyIds = new Set(
+    db.management_assignments
+      .filter((a) => a.organization_id === pmOrgId && !a.revoked_at)
+      .map((a) => a.property_id),
+  );
+  const rows = db.listings
+    .filter(alive)
+    .filter((l) => l.organization_id === pmOrgId || managedPropertyIds.has(l.property_id))
+    .map(hydrateListing)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return latency(clone(rows));
+}
+
 export async function createListing(input: {
   organizationId: UUID;
   propertyId: UUID;
