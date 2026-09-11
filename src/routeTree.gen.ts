@@ -27,6 +27,7 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReviewsRouteImport } from './routes/_authenticated/reviews'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTenantRouteImport } from './routes/_authenticated/tenant'
+import { Route as ListingListingRefRouteImport } from './routes/listing.$listingRef'
 import { Route as ProvidersOrgIdRouteImport } from './routes/providers.$orgId'
 import { Route as RentIndexRouteImport } from './routes/rent.index'
 import { Route as RentListingIdRouteImport } from './routes/rent.$listingId'
@@ -147,6 +148,11 @@ const AuthenticatedTenantRoute = AuthenticatedTenantRouteImport.update({
   id: '/tenant',
   path: '/tenant',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ListingListingRefRoute = ListingListingRefRouteImport.update({
+  id: '/listing/$listingRef',
+  path: '/listing/$listingRef',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProvidersOrgIdRoute = ProvidersOrgIdRouteImport.update({
   id: '/providers/$orgId',
@@ -336,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/reviews': typeof AuthenticatedReviewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tenant': typeof AuthenticatedTenantRouteWithChildren
+  '/listing/$listingRef': typeof ListingListingRefRoute
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent/': typeof RentIndexRoute
@@ -382,6 +389,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/reviews': typeof AuthenticatedReviewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/listing/$listingRef': typeof ListingListingRefRoute
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent': typeof RentIndexRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/_authenticated/reviews': typeof AuthenticatedReviewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tenant': typeof AuthenticatedTenantRouteWithChildren
+  '/listing/$listingRef': typeof ListingListingRefRoute
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent/': typeof RentIndexRoute
@@ -482,6 +491,7 @@ export interface FileRouteTypes {
     | '/reviews'
     | '/settings'
     | '/tenant'
+    | '/listing/$listingRef'
     | '/providers/$orgId'
     | '/rent/$listingId'
     | '/rent/'
@@ -528,6 +538,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/reviews'
     | '/settings'
+    | '/listing/$listingRef'
     | '/providers/$orgId'
     | '/rent/$listingId'
     | '/rent'
@@ -577,6 +588,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reviews'
     | '/_authenticated/settings'
     | '/_authenticated/tenant'
+    | '/listing/$listingRef'
     | '/providers/$orgId'
     | '/rent/$listingId'
     | '/rent/'
@@ -615,6 +627,7 @@ export interface RootRouteChildren {
   ForLandlordsRoute: typeof ForLandlordsRoute
   ForPropertyManagersRoute: typeof ForPropertyManagersRoute
   ForTenantsRoute: typeof ForTenantsRoute
+  ListingListingRefRoute: typeof ListingListingRefRoute
   ProvidersOrgIdRoute: typeof ProvidersOrgIdRoute
   RentListingIdRoute: typeof RentListingIdRoute
   RentIndexRoute: typeof RentIndexRoute
@@ -747,6 +760,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tenant'
       preLoaderRoute: typeof AuthenticatedTenantRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/listing/$listingRef': {
+      id: '/listing/$listingRef'
+      path: '/listing/$listingRef'
+      fullPath: '/listing/$listingRef'
+      preLoaderRoute: typeof ListingListingRefRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/providers/$orgId': {
       id: '/providers/$orgId'
@@ -1069,6 +1089,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForLandlordsRoute: ForLandlordsRoute,
   ForPropertyManagersRoute: ForPropertyManagersRoute,
   ForTenantsRoute: ForTenantsRoute,
+  ListingListingRefRoute: ListingListingRefRoute,
   ProvidersOrgIdRoute: ProvidersOrgIdRoute,
   RentListingIdRoute: RentListingIdRoute,
   RentIndexRoute: RentIndexRoute,
