@@ -428,6 +428,10 @@ const MARKETPLACE_KEYS = [
   "managed-properties",
   "owner-accounts",
   "pm-metrics",
+  "listing-by-ref",
+  "listing-distribution",
+  "listing-leads",
+  "listing-sources",
 ];
 
 export function useInvalidateMarketplace() {
@@ -557,6 +561,74 @@ export function useUpdateListingStatus() {
   return useMutation({
     mutationFn: ({ listingId, status }: { listingId: UUID; status: ListingStatus }) =>
       svc.updateListingStatus(listingId, status, user?.id ?? null),
+    onSuccess: invalidate,
+  });
+}
+
+/* ------------------------- listing syndication ---------------------------- */
+
+/** Public listing by its short reference (rentid.online/listing/<ref>). */
+export function useListingByRef(ref: string) {
+  return useQuery({ queryKey: ["listing-by-ref", ref], queryFn: () => svc.getListingByRef(ref) });
+}
+
+/** Channel states plus the sync history for one listing. */
+export function useListingDistribution(listingId: UUID | null) {
+  return useQuery({
+    queryKey: ["listing-distribution", listingId],
+    enabled: Boolean(listingId),
+    queryFn: () => svc.getDistribution(listingId as UUID),
+  });
+}
+
+export function useSetChannelEnabled() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: (input: { listingId: UUID; marketplaceId: string; enabled: boolean }) =>
+      svc.setChannelEnabled({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useResyncChannel() {
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: (input: { listingId: UUID; marketplaceId: string }) => svc.resyncChannel(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateListing() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: (input: { listingId: UUID; patch: Parameters<typeof svc.updateListing>[0]["patch"] }) =>
+      svc.updateListing({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useListingLeads(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["listing-leads", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getLeads(orgId),
+  });
+}
+
+export function useListingSources(orgId: UUID | null) {
+  return useQuery({
+    queryKey: ["listing-sources", orgId],
+    enabled: Boolean(orgId),
+    queryFn: () => svc.getSourceBreakdown(orgId),
+  });
+}
+
+export function useRecordLead() {
+  const invalidate = useInvalidateMarketplace();
+  return useMutation({
+    mutationFn: (input: Parameters<typeof svc.recordLead>[0]) => svc.recordLead(input),
     onSuccess: invalidate,
   });
 }
