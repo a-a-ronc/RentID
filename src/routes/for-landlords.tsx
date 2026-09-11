@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { PublicGrid, PublicHero, PublicShell } from "@/components/rentid/PublicShell";
 
-const TITLE = "RentID for landlords — verified tenants, reconciled rent, one ledger";
+const TITLE = "RentID for landlords — make your life cheaper, and easier. Rent through RentID";
 const DESCRIPTION =
-  "List units, review verified applicants, reconcile rent per unit, track maintenance and build an operating reputation you own.";
+  "Every property, every unit, neatly organized and monitored for free. Easily manage your entire portfolio, even from your phone.";
 
 export const Route = createFileRoute("/for-landlords")({
   head: () => ({
@@ -25,18 +25,14 @@ function ForLandlords() {
     <PublicShell>
       <PublicHero
         eyebrow="For landlords"
-        title={
-          <>
-            Rent that reconciles. Tenants that <span className="text-accent">check out</span>.
-          </>
-        }
-        body="Every unit has a status and a number. Applicants arrive with verified rental history instead of a PDF of promises, and your own operating record travels with your properties."
+        title="Make your life cheaper, and easier. Rent through RentID"
+        body="Every property, every unit, neatly organized and monitored for free. Easily manage your entire portfolio, even from your phone."
         primary={{ to: "/auth", label: "Start with a demo portfolio" }}
         secondary={{ to: "/for-property-managers", label: "I manage for owners" }}
       />
 
       <section className="pb-12">
-        <h2 className="font-display text-[19px] font-semibold tracking-tight">Run the portfolio</h2>
+        <h2 className="font-display text-[19px] font-semibold tracking-tight">Run your Portfolio</h2>
         <div className="mt-4">
           <PublicGrid
             items={[
@@ -50,11 +46,11 @@ function ForLandlords() {
               },
               {
                 title: "Listings and applications",
-                body: "Publish a vacancy, receive applications with verified rental history attached, decide in one place.",
+                body: "Publish a vacancy through RentID and RentID will publish to all the major sites. Then applications come back through RentID, so you can receive applicants with verified rental history and income and make your decision, all in one place.",
               },
               {
                 title: "Maintenance and evidence",
-                body: "Work orders with priority, response time and a closing record you can point to later.",
+                body: "Work orders with priority, response time and a closing record. Before and after pictures and proofs, all recorded and organized for you to point to later.",
               },
             ]}
           />
@@ -71,11 +67,11 @@ function ForLandlords() {
             items={[
               {
                 title: "Claim your property",
-                body: "Ownership is verified before badges, listings or payout changes activate.",
+                body: "Ownership is verified through identification to avoid scams or fraudulent activity",
               },
               {
                 title: "Confirm the tenancy",
-                body: "Both sides confirm the lease. Reputation only builds on verified tenancies.",
+                body: "For properties you have claimed, both sides confirm the lease. Reputation only builds on verified tenancies.",
               },
               {
                 title: "Show your record",
