@@ -4,7 +4,7 @@ import { PublicGrid, PublicHero, PublicShell } from "@/components/rentid/PublicS
 
 const TITLE = "RentID for tenants — rent, receipts and a rental record you own";
 const DESCRIPTION =
-  "Pay rent, keep verified receipts, store your lease and carry a portable rental record to your next application.";
+  "Manage everything with your apartment through one app, while building credit and rental history. Rent paid through RentID becomes verified history: receipts you can show, lease at the ready, a rental profile you can share with your next landlord.";
 
 export const Route = createFileRoute("/for-tenants")({
   head: () => ({
@@ -27,10 +27,10 @@ function ForTenants() {
         eyebrow="For tenants"
         title={
           <>
-            Your rent history should <span className="text-accent">belong to you</span>.
+            Your rent history should <span className="text-accent">work for you</span>.
           </>
         }
-        body="Rent paid through RentID becomes verified history: receipts you can show, a lease you can find, and a rental profile you can share with your next landlord."
+        body="Manage everything with your apartment through one app, while building credit and rental history. Rent paid through RentID becomes verified history: receipts you can show, lease at the ready, a rental profile you can share with your next landlord. Also, only on-time rent payments get reported to your credit score, to help protect and build credit outside RentID."
         primary={{ to: "/auth", label: "Create your RentID" }}
         secondary={{ to: "/rent", label: "Browse rentals" }}
       />
@@ -47,7 +47,7 @@ function ForTenants() {
               },
               {
                 title: "2. Connect your tenancy",
-                body: "Your landlord confirms the address, rent and lease dates. Only confirmed tenancies count.",
+                body: "Have your landlord confirm your rental details, or upload an executed lease to get started without your landlord.",
               },
               {
                 title: "3. Build the record",
@@ -65,15 +65,15 @@ function ForTenants() {
             items={[
               {
                 title: "Receipts and payment history",
-                body: "A dated ledger of what you paid and when, labelled verified when both sides agree.",
+                body: "A dated ledger of what you paid and when, verified through RentID.",
               },
               {
                 title: "Lease and document vault",
-                body: "Your lease, addenda and notices in one place — not lost in an old email thread.",
+                body: "Your lease, addenda and notices in one place — not lost in an old email thread. Even request to sublease through RentID.",
               },
               {
                 title: "Maintenance with evidence",
-                body: "Report an issue with photos and keep the timestamped record of what was promised.",
+                body: "Report an issue with photos and keep the time stamped record of what was requested, and the time it took for it to be addressed.",
               },
               {
                 title: "A shareable rental profile",
