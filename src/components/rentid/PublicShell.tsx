@@ -11,6 +11,7 @@ const PUBLIC_NAV = [
   { to: "/for-tenants", label: "For tenants" },
   { to: "/for-landlords", label: "For landlords" },
   { to: "/for-property-managers", label: "For property managers" },
+  { to: "/join", label: "Join RentID" },
 ];
 
 export function PublicShell({ children }: { children: ReactNode }) {

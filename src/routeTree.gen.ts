@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForLandlordsRouteImport } from './routes/for-landlords'
 import { Route as ForPropertyManagersRouteImport } from './routes/for-property-managers'
 import { Route as ForTenantsRouteImport } from './routes/for-tenants'
+import { Route as JoinRouteImport } from './routes/join'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -33,6 +34,7 @@ import { Route as ListingListingRefRouteImport } from './routes/listing.$listing
 import { Route as ProvidersOrgIdRouteImport } from './routes/providers.$orgId'
 import { Route as RentIndexRouteImport } from './routes/rent.index'
 import { Route as RentListingIdRouteImport } from './routes/rent.$listingId'
+import { Route as AuthenticatedAdminProspectsRouteImport } from './routes/_authenticated/admin.prospects'
 import { Route as AuthenticatedAdminVerificationRouteImport } from './routes/_authenticated/admin.verification'
 import { Route as AuthenticatedLeasesIndexRouteImport } from './routes/_authenticated/leases.index'
 import { Route as AuthenticatedLeasesLeaseIdRouteImport } from './routes/_authenticated/leases.$leaseId'
@@ -88,6 +90,11 @@ const ForPropertyManagersRoute = ForPropertyManagersRouteImport.update({
 const ForTenantsRoute = ForTenantsRouteImport.update({
   id: '/for-tenants',
   path: '/for-tenants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -182,6 +189,12 @@ const RentListingIdRoute = RentListingIdRouteImport.update({
   path: '/rent/$listingId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminProspectsRoute =
+  AuthenticatedAdminProspectsRouteImport.update({
+    id: '/prospects',
+    path: '/prospects',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminVerificationRoute =
   AuthenticatedAdminVerificationRouteImport.update({
     id: '/verification',
@@ -349,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/join': typeof JoinRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -367,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent/': typeof RentIndexRoute
+  '/admin/prospects': typeof AuthenticatedAdminProspectsRoute
   '/admin/verification': typeof AuthenticatedAdminVerificationRoute
   '/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
   '/listings/$listingId': typeof AuthenticatedListingsListingIdRoute
@@ -401,6 +416,7 @@ export interface FileRoutesByTo {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/join': typeof JoinRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -417,6 +433,7 @@ export interface FileRoutesByTo {
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent': typeof RentIndexRoute
+  '/admin/prospects': typeof AuthenticatedAdminProspectsRoute
   '/admin/verification': typeof AuthenticatedAdminVerificationRoute
   '/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
   '/listings/$listingId': typeof AuthenticatedListingsListingIdRoute
@@ -453,6 +470,7 @@ export interface FileRoutesById {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/join': typeof JoinRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -471,6 +489,7 @@ export interface FileRoutesById {
   '/providers/$orgId': typeof ProvidersOrgIdRoute
   '/rent/$listingId': typeof RentListingIdRoute
   '/rent/': typeof RentIndexRoute
+  '/_authenticated/admin/prospects': typeof AuthenticatedAdminProspectsRoute
   '/_authenticated/admin/verification': typeof AuthenticatedAdminVerificationRoute
   '/_authenticated/leases/$leaseId': typeof AuthenticatedLeasesLeaseIdRoute
   '/_authenticated/listings/$listingId': typeof AuthenticatedListingsListingIdRoute
@@ -507,6 +526,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/join'
     | '/admin'
     | '/applications'
     | '/dashboard'
@@ -525,6 +545,7 @@ export interface FileRouteTypes {
     | '/providers/$orgId'
     | '/rent/$listingId'
     | '/rent/'
+    | '/admin/prospects'
     | '/admin/verification'
     | '/leases/$leaseId'
     | '/listings/$listingId'
@@ -559,6 +580,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/join'
     | '/admin'
     | '/applications'
     | '/dashboard'
@@ -575,6 +597,7 @@ export interface FileRouteTypes {
     | '/providers/$orgId'
     | '/rent/$listingId'
     | '/rent'
+    | '/admin/prospects'
     | '/admin/verification'
     | '/leases/$leaseId'
     | '/listings/$listingId'
@@ -610,6 +633,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/join'
     | '/_authenticated/admin'
     | '/_authenticated/applications'
     | '/_authenticated/dashboard'
@@ -628,6 +652,7 @@ export interface FileRouteTypes {
     | '/providers/$orgId'
     | '/rent/$listingId'
     | '/rent/'
+    | '/_authenticated/admin/prospects'
     | '/_authenticated/admin/verification'
     | '/_authenticated/leases/$leaseId'
     | '/_authenticated/listings/$listingId'
@@ -664,6 +689,7 @@ export interface RootRouteChildren {
   ForLandlordsRoute: typeof ForLandlordsRoute
   ForPropertyManagersRoute: typeof ForPropertyManagersRoute
   ForTenantsRoute: typeof ForTenantsRoute
+  JoinRoute: typeof JoinRoute
   ApplyListingRefRoute: typeof ApplyListingRefRoute
   ListingListingRefRoute: typeof ListingListingRefRoute
   ProvidersOrgIdRoute: typeof ProvidersOrgIdRoute
@@ -713,6 +739,13 @@ declare module '@tanstack/react-router' {
       path: '/for-tenants'
       fullPath: '/for-tenants'
       preLoaderRoute: typeof ForTenantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -840,6 +873,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rent/$listingId'
       preLoaderRoute: typeof RentListingIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/prospects': {
+      id: '/_authenticated/admin/prospects'
+      path: '/prospects'
+      fullPath: '/admin/prospects'
+      preLoaderRoute: typeof AuthenticatedAdminProspectsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/verification': {
       id: '/_authenticated/admin/verification'
@@ -1034,10 +1074,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminProspectsRoute: typeof AuthenticatedAdminProspectsRoute
   AuthenticatedAdminVerificationRoute: typeof AuthenticatedAdminVerificationRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminProspectsRoute: AuthenticatedAdminProspectsRoute,
   AuthenticatedAdminVerificationRoute: AuthenticatedAdminVerificationRoute,
 }
 
@@ -1161,6 +1203,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForLandlordsRoute: ForLandlordsRoute,
   ForPropertyManagersRoute: ForPropertyManagersRoute,
   ForTenantsRoute: ForTenantsRoute,
+  JoinRoute: JoinRoute,
   ApplyListingRefRoute: ApplyListingRefRoute,
   ListingListingRefRoute: ListingListingRefRoute,
   ProvidersOrgIdRoute: ProvidersOrgIdRoute,
