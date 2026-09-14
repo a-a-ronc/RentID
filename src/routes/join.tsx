@@ -163,6 +163,8 @@ function RegistrationForm() {
   const [phone, setPhone] = useState("");
   const [wouldUse, setWouldUse] = useState<boolean | null>(null);
   const [roles, setRoles] = useState<InterestRole[]>([]);
+  const [currentUnits, setCurrentUnits] = useState("");
+  const [intendedUnits, setIntendedUnits] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
@@ -180,6 +182,12 @@ function RegistrationForm() {
     if (phone.replace(/\D/g, "").length !== 10) next["phone"] = "Enter a 10-digit U.S. phone number";
     if (wouldUse === null) next["would_use"] = "Please select Yes or No";
     if (roles.length === 0) next["roles"] = "Select at least one option";
+    if (managesUnits) {
+      if (!/^\d+$/.test(currentUnits.trim()) || Number(currentUnits) < 1)
+        next["current_units"] = "Enter a whole number of 1 or more";
+      if (intendedUnits.trim() !== "" && (!/^\d+$/.test(intendedUnits.trim()) || Number(intendedUnits) < 0))
+        next["intended_units"] = "Enter a whole number of 0 or more";
+    }
     if (!acknowledged) next["acknowledged"] = "Please acknowledge to continue";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -199,6 +207,9 @@ function RegistrationForm() {
           roles,
           would_use: wouldUse === true,
           acknowledged: true,
+          current_units: managesUnits ? Number(currentUnits) : null,
+          intended_units:
+            managesUnits && intendedUnits.trim() !== "" ? Number(intendedUnits) : null,
           update_existing: updateExisting,
         },
       })) as RegisterResult;
