@@ -128,7 +128,11 @@ export function AppShell({
     activeRole === "tenant" ? TENANT_NAV : activeRole === "manager" ? MANAGER_NAV : LANDLORD_NAV;
   // Administrators get the ownership review queue alongside their workspace.
   const desktopNav = roles.includes("admin")
-    ? [...baseNav, { to: "/admin/verification", label: "Ownership review", icon: ShieldCheck } as NavItem]
+    ? [
+        ...baseNav,
+        { to: "/admin/verification", label: "Ownership review", icon: ShieldCheck } as NavItem,
+        { to: "/admin/prospects", label: "Prospective users", icon: ClipboardList } as NavItem,
+      ]
     : baseNav;
   const mobilePrimary =
     activeRole === "tenant" ? TENANT_MOBILE : activeRole === "manager" ? MANAGER_MOBILE : LANDLORD_MOBILE;
