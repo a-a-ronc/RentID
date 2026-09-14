@@ -94,12 +94,6 @@ function Landing() {
             <ArrowRight className="size-4" />
           </Link>
           <Link
-            to="/rent"
-            className="glass rounded-full px-6 py-3 text-[14px] font-medium transition-opacity hover:opacity-90"
-          >
-            Find a verified rental
-          </Link>
-          <Link
             to="/join"
             className="glass rounded-full px-6 py-3 text-[14px] font-medium transition-opacity hover:opacity-90"
           >
