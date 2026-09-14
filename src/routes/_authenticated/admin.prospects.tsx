@@ -137,6 +137,43 @@ function AdminProspects() {
           }
         />
 
+        {!code || query.isError ? (
+          <Glass className="p-5">
+            <h2 className="font-display text-[15px] font-semibold tracking-tight">
+              Unlock prospective users
+            </h2>
+            <p className="mt-1.5 text-[12.5px] text-muted-foreground">
+              Registrations contain personal contact details, so the list is released server-side
+              only. Enter the administrator access code to view, filter and export it.
+            </p>
+            {query.isError ? (
+              <p className="mt-2 text-[12.5px] text-destructive">
+                That access code was not accepted.
+              </p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <Field label="Administrator access code" htmlFor="prospect-code" className="min-w-[240px]">
+                <TextInput
+                  id="prospect-code"
+                  type="password"
+                  autoComplete="off"
+                  value={codeDraft}
+                  onChange={(e) => setCodeDraft(e.target.value)}
+                />
+              </Field>
+              <Button
+                onClick={() => {
+                  window.sessionStorage.setItem(CODE_KEY, codeDraft);
+                  setCode(codeDraft);
+                }}
+                disabled={codeDraft.length === 0}
+              >
+                Unlock
+              </Button>
+            </div>
+          </Glass>
+        ) : null}
+
         {query.isLoading ? <LoadingCard label="Loading registrations…" /> : null}
 
         {stats ? (
