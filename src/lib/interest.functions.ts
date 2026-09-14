@@ -132,17 +132,18 @@ export type InterestStats = {
   this_month: number;
 };
 
-export const listInterestRegistrations = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ rows: InterestRegistration[]; stats: InterestStats }> => {
-    const { data: roleRow, error: roleError } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (roleError) throw new Error(roleError.message);
-    if (!roleRow) throw new Error("Administrator access only");
+/**
+ * Registrations are personal data, so the read is authorised server-side only.
+ * The app's session layer is still local (not real auth), so an administrator
+ * unlocks the list with the RENTID_ADMIN_ACCESS_CODE secret. Once real sessions
+ * land, an admin bearer token authorises without the code.
+ */
+export const listInterestRegistrations = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ access_code: z.string().max(200).optional() }).parse(data ?? {}))
+  .handler(async ({ data }): Promise<{ rows: InterestRegistration[]; stats: InterestStats }> => {
+    const expected = process.env["RENTID_ADMIN_ACCESS_CODE"];
+    const authorised = Boolean(expected && data.access_code && data.access_code === expected);
+    if (!authorised) throw new Error("Administrator access only");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
