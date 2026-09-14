@@ -9,8 +9,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
 export const INTEREST_ROLES = ["renter", "landlord", "property_manager", "other"] as const;
 export type InterestRole = (typeof INTEREST_ROLES)[number];
 
