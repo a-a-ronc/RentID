@@ -85,6 +85,8 @@ function AdminProspects() {
       "phone",
       "user_roles",
       "would_use_rentid",
+      "current_rental_units_owned_or_managed",
+      "rental_units_intended_for_rentid",
       "acknowledgement_accepted",
       "submitted_date",
       "submitted_time",
@@ -99,6 +101,8 @@ function AdminProspects() {
         r.phone,
         r.roles.map((x) => ROLE_LABELS[x] ?? x).join(" | "),
         r.would_use ? "Yes" : "No",
+        r.current_units ?? "N/A",
+        r.intended_units ?? "N/A",
         r.acknowledged ? "Accepted" : "Not accepted",
         d.toISOString().slice(0, 10),
         d.toISOString().slice(11, 19),
@@ -106,7 +110,25 @@ function AdminProspects() {
         .map((v) => esc(String(v)))
         .join(",");
     });
-    const csv = [header.join(","), ...lines].join("\n");
+
+    const s = computeInterestStats(filtered);
+    const summary = [
+      "",
+      esc("REGISTRATION SUMMARY"),
+      [esc("Total registrations"), esc(String(s.total))].join(","),
+      [esc("Total Yes responses"), esc(String(s.yes))].join(","),
+      [esc("Total No responses"), esc(String(s.no))].join(","),
+      [esc("Total renters"), esc(String(s.renters))].join(","),
+      [esc("Total landlords"), esc(String(s.landlords))].join(","),
+      [esc("Total property managers"), esc(String(s.property_managers))].join(","),
+      [esc("Total current rental units represented"), esc(String(s.current_units_all))].join(","),
+      [
+        esc("Total rental units intended for RentID (Yes responses)"),
+        esc(String(s.intended_units_yes)),
+      ].join(","),
+    ];
+
+    const csv = [header.join(","), ...lines, ...summary].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
