@@ -163,6 +163,8 @@ function RegistrationForm() {
   const [phone, setPhone] = useState("");
   const [wouldUse, setWouldUse] = useState<boolean | null>(null);
   const [roles, setRoles] = useState<InterestRole[]>([]);
+  const [currentUnits, setCurrentUnits] = useState("");
+  const [intendedUnits, setIntendedUnits] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
@@ -173,6 +175,9 @@ function RegistrationForm() {
     setRoles((prev) => (prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]));
   }
 
+  /** Unit questions apply once to landlords and/or property managers. */
+  const managesUnits = roles.includes("landlord") || roles.includes("property_manager");
+
   function validate() {
     const next: Record<string, string> = {};
     if (fullName.trim().split(/\s+/).length < 2) next["full_name"] = "Enter your first and last name";
@@ -180,6 +185,12 @@ function RegistrationForm() {
     if (phone.replace(/\D/g, "").length !== 10) next["phone"] = "Enter a 10-digit U.S. phone number";
     if (wouldUse === null) next["would_use"] = "Please select Yes or No";
     if (roles.length === 0) next["roles"] = "Select at least one option";
+    if (managesUnits) {
+      if (!/^\d+$/.test(currentUnits.trim()) || Number(currentUnits) < 1)
+        next["current_units"] = "Enter a whole number of 1 or more";
+      if (intendedUnits.trim() !== "" && (!/^\d+$/.test(intendedUnits.trim()) || Number(intendedUnits) < 0))
+        next["intended_units"] = "Enter a whole number of 0 or more";
+    }
     if (!acknowledged) next["acknowledged"] = "Please acknowledge to continue";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -199,6 +210,9 @@ function RegistrationForm() {
           roles,
           would_use: wouldUse === true,
           acknowledged: true,
+          current_units: managesUnits ? Number(currentUnits) : null,
+          intended_units:
+            managesUnits && intendedUnits.trim() !== "" ? Number(intendedUnits) : null,
           update_existing: updateExisting,
         },
       })) as RegisterResult;
@@ -344,6 +358,45 @@ function RegistrationForm() {
             })}
           </div>
         </Field>
+
+        {managesUnits ? (
+          <div className="grid gap-4 rounded-2xl border border-brand/30 bg-brand/5 p-4 sm:grid-cols-2">
+            <Field
+              label="How many rental units do you currently own or manage?"
+              htmlFor="join-current-units"
+              error={errors["current_units"] ?? null}
+            >
+              <TextInput
+                id="join-current-units"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step={1}
+                placeholder="12"
+                value={currentUnits}
+                onChange={(e) => setCurrentUnits(e.target.value.replace(/\D/g, ""))}
+                required
+              />
+            </Field>
+            <Field
+              label="How many rental units would you intend to use RentID for once the platform is available?"
+              hint="Optional."
+              htmlFor="join-intended-units"
+              error={errors["intended_units"] ?? null}
+            >
+              <TextInput
+                id="join-intended-units"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                placeholder="12"
+                value={intendedUnits}
+                onChange={(e) => setIntendedUnits(e.target.value.replace(/\D/g, ""))}
+              />
+            </Field>
+          </div>
+        ) : null}
 
         <div className="rounded-2xl border border-border bg-card/60 p-4">
           <p className="text-[12.5px] leading-relaxed text-muted-foreground">{ACKNOWLEDGEMENT}</p>

@@ -20,6 +20,8 @@ export type InterestRegistration = {
   roles: string[];
   would_use: boolean;
   acknowledged: boolean;
+  current_units: number | null;
+  intended_units: number | null;
   submitted_at: string;
   created_at: string;
   updated_at: string;
@@ -29,7 +31,7 @@ export type RegisterResult =
   | { status: "created" | "updated" }
   | { status: "duplicate"; message: string };
 
-const registrationSchema = z.object({
+const baseSchema = z.object({
   full_name: z
     .string()
     .trim()
@@ -45,10 +47,24 @@ const registrationSchema = z.object({
   roles: z.array(z.enum(INTEREST_ROLES)).min(1, "Select at least one role"),
   would_use: z.boolean(),
   acknowledged: z.literal(true),
+  current_units: z.number().int().min(1).max(1000000).nullable().optional(),
+  intended_units: z.number().int().min(0).max(1000000).nullable().optional(),
   update_existing: z.boolean().optional(),
 });
 
-export type RegistrationInput = z.input<typeof registrationSchema>;
+/** Unit counts only apply to landlords / property managers. */
+const registrationSchema = baseSchema.superRefine((data, ctx) => {
+  const owns = data.roles.includes("landlord") || data.roles.includes("property_manager");
+  if (owns && (data.current_units === null || data.current_units === undefined)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["current_units"],
+      message: "Enter the number of rental units you own or manage",
+    });
+  }
+});
+
+export type RegistrationInput = z.input<typeof baseSchema>;
 
 export const registerInterest = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => registrationSchema.parse(data))
@@ -68,6 +84,13 @@ export const registerInterest = createServerFn({ method: "POST" })
         headers?.get("cf-connecting-ip") ??
         headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
         null,
+    };
+
+    const managesUnits =
+      data.roles.includes("landlord") || data.roles.includes("property_manager");
+    const units = {
+      current_units: managesUnits ? (data.current_units ?? null) : null,
+      intended_units: managesUnits ? (data.intended_units ?? null) : null,
     };
 
     const { data: existing } = await supabaseAdmin
@@ -95,6 +118,7 @@ export const registerInterest = createServerFn({ method: "POST" })
           acknowledged: true,
           submitted_at: new Date().toISOString(),
           submission_count: (existing.submission_count ?? 1) + 1,
+          ...units,
           ...metadata,
         })
         .eq("id", existing.id);
@@ -110,6 +134,7 @@ export const registerInterest = createServerFn({ method: "POST" })
       roles: data.roles,
       would_use: data.would_use,
       acknowledged: true,
+      ...units,
       ...metadata,
     });
     if (error) throw new Error(error.message);
@@ -128,6 +153,18 @@ export type InterestStats = {
   property_managers: number;
   this_week: number;
   this_month: number;
+  /** Registrations that are a landlord and/or property manager (counted once). */
+  unit_holders: number;
+  /** Current units owned/managed across all registrations. */
+  current_units_all: number;
+  /** Current units owned/managed by "yes" registrations. */
+  current_units_yes: number;
+  /** Intended units across all registrations (secondary figure). */
+  intended_units_all: number;
+  /** Primary metric: intended units from "yes" registrations only. */
+  intended_units_yes: number;
+  /** Average intended units per "yes" landlord/property manager. */
+  average_intended_units: number;
 };
 
 /**
@@ -146,28 +183,50 @@ export const listInterestRegistrations = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: registrations, error } = await supabaseAdmin
       .from("interest_registrations")
-      .select("id, full_name, email, phone, roles, would_use, acknowledged, submitted_at, created_at, updated_at")
+      .select(
+        "id, full_name, email, phone, roles, would_use, acknowledged, current_units, intended_units, submitted_at, created_at, updated_at",
+      )
       .order("submitted_at", { ascending: false });
     if (error) throw new Error(error.message);
 
     const rows = (registrations ?? []) as InterestRegistration[];
-    const now = Date.now();
-    const since = (days: number) => now - days * 24 * 60 * 60 * 1000;
-    const has = (r: InterestRegistration, role: InterestRole) => r.roles.includes(role);
-    const yes = rows.filter((r) => r.would_use).length;
-
-    return {
-      rows,
-      stats: {
-        total: rows.length,
-        yes,
-        no: rows.length - yes,
-        yes_percentage: rows.length ? Math.round((yes / rows.length) * 100) : 0,
-        renters: rows.filter((r) => has(r, "renter")).length,
-        landlords: rows.filter((r) => has(r, "landlord")).length,
-        property_managers: rows.filter((r) => has(r, "property_manager")).length,
-        this_week: rows.filter((r) => new Date(r.submitted_at).getTime() >= since(7)).length,
-        this_month: rows.filter((r) => new Date(r.submitted_at).getTime() >= since(30)).length,
-      },
-    };
+    return { rows, stats: computeInterestStats(rows) };
   });
+
+/**
+ * Shared stat maths so the dashboard, filtered views and the CSV summary all
+ * agree. A registration that is both landlord and property manager is counted
+ * once for unit totals; the primary intended-unit figure only counts "yes".
+ */
+export function computeInterestStats(rows: InterestRegistration[]): InterestStats {
+  const now = Date.now();
+  const since = (days: number) => now - days * 24 * 60 * 60 * 1000;
+  const has = (r: InterestRegistration, role: InterestRole) => r.roles.includes(role);
+  const yes = rows.filter((r) => r.would_use).length;
+
+  const holders = rows.filter((r) => has(r, "landlord") || has(r, "property_manager"));
+  const yesHolders = holders.filter((r) => r.would_use);
+  const sum = (list: InterestRegistration[], key: "current_units" | "intended_units") =>
+    list.reduce((acc, r) => acc + (r[key] ?? 0), 0);
+  const intendedYes = sum(yesHolders, "intended_units");
+
+  return {
+    total: rows.length,
+    yes,
+    no: rows.length - yes,
+    yes_percentage: rows.length ? Math.round((yes / rows.length) * 100) : 0,
+    renters: rows.filter((r) => has(r, "renter")).length,
+    landlords: rows.filter((r) => has(r, "landlord")).length,
+    property_managers: rows.filter((r) => has(r, "property_manager")).length,
+    this_week: rows.filter((r) => new Date(r.submitted_at).getTime() >= since(7)).length,
+    this_month: rows.filter((r) => new Date(r.submitted_at).getTime() >= since(30)).length,
+    unit_holders: holders.length,
+    current_units_all: sum(holders, "current_units"),
+    current_units_yes: sum(yesHolders, "current_units"),
+    intended_units_all: sum(holders, "intended_units"),
+    intended_units_yes: intendedYes,
+    average_intended_units: yesHolders.length
+      ? Math.round(intendedYes / yesHolders.length)
+      : 0,
+  };
+}
