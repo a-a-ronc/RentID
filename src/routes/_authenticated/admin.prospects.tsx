@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/admin/prospects")({
   head: () => ({
     meta: [{ title: "Prospective users — RentID" }, { name: "robots", content: "noindex" }],
   }),
-  component: AdminProspects;
+  component: AdminProspects,
 });
 
 const ROLE_LABELS: Record<string, string> = {
