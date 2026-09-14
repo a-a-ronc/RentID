@@ -45,6 +45,10 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   async function route(roles: AppRole[]) {
+    if (roles.includes("admin") && !roles.includes("landlord")) {
+      await navigate({ to: "/admin/prospects", replace: true });
+      return;
+    }
     if (roles.includes("property_manager") && !roles.includes("landlord")) {
       await navigate({ to: "/manager", replace: true });
       return;
@@ -87,13 +91,17 @@ function AuthPage() {
     }
   }
 
-  async function demoSignIn(kind: "landlord" | "tenant" | "manager" | "student") {
+  async function demoSignIn(kind: "landlord" | "tenant" | "manager" | "student" | "admin") {
     const account = DEMO_ACCOUNTS[kind];
     setBusy(true);
     try {
       const session = await authService.signIn(account.email, account.password);
       if (kind === "student") {
         await navigate({ to: "/tenant/housing", replace: true });
+        return;
+      }
+      if (kind === "admin") {
+        await navigate({ to: "/admin/prospects", replace: true });
         return;
       }
       await route(session.roles);
@@ -205,6 +213,9 @@ function AuthPage() {
               </Button>
               <Button tone="secondary" size="sm" onClick={() => void demoSignIn("student")} disabled={busy}>
                 Student demo
+              </Button>
+              <Button tone="secondary" size="sm" onClick={() => void demoSignIn("admin")} disabled={busy}>
+                Admin demo
               </Button>
             </div>
           </div>

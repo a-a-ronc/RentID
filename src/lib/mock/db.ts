@@ -128,7 +128,7 @@ export type MockDatabase = {
   verification_status_events: VerificationStatusEvent[];
 };
 
-const STORAGE_KEY = "rentid.mock.db.v5";
+const STORAGE_KEY = "rentid.mock.db.v6";
 
 let db: MockDatabase | null = null;
 const listeners = new Set<() => void>();
