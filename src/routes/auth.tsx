@@ -45,6 +45,10 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   async function route(roles: AppRole[]) {
+    if (roles.includes("admin") && !roles.includes("landlord")) {
+      await navigate({ to: "/admin/prospects", replace: true });
+      return;
+    }
     if (roles.includes("property_manager") && !roles.includes("landlord")) {
       await navigate({ to: "/manager", replace: true });
       return;
