@@ -99,6 +99,12 @@ function Landing() {
           >
             Find a verified rental
           </Link>
+          <Link
+            to="/join"
+            className="glass rounded-full px-6 py-3 text-[14px] font-medium transition-opacity hover:opacity-90"
+          >
+            Pre-register
+          </Link>
         </div>
 
         <div className="mt-14 grid gap-3 sm:grid-cols-3">
