@@ -187,6 +187,60 @@ export type Database = {
           },
         ]
       }
+      interest_registrations: {
+        Row: {
+          acknowledged: boolean
+          created_at: string
+          email: string
+          email_normalized: string
+          full_name: string
+          id: string
+          ip_address: string | null
+          phone: string
+          referer: string | null
+          roles: string[]
+          submission_count: number
+          submitted_at: string
+          updated_at: string
+          user_agent: string | null
+          would_use: boolean
+        }
+        Insert: {
+          acknowledged?: boolean
+          created_at?: string
+          email: string
+          email_normalized: string
+          full_name: string
+          id?: string
+          ip_address?: string | null
+          phone: string
+          referer?: string | null
+          roles?: string[]
+          submission_count?: number
+          submitted_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          would_use: boolean
+        }
+        Update: {
+          acknowledged?: boolean
+          created_at?: string
+          email?: string
+          email_normalized?: string
+          full_name?: string
+          id?: string
+          ip_address?: string | null
+          phone?: string
+          referer?: string | null
+          roles?: string[]
+          submission_count?: number
+          submitted_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          would_use?: boolean
+        }
+        Relationships: []
+      }
       leases: {
         Row: {
           created_at: string
