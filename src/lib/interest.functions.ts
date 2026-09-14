@@ -144,7 +144,7 @@ export const listInterestRegistrations = createServerFn({ method: "POST" })
     if (!authorised) throw new Error("Administrator access only");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data: registrations, error } = await supabaseAdmin
       .from("interest_registrations")
       .select("id, full_name, email, phone, roles, would_use, acknowledged, submitted_at, created_at, updated_at")
       .order("submitted_at", { ascending: false });
