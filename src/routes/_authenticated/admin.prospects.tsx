@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 
 import { AppShell, PageHeader, SectionCard, SummaryGrid } from "@/components/rentid/patterns";
 import { Button, DataTable, Field, LoadingCard, Select, TextInput } from "@/components/rentid/kit";
-import { EmptyState } from "@/components/rentid/Surface";
+import { EmptyState, Glass } from "@/components/rentid/Surface";
 import { useAuth } from "@/lib/auth";
 import { listInterestRegistrations, type InterestRegistration } from "@/lib/interest.functions";
 
