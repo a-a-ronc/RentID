@@ -86,6 +86,13 @@ export const registerInterest = createServerFn({ method: "POST" })
         null,
     };
 
+    const managesUnits =
+      data.roles.includes("landlord") || data.roles.includes("property_manager");
+    const units = {
+      current_units: managesUnits ? (data.current_units ?? null) : null,
+      intended_units: managesUnits ? (data.intended_units ?? null) : null,
+    };
+
     const { data: existing } = await supabaseAdmin
       .from("interest_registrations")
       .select("id, submission_count")
@@ -111,6 +118,7 @@ export const registerInterest = createServerFn({ method: "POST" })
           acknowledged: true,
           submitted_at: new Date().toISOString(),
           submission_count: (existing.submission_count ?? 1) + 1,
+          ...units,
           ...metadata,
         })
         .eq("id", existing.id);
@@ -126,6 +134,7 @@ export const registerInterest = createServerFn({ method: "POST" })
       roles: data.roles,
       would_use: data.would_use,
       acknowledged: true,
+      ...units,
       ...metadata,
     });
     if (error) throw new Error(error.message);
