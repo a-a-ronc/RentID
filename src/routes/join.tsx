@@ -175,6 +175,9 @@ function RegistrationForm() {
     setRoles((prev) => (prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]));
   }
 
+  /** Unit questions apply once to landlords and/or property managers. */
+  const managesUnits = roles.includes("landlord") || roles.includes("property_manager");
+
   function validate() {
     const next: Record<string, string> = {};
     if (fullName.trim().split(/\s+/).length < 2) next["full_name"] = "Enter your first and last name";
