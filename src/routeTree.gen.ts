@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForLandlordsRouteImport } from './routes/for-landlords'
 import { Route as ForPropertyManagersRouteImport } from './routes/for-property-managers'
 import { Route as ForTenantsRouteImport } from './routes/for-tenants'
+import { Route as JoinRouteImport } from './routes/join'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -88,6 +89,11 @@ const ForPropertyManagersRoute = ForPropertyManagersRouteImport.update({
 const ForTenantsRoute = ForTenantsRouteImport.update({
   id: '/for-tenants',
   path: '/for-tenants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -349,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/join': typeof JoinRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -401,6 +408,7 @@ export interface FileRoutesByTo {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/join': typeof JoinRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -453,6 +461,7 @@ export interface FileRoutesById {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/join': typeof JoinRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -507,6 +516,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/join'
     | '/admin'
     | '/applications'
     | '/dashboard'
@@ -559,6 +569,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/join'
     | '/admin'
     | '/applications'
     | '/dashboard'
@@ -610,6 +621,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/join'
     | '/_authenticated/admin'
     | '/_authenticated/applications'
     | '/_authenticated/dashboard'
@@ -664,6 +676,7 @@ export interface RootRouteChildren {
   ForLandlordsRoute: typeof ForLandlordsRoute
   ForPropertyManagersRoute: typeof ForPropertyManagersRoute
   ForTenantsRoute: typeof ForTenantsRoute
+  JoinRoute: typeof JoinRoute
   ApplyListingRefRoute: typeof ApplyListingRefRoute
   ListingListingRefRoute: typeof ListingListingRefRoute
   ProvidersOrgIdRoute: typeof ProvidersOrgIdRoute
@@ -713,6 +726,13 @@ declare module '@tanstack/react-router' {
       path: '/for-tenants'
       fullPath: '/for-tenants'
       preLoaderRoute: typeof ForTenantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -1161,6 +1181,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForLandlordsRoute: ForLandlordsRoute,
   ForPropertyManagersRoute: ForPropertyManagersRoute,
   ForTenantsRoute: ForTenantsRoute,
+  JoinRoute: JoinRoute,
   ApplyListingRefRoute: ApplyListingRefRoute,
   ListingListingRefRoute: ListingListingRefRoute,
   ProvidersOrgIdRoute: ProvidersOrgIdRoute,
