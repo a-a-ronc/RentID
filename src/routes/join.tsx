@@ -359,6 +359,45 @@ function RegistrationForm() {
           </div>
         </Field>
 
+        {managesUnits ? (
+          <div className="grid gap-4 rounded-2xl border border-brand/30 bg-brand/5 p-4 sm:grid-cols-2">
+            <Field
+              label="How many rental units do you currently own or manage?"
+              htmlFor="join-current-units"
+              error={errors["current_units"] ?? null}
+            >
+              <TextInput
+                id="join-current-units"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                step={1}
+                placeholder="12"
+                value={currentUnits}
+                onChange={(e) => setCurrentUnits(e.target.value.replace(/\D/g, ""))}
+                required
+              />
+            </Field>
+            <Field
+              label="How many rental units would you intend to use RentID for once the platform is available?"
+              hint="Optional."
+              htmlFor="join-intended-units"
+              error={errors["intended_units"] ?? null}
+            >
+              <TextInput
+                id="join-intended-units"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                placeholder="12"
+                value={intendedUnits}
+                onChange={(e) => setIntendedUnits(e.target.value.replace(/\D/g, ""))}
+              />
+            </Field>
+          </div>
+        ) : null}
+
         <div className="rounded-2xl border border-border bg-card/60 p-4">
           <p className="text-[12.5px] leading-relaxed text-muted-foreground">{ACKNOWLEDGEMENT}</p>
           <label className="mt-3 flex items-start gap-2.5 text-[13px] font-medium">
