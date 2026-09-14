@@ -183,7 +183,9 @@ export const listInterestRegistrations = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: registrations, error } = await supabaseAdmin
       .from("interest_registrations")
-      .select("id, full_name, email, phone, roles, would_use, acknowledged, submitted_at, created_at, updated_at")
+      .select(
+        "id, full_name, email, phone, roles, would_use, acknowledged, current_units, intended_units, submitted_at, created_at, updated_at",
+      )
       .order("submitted_at", { ascending: false });
     if (error) throw new Error(error.message);
 
