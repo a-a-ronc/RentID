@@ -8,7 +8,11 @@ import { AppShell, PageHeader, SectionCard, SummaryGrid } from "@/components/ren
 import { Button, DataTable, Field, LoadingCard, Select, TextInput } from "@/components/rentid/kit";
 import { EmptyState, Glass } from "@/components/rentid/Surface";
 import { useAuth } from "@/lib/auth";
-import { listInterestRegistrations, type InterestRegistration } from "@/lib/interest.functions";
+import {
+  computeInterestStats,
+  listInterestRegistrations,
+  type InterestRegistration,
+} from "@/lib/interest.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/prospects")({
   head: () => ({
