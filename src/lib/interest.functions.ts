@@ -20,6 +20,8 @@ export type InterestRegistration = {
   roles: string[];
   would_use: boolean;
   acknowledged: boolean;
+  current_units: number | null;
+  intended_units: number | null;
   submitted_at: string;
   created_at: string;
   updated_at: string;
@@ -29,7 +31,7 @@ export type RegisterResult =
   | { status: "created" | "updated" }
   | { status: "duplicate"; message: string };
 
-const registrationSchema = z.object({
+const baseSchema = z.object({
   full_name: z
     .string()
     .trim()
@@ -45,10 +47,24 @@ const registrationSchema = z.object({
   roles: z.array(z.enum(INTEREST_ROLES)).min(1, "Select at least one role"),
   would_use: z.boolean(),
   acknowledged: z.literal(true),
+  current_units: z.number().int().min(1).max(1000000).nullable().optional(),
+  intended_units: z.number().int().min(0).max(1000000).nullable().optional(),
   update_existing: z.boolean().optional(),
 });
 
-export type RegistrationInput = z.input<typeof registrationSchema>;
+/** Unit counts only apply to landlords / property managers. */
+const registrationSchema = baseSchema.superRefine((data, ctx) => {
+  const owns = data.roles.includes("landlord") || data.roles.includes("property_manager");
+  if (owns && (data.current_units === null || data.current_units === undefined)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["current_units"],
+      message: "Enter the number of rental units you own or manage",
+    });
+  }
+});
+
+export type RegistrationInput = z.input<typeof baseSchema>;
 
 export const registerInterest = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => registrationSchema.parse(data))
