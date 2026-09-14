@@ -191,10 +191,12 @@ export type Database = {
         Row: {
           acknowledged: boolean
           created_at: string
+          current_units: number | null
           email: string
           email_normalized: string
           full_name: string
           id: string
+          intended_units: number | null
           ip_address: string | null
           phone: string
           referer: string | null
@@ -208,10 +210,12 @@ export type Database = {
         Insert: {
           acknowledged?: boolean
           created_at?: string
+          current_units?: number | null
           email: string
           email_normalized: string
           full_name: string
           id?: string
+          intended_units?: number | null
           ip_address?: string | null
           phone: string
           referer?: string | null
@@ -225,10 +229,12 @@ export type Database = {
         Update: {
           acknowledged?: boolean
           created_at?: string
+          current_units?: number | null
           email?: string
           email_normalized?: string
           full_name?: string
           id?: string
+          intended_units?: number | null
           ip_address?: string | null
           phone?: string
           referer?: string | null
