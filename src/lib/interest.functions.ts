@@ -153,6 +153,18 @@ export type InterestStats = {
   property_managers: number;
   this_week: number;
   this_month: number;
+  /** Registrations that are a landlord and/or property manager (counted once). */
+  unit_holders: number;
+  /** Current units owned/managed across all registrations. */
+  current_units_all: number;
+  /** Current units owned/managed by "yes" registrations. */
+  current_units_yes: number;
+  /** Intended units across all registrations (secondary figure). */
+  intended_units_all: number;
+  /** Primary metric: intended units from "yes" registrations only. */
+  intended_units_yes: number;
+  /** Average intended units per "yes" landlord/property manager. */
+  average_intended_units: number;
 };
 
 /**
