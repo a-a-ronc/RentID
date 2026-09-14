@@ -33,14 +33,22 @@ function stamp(iso: string) {
   return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
+const CODE_KEY = "rentid.admin.prospects.code";
+
 function AdminProspects() {
   const { roles } = useAuth();
   const fetchRows = useServerFn(listInterestRegistrations);
+  const [code, setCode] = useState(() =>
+    typeof window === "undefined" ? "" : (window.sessionStorage.getItem(CODE_KEY) ?? ""),
+  );
+  const [codeDraft, setCodeDraft] = useState("");
   const query = useQuery({
-    queryKey: ["interest-registrations"],
-    queryFn: () => fetchRows(),
-    enabled: roles.includes("admin"),
+    queryKey: ["interest-registrations", code],
+    queryFn: () => fetchRows({ data: { access_code: code } }),
+    enabled: roles.includes("admin") && code.length > 0,
+    retry: false,
   });
+
 
   const [search, setSearch] = useState("");
   const [answer, setAnswer] = useState<"all" | "yes" | "no">("all");
