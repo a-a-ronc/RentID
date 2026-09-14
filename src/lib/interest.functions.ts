@@ -150,7 +150,7 @@ export const listInterestRegistrations = createServerFn({ method: "POST" })
       .order("submitted_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    const rows = (data ?? []) as InterestRegistration[];
+    const rows = (registrations ?? []) as InterestRegistration[];
     const now = Date.now();
     const since = (days: number) => now - days * 24 * 60 * 60 * 1000;
     const has = (r: InterestRegistration, role: InterestRole) => r.roles.includes(role);
