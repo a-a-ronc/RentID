@@ -125,7 +125,7 @@ function JoinPage() {
       <section className="pb-12">
         <div className="grid gap-3 lg:grid-cols-3">
           {COLUMNS.map((col, i) => (
-            <Glass key={col.role} className="p-5" style={{ animationDelay: `${i * 60}ms` }}>
+            <Glass key={col.role} className="p-5" delay={i * 60}>
               <div className="grid size-10 place-items-center rounded-2xl bg-accent/15 text-accent">
                 <col.icon className="size-5" strokeWidth={1.75} />
               </div>
