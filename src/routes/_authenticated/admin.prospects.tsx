@@ -220,6 +220,40 @@ function AdminProspects() {
                 { label: "This week", value: stats.this_week, hint: `${stats.this_month} this month` },
               ]}
             />
+            <Glass className="p-5">
+              <p className="label-eyebrow">Primary unit metric</p>
+              <p className="mt-2 font-display text-[40px] leading-none font-bold tracking-tight text-brand">
+                {stats.intended_units_yes.toLocaleString()}
+              </p>
+              <p className="mt-2 text-[13px] font-medium">Total units intended for RentID</p>
+              <p className="mt-1 text-[12.5px] text-muted-foreground">
+                Counts only registrations that answered Yes. All respondents together represent{" "}
+                {stats.intended_units_all.toLocaleString()} intended units.
+              </p>
+            </Glass>
+            <SummaryGrid
+              items={[
+                {
+                  label: "Current units owned/managed",
+                  value: stats.current_units_all.toLocaleString(),
+                  hint: `${stats.current_units_yes.toLocaleString()} from Yes responses`,
+                },
+                {
+                  label: "Avg intended units",
+                  value: stats.average_intended_units.toLocaleString(),
+                  hint: "Per Yes landlord / property manager",
+                },
+                {
+                  label: "Landlords & managers",
+                  value: stats.unit_holders,
+                  hint: "Counted once each",
+                },
+                {
+                  label: "Intended units (all responses)",
+                  value: stats.intended_units_all.toLocaleString(),
+                },
+              ]}
+            />
           </>
         ) : null}
 
@@ -279,6 +313,20 @@ function AdminProspects() {
                 key: "would",
                 header: "Would use RentID?",
                 cell: (r) => (r.would_use ? "Yes" : "No"),
+              },
+              {
+                key: "current_units",
+                header: "Current units",
+                cell: (r) => (r.current_units ?? "—"),
+                hideOnMobile: true,
+                align: "right",
+              },
+              {
+                key: "intended_units",
+                header: "Intended units",
+                cell: (r) => (r.intended_units ?? "—"),
+                hideOnMobile: true,
+                align: "right",
               },
               {
                 key: "date",
