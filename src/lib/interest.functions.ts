@@ -190,23 +190,43 @@ export const listInterestRegistrations = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     const rows = (registrations ?? []) as InterestRegistration[];
-    const now = Date.now();
-    const since = (days: number) => now - days * 24 * 60 * 60 * 1000;
-    const has = (r: InterestRegistration, role: InterestRole) => r.roles.includes(role);
-    const yes = rows.filter((r) => r.would_use).length;
-
-    return {
-      rows,
-      stats: {
-        total: rows.length,
-        yes,
-        no: rows.length - yes,
-        yes_percentage: rows.length ? Math.round((yes / rows.length) * 100) : 0,
-        renters: rows.filter((r) => has(r, "renter")).length,
-        landlords: rows.filter((r) => has(r, "landlord")).length,
-        property_managers: rows.filter((r) => has(r, "property_manager")).length,
-        this_week: rows.filter((r) => new Date(r.submitted_at).getTime() >= since(7)).length,
-        this_month: rows.filter((r) => new Date(r.submitted_at).getTime() >= since(30)).length,
-      },
-    };
+    return { rows, stats: computeInterestStats(rows) };
   });
+
+/**
+ * Shared stat maths so the dashboard, filtered views and the CSV summary all
+ * agree. A registration that is both landlord and property manager is counted
+ * once for unit totals; the primary intended-unit figure only counts "yes".
+ */
+export function computeInterestStats(rows: InterestRegistration[]): InterestStats {
+  const now = Date.now();
+  const since = (days: number) => now - days * 24 * 60 * 60 * 1000;
+  const has = (r: InterestRegistration, role: InterestRole) => r.roles.includes(role);
+  const yes = rows.filter((r) => r.would_use).length;
+
+  const holders = rows.filter((r) => has(r, "landlord") || has(r, "property_manager"));
+  const yesHolders = holders.filter((r) => r.would_use);
+  const sum = (list: InterestRegistration[], key: "current_units" | "intended_units") =>
+    list.reduce((acc, r) => acc + (r[key] ?? 0), 0);
+  const intendedYes = sum(yesHolders, "intended_units");
+
+  return {
+    total: rows.length,
+    yes,
+    no: rows.length - yes,
+    yes_percentage: rows.length ? Math.round((yes / rows.length) * 100) : 0,
+    renters: rows.filter((r) => has(r, "renter")).length,
+    landlords: rows.filter((r) => has(r, "landlord")).length,
+    property_managers: rows.filter((r) => has(r, "property_manager")).length,
+    this_week: rows.filter((r) => new Date(r.submitted_at).getTime() >= since(7)).length,
+    this_month: rows.filter((r) => new Date(r.submitted_at).getTime() >= since(30)).length,
+    unit_holders: holders.length,
+    current_units_all: sum(holders, "current_units"),
+    current_units_yes: sum(yesHolders, "current_units"),
+    intended_units_all: sum(holders, "intended_units"),
+    intended_units_yes: intendedYes,
+    average_intended_units: yesHolders.length
+      ? Math.round(intendedYes / yesHolders.length)
+      : 0,
+  };
+}
