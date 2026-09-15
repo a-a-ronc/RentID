@@ -8,8 +8,16 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:rls": "bash scripts/db/test-rls.sh",
+    "db:reset": "bash scripts/db/reset-local.sh",
+    "db:types": "bash scripts/db/gen-types.sh",
+    "check": "bun run typecheck && bun run lint && bun run test && bun run build"
   },
   "overrides": {
     "rolldown": "1.2.1"
