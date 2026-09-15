@@ -10,6 +10,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 URL="${LOCAL_DATABASE_URL:-postgres://postgres:postgres@localhost:5432/rentid_local}"
+export PGOPTIONS="-c client_min_messages=warning"
 
 # Split the URL into an admin URL (postgres db) so we can drop/create the target db.
 DBNAME="${URL##*/}"
