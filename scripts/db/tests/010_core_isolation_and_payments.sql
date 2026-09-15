@@ -59,6 +59,19 @@ insert into public.tenant_invitations (id, organization_id, property_id, unit_id
   values ('30000000-0000-4000-8000-000000000001', :'org_a', '10000000-0000-4000-8000-000000000001',
           '20000000-0000-4000-8000-000000000001', 'tenant-c@test.rentid', 'Tenant C', 1500, 'test-token-c');
 
+-- A cannot hand-verify a tenancy that has no tenant account
+insert into public.tenancies (id, organization_id, property_id, unit_id, tenant_name, status, verified)
+  values ('50000000-0000-4000-8000-0000000000ff', :'org_a', '10000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'Paper Tenant', 'active', true);
+do $$ begin
+  assert (select verified from public.tenancies where id = '50000000-0000-4000-8000-0000000000ff') = false, 'client insert cannot create a verified tenancy';
+  begin
+    update public.tenancies set verified = true where id = '50000000-0000-4000-8000-0000000000ff';
+    raise exception 'ASSERT FAILED: landlord hand-verified a tenancy';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+delete from public.tenancies where id = '50000000-0000-4000-8000-0000000000ff';
+
 -- ------------------------------------------- landlord B sees nothing of A's
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-00000000000b","role":"authenticated","email":"landlord-b@test.rentid"}';
 select public.create_organization('B Rentals', 'landlord') as org_b \gset
@@ -96,6 +109,9 @@ do $$ declare t public.tenancies%rowtype; begin
   assert (select status from public.tenant_invitations where id = '30000000-0000-4000-8000-000000000001') = 'accepted', 'invitation marked accepted';
   assert (select occupancy_status from public.units where id = '20000000-0000-4000-8000-000000000001') = 'occupied', 'unit occupied';
   assert (select count(*) from public.properties) = 1, 'tenant can see the property they rent';
+  assert t.verified and t.verified_at is not null, 'tenancy verified once both sides confirmed';
+  assert (select count(*) from public.payments where tenancy_id = t.id and status = 'scheduled') = 1, 'first rent period seeded';
+  assert (select count(*) from public.verification_records where tenancy_id = t.id and kind = 'tenancy') = 1, 'tenancy verification record';
 end $$;
 
 -- second accept must fail
@@ -108,7 +124,7 @@ end $$;
 insert into public.payments (organization_id, tenancy_id, amount, status, method, due_date, period_label, verification_source)
   values (:'org_a', :'tenancy_c', 1500, 'paid', 'cash', current_date, 'September 2026', 'tenant_reported');
 do $$ begin
-  assert (select verified from public.payments where period_label = 'September 2026') = false,
+  assert (select verified from public.payments where period_label = 'September 2026' and verification_source = 'tenant_reported') = false,
     'tenant_reported payment is NOT verified';
   begin
     insert into public.payments (organization_id, tenancy_id, amount, status, method, due_date, period_label, verification_source)

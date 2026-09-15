@@ -132,6 +132,43 @@ drop trigger if exists tenant_invitations_rate_limit on public.tenant_invitation
 create trigger tenant_invitations_rate_limit before insert on public.tenant_invitations
   for each row execute function public.rate_limit_invitations();
 
+-- ------------------------------------------ tenancy verification guard
+-- A tenancy is "verified" only when BOTH sides confirmed it: the landlord
+-- created it and the tenant accepted the invitation from their own account.
+-- Clients cannot flip the flag; accept_invitation() and the platform can.
+-- SECURITY DEFINER RPCs run with the caller's JWT, so triggers cannot tell them
+-- apart from a direct client write. An RPC that legitimately needs to cross a
+-- guard sets a transaction-local flag; is_trusted_write() honours it.
+create or replace function public.is_trusted_write() returns boolean
+language sql stable set search_path = public as $$
+  select public.is_platform_actor() or coalesce(current_setting('rentid.trusted_write', true), '') = 'on'
+$$;
+revoke execute on function public.is_trusted_write() from public, anon;
+grant execute on function public.is_trusted_write() to authenticated, service_role;
+
+create or replace function public.tenancies_guard_verified() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if not public.is_trusted_write() then
+    if tg_op = 'INSERT' and (new.verified or new.verified_at is not null) then
+      new.verified := false; new.verified_at := null;
+    elsif tg_op = 'UPDATE' and (new.verified is distinct from old.verified or new.verified_at is distinct from old.verified_at) then
+      raise exception 'tenancy verification is set when the tenant accepts the invitation, not by hand' using errcode = '42501';
+    end if;
+    -- the landlord cannot re-point a tenancy at a different user account
+    if tg_op = 'UPDATE' and new.tenant_user_id is distinct from old.tenant_user_id and old.tenant_user_id is not null then
+      raise exception 'tenant account link cannot be changed once set' using errcode = '42501';
+    end if;
+  end if;
+  if new.verified and new.tenant_user_id is null then
+    raise exception 'a tenancy without a tenant account cannot be verified' using errcode = '22023';
+  end if;
+  return new;
+end $$;
+drop trigger if exists tenancies_guard_verified on public.tenancies;
+create trigger tenancies_guard_verified before insert or update on public.tenancies
+  for each row execute function public.tenancies_guard_verified();
+
 -- accept_invitation v2: throttled (10 attempts / hour / user) and *soft-failing*.
 -- Soft failures (not found, expired, wrong email, already used) return
 -- {ok:false, error} instead of raising, so the attempt still counts against the
@@ -189,10 +226,28 @@ begin
      set status = 'accepted', accepted_by = uid, accepted_at = now(), tenancy_id = t_id
    where id = inv.id;
 
+  -- both sides have now confirmed the relationship
+  perform set_config('rentid.trusted_write', 'on', true);
+  update public.tenancies set verified = true, verified_at = now() where id = t_id;
+  perform set_config('rentid.trusted_write', 'off', true);
+  insert into public.verification_records (organization_id, tenancy_id, kind, source, record_type, label, subject_user_id, verified_by, notes)
+  values (inv.organization_id, t_id, 'tenancy', 'platform', 'tenancy_confirmed', 'Tenancy confirmed by landlord and tenant', uid, uid,
+          'Landlord created the tenancy; tenant accepted the invitation from their own account');
+
   insert into public.user_roles (user_id, role) values (uid, 'tenant') on conflict (user_id, role) do nothing;
 
   if inv.unit_id is not null then
     update public.units set occupancy_status = 'occupied' where id = inv.unit_id;
+  end if;
+
+  -- seed the current rent period so the tenant sees a live ledger
+  if not exists (select 1 from public.payments where tenancy_id = t_id) then
+    insert into public.payments (organization_id, tenancy_id, unit_id, amount, status, method, due_date, period_label)
+    select t.organization_id, t.id, t.unit_id, coalesce(t.monthly_rent, u.monthly_rent, 0), 'scheduled', 'manual',
+           make_date(extract(year from now())::int, extract(month from now())::int, least(coalesce(u.rent_due_day, 1), 28)),
+           to_char(now(), 'FMMonth YYYY')
+      from public.tenancies t left join public.units u on u.id = t.unit_id
+     where t.id = t_id and coalesce(t.monthly_rent, u.monthly_rent, 0) > 0;
   end if;
 
   insert into public.audit_logs (actor_id, actor_role, organization_id, action, entity_type, entity_id, metadata)

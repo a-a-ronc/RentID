@@ -2863,6 +2863,7 @@ export type Database = {
       is_platform_actor: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_tenancy_party: { Args: { _tenancy_id: string }; Returns: boolean }
       is_tenant_of_unit: { Args: { _unit_id: string }; Returns: boolean }
+      is_trusted_write: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_verified_tenancy: { Args: { _tenancy_id: string }; Returns: boolean }
       notify_user: {
         Args: {
