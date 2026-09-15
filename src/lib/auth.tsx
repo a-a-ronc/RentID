@@ -1,10 +1,9 @@
 /**
- * Session context.
+ * Session context over Supabase Auth (see `src/lib/services/auth.ts`).
  *
- * Backed by the local mock auth service while Supabase is unavailable — this is
- * NOT real authentication. The public surface (useAuth / useProfile / useRoles)
- * matches what a Supabase-backed provider exposes, so swapping in real auth
- * touches this file and `src/lib/services/auth.ts` only.
+ * `useAuth()` exposes { user, roles, loading }. Roles are read from
+ * `public.user_roles` and are only a UX hint — every protected read and write
+ * is enforced by row-level security on the server.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -23,15 +22,25 @@ type AuthState = {
 const AuthContext = createContext<AuthState>({ user: null, roles: [], loading: true });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ user: null, roles: [], loading: true });
+  const [state, setState] = useState<AuthState>(() => {
+    const snapshot = authService.peekSession();
+    return snapshot
+      ? { user: snapshot.user, roles: snapshot.roles, loading: false }
+      : { user: null, roles: [], loading: true };
+  });
 
   useEffect(() => {
-    const session = authService.getSession();
-    setState({ user: session?.user ?? null, roles: session?.roles ?? [], loading: false });
+    let active = true;
+    void authService.getSession().then((session) => {
+      if (!active) return;
+      setState({ user: session?.user ?? null, roles: session?.roles ?? [], loading: false });
+    });
     const unsubscribe = authService.onAuthStateChange((next) => {
+      if (!active) return;
       setState({ user: next?.user ?? null, roles: next?.roles ?? [], loading: false });
     });
     return () => {
+      active = false;
       unsubscribe();
     };
   }, []);

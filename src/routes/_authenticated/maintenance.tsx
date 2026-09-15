@@ -46,6 +46,8 @@ const STATUS_TONE: Record<MaintenanceStatus, "warning" | "neutral" | "success" |
   acknowledged: "neutral",
   in_progress: "neutral",
   completed: "success",
+  resolved: "success",
+  closed: "neutral",
   cancelled: "danger",
 };
 
@@ -59,6 +61,7 @@ const PRIORITY_TONE: Record<MaintenancePriority, "neutral" | "warning" | "danger
   low: "neutral",
   normal: "neutral",
   high: "warning",
+  urgent: "danger",
   emergency: "danger",
 };
 

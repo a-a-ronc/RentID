@@ -58,6 +58,7 @@ export async function recordPayment(input: {
       year: "numeric",
     }),
     verified: true,
+    verification_source: "landlord_reported",
     memo: input.memo?.trim() || null,
     created_at: now,
     updated_at: now,

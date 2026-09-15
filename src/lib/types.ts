@@ -1,10 +1,13 @@
 /**
  * RentID domain models.
  *
- * These mirror the planned PostgreSQL schema in `supabase/planned/` one-to-one:
- * UUID string ids, ISO-8601 timestamps, snake_case columns, and the same
- * constrained status values. When Supabase comes back online the mock service
- * layer is swapped for real queries and these types stay unchanged.
+ * These mirror the LIVE PostgreSQL schema (`supabase/migrations/`) as the app
+ * consumes it: UUID string ids, ISO-8601 timestamps, snake_case columns and the
+ * same enum values. A few DB columns carry a different name than the domain
+ * field (e.g. `profiles.onboarding_completed` ↔ `Profile.onboarded`); those are
+ * translated in `src/lib/db/mappers.ts`, which is the only place allowed to
+ * know both spellings. Regenerate `src/integrations/supabase/types.ts` with
+ * `bun run db:reset && bun run db:types` after changing a migration.
  */
 
 export type UUID = string;
@@ -57,7 +60,8 @@ export type Organization = {
   deleted_at: Timestamp | null;
 };
 
-export type OrganizationMemberRole = "owner" | "manager" | "staff";
+/** Live schema stores the member's app role on the membership row. */
+export type OrganizationMemberRole = AppRole;
 
 export type OrganizationMember = {
   id: UUID;
@@ -67,7 +71,7 @@ export type OrganizationMember = {
   created_at: Timestamp;
 };
 
-export type PropertyType = "single_family" | "multi_family" | "condo" | "townhouse" | "apartment";
+export type PropertyType = "single_family" | "multi_family" | "condo" | "townhouse" | "apartment" | "other";
 
 export type Property = {
   id: UUID;
@@ -97,7 +101,7 @@ export type Property = {
   deleted_at: Timestamp | null;
 };
 
-export type OccupancyStatus = "vacant" | "occupied" | "off_market";
+export type OccupancyStatus = "vacant" | "occupied" | "off_market" | "upcoming_vacancy";
 
 export type Unit = {
   id: UUID;
@@ -153,7 +157,11 @@ export type Lease = {
   security_deposit: number | null;
   rent_due_day: number;
   late_fee: number | null;
+  /** Free-text late-fee terms from the live schema (kept alongside the numeric late_fee). */
+  late_fee_terms?: string | null;
   document_id: UUID | null;
+  /** Storage path of the signed lease when uploaded without a documents row. */
+  document_path?: string | null;
   signed_at: Timestamp | null;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -170,10 +178,15 @@ export type TenantInvitation = {
   tenancy_id: UUID | null;
   email: string;
   invited_name: string | null;
+  phone?: string | null;
+  monthly_rent?: number | null;
+  lease_start?: DateOnly | null;
+  lease_end?: DateOnly | null;
   status: InvitationStatus;
   token: string;
   expires_at: Timestamp;
   accepted_at: Timestamp | null;
+  accepted_by?: UUID | null;
   created_by: UUID | null;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -184,6 +197,10 @@ export type DocumentKind =
   | "addendum"
   | "id_verification"
   | "inspection"
+  | "move_in_inspection"
+  | "move_out_inspection"
+  | "photo"
+  | "maintenance"
   | "receipt"
   | "notice"
   | "other";
@@ -194,6 +211,7 @@ export type Document = {
   property_id: UUID | null;
   unit_id: UUID | null;
   tenancy_id: UUID | null;
+  lease_id?: UUID | null;
   kind: DocumentKind;
   title: string;
   storage_path: string;
@@ -206,20 +224,41 @@ export type Document = {
   deleted_at: Timestamp | null;
 };
 
-export type PaymentStatus = "scheduled" | "pending" | "paid" | "late" | "failed" | "refunded";
-export type PaymentMethod = "manual" | "ach" | "card" | "cash" | "check";
+export type PaymentStatus = "scheduled" | "pending" | "paid" | "late" | "failed" | "refunded" | "returned";
+export type PaymentMethod = "manual" | "ach" | "same_day_ach" | "rtp" | "fednow" | "card" | "cash" | "check";
+
+/**
+ * How a payment row came to be trusted. Only `platform_settled` and
+ * `bank_linked` count as verified; the database derives `verified` from this
+ * and refuses client attempts to assert the platform-only sources.
+ */
+export type PaymentVerificationSource =
+  | "unverified"
+  | "landlord_reported"
+  | "tenant_reported"
+  | "bank_linked"
+  | "imported"
+  | "platform_settled";
 
 export type Payment = {
   id: UUID;
   organization_id: UUID;
   tenancy_id: UUID;
+  unit_id?: UUID | null;
   amount: number;
+  platform_fee_amount?: number | null;
   status: PaymentStatus;
   method: PaymentMethod;
   due_date: DateOnly;
   paid_at: Timestamp | null;
   period_label: string;
+  /** Derived server-side from verification_source — never set by the client. */
   verified: boolean;
+  verification_source: PaymentVerificationSource;
+  verified_at?: Timestamp | null;
+  external_reference?: string | null;
+  payout_id?: UUID | null;
+  recorded_by?: UUID | null;
   memo: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -239,8 +278,15 @@ export type PaymentSchedule = {
   updated_at: Timestamp;
 };
 
-export type MaintenanceStatus = "open" | "acknowledged" | "in_progress" | "completed" | "cancelled";
-export type MaintenancePriority = "low" | "normal" | "high" | "emergency";
+export type MaintenanceStatus =
+  | "open"
+  | "acknowledged"
+  | "in_progress"
+  | "completed"
+  | "resolved"
+  | "closed"
+  | "cancelled";
+export type MaintenancePriority = "low" | "normal" | "high" | "urgent" | "emergency";
 
 export type MaintenanceRequest = {
   id: UUID;
@@ -273,7 +319,7 @@ export type Message = {
   conversation_id: UUID;
   sender_id: UUID | null;
   sender_name: string;
-  sender_role: AppRole;
+  sender_role: AppRole | null;
   body: string;
   read_at: Timestamp | null;
   created_at: Timestamp;
@@ -421,9 +467,9 @@ export type DashboardMetrics = {
 export type OrganizationKind = "landlord" | "property_manager";
 
 /** Claim/verification state for people, businesses, properties and authority. */
-export type VerificationStatus = "unverified" | "pending" | "verified" | "disputed";
+export type VerificationStatus = "unverified" | "pending" | "verified" | "disputed" | "rejected" | "revoked";
 
-export type ListingStatus = "draft" | "published" | "paused" | "leased";
+export type ListingStatus = "draft" | "published" | "paused" | "leased" | "archived";
 
 /**
  * A RentID listing is the master record. Every distribution channel is a copy

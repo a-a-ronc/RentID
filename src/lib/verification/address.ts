@@ -96,12 +96,17 @@ export function normalizePropertyAddress(property: Property): string {
  * Existing property matching the given address, if any. Callers use this
  * before creating a property so records lookups reuse the canonical record.
  */
-export function findDuplicateProperty(
-  properties: Property[],
+type AddressLike = Pick<Property, "street_address" | "city" | "state" | "zip"> & {
+  unit_label?: string | null;
+  normalized_address?: string | null;
+};
+
+export function findDuplicateProperty<T extends AddressLike>(
+  properties: T[],
   input: { street_address: string; unit_label?: string | null; city: string; state: string; zip: string },
-): Property | null {
+): T | null {
   const key = normalizeAddress(input);
-  return properties.find((p) => normalizePropertyAddress(p) === key) ?? null;
+  return properties.find((p) => (p.normalized_address ?? normalizeAddress(p)) === key) ?? null;
 }
 
 /**
