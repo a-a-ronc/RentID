@@ -1,9 +1,10 @@
 /**
  * RentID fee schedule — pure functions, no I/O.
  *
- * Mirrors `public.compute_platform_fee()` in
- * supabase/migrations/20260915000500_payments_foundation.sql so SQL reports and
- * the UI agree by construction. Defaults match the seeded `platform_settings`
+ * Mirrors `public.compute_platform_fee()`, whose authoritative definition is in
+ * supabase/migrations/20260915000900_fee_parity_fix.sql, so SQL reports and the
+ * UI agree by construction. src/lib/payments/fees.test.ts asserts that parity;
+ * scripts/db/tests/090_fee_parity.sql asserts it against a real Postgres. Defaults match the seeded `platform_settings`
  * row; pass the live row when you have it.
  *
  *   ACH  $1,500 rent → $7.50 platform fee (0.5%)
@@ -36,9 +37,27 @@ export const DEFAULT_FEE_SETTINGS: FeeSettings = {
   marketplaceFeePercentage: 1.0,
 };
 
-/** Round half-up to cents, avoiding float drift (1.005 → 1.01). */
+/**
+ * Round half-away-from-zero to cents, matching Postgres `round(numeric, 2)`.
+ *
+ * The obvious `Math.round(value * 100) / 100` is wrong for money: `8.245`
+ * is stored as 8.244999999999999 and rounds DOWN, so RentID would bill a cent
+ * less than the ledger says on 53 of the first 2,000 whole-dollar rents
+ * ($427, $435, …, $1,649, …). Adding `Number.EPSILON` does not fix it either —
+ * EPSILON is the ULP at 1.0, so it is a no-op above ~4.
+ *
+ * Instead compare against the exact decimal via the shortest round-trip string
+ * (`toPrecision(15)` strips the representation error without inventing digits),
+ * then round the integer cents.
+ */
 export function roundCents(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
+  if (!Number.isFinite(value)) return value;
+  const sign = value < 0 ? -1 : 1;
+  const cents = Math.abs(value) * 100;
+  // 15 significant digits is the widest decimal a double round-trips exactly,
+  // so this recovers the decimal the author wrote rather than its binary echo.
+  const exact = Number.parseFloat(cents.toPrecision(15));
+  return (sign * Math.round(exact)) / 100;
 }
 
 export type FeeBreakdown = {
@@ -59,13 +78,18 @@ export function computePlatformFee(
 ): FeeBreakdown {
   if (!Number.isFinite(amount) || amount < 0)
     throw new RangeError("amount must be a non-negative number");
-  let platformFee = Math.max(
+
+  // Each component is rounded once, and `totalFees` is the sum of the rounded
+  // parts — NOT a re-rounded sum. `compute_platform_fee()` in SQL rounds the
+  // same way (see the parity table in fees.test.ts): a breakdown whose parts
+  // don't add up to its own total is a support ticket waiting to happen.
+  let rawPlatformFee = Math.max(
     (amount * settings.platformFeePercentage) / 100,
     settings.platformFeeMinimum,
   );
   if (settings.platformFeeCap !== null)
-    platformFee = Math.min(platformFee, settings.platformFeeCap);
-  platformFee = roundCents(platformFee);
+    rawPlatformFee = Math.min(rawPlatformFee, settings.platformFeeCap);
+  const platformFee = roundCents(rawPlatformFee);
 
   const cardFee =
     method === "card" && settings.cardFeePassthrough

@@ -71,7 +71,8 @@ export type OrganizationMember = {
   created_at: Timestamp;
 };
 
-export type PropertyType = "single_family" | "multi_family" | "condo" | "townhouse" | "apartment" | "other";
+export type PropertyType =
+  "single_family" | "multi_family" | "condo" | "townhouse" | "apartment" | "other";
 
 export type Property = {
   id: UUID;
@@ -224,8 +225,10 @@ export type Document = {
   deleted_at: Timestamp | null;
 };
 
-export type PaymentStatus = "scheduled" | "pending" | "paid" | "late" | "failed" | "refunded" | "returned";
-export type PaymentMethod = "manual" | "ach" | "same_day_ach" | "rtp" | "fednow" | "card" | "cash" | "check";
+export type PaymentStatus =
+  "scheduled" | "pending" | "paid" | "late" | "failed" | "refunded" | "returned";
+export type PaymentMethod =
+  "manual" | "ach" | "same_day_ach" | "rtp" | "fednow" | "card" | "cash" | "check";
 
 /**
  * How a payment row came to be trusted. Only `platform_settled` and
@@ -279,13 +282,7 @@ export type PaymentSchedule = {
 };
 
 export type MaintenanceStatus =
-  | "open"
-  | "acknowledged"
-  | "in_progress"
-  | "completed"
-  | "resolved"
-  | "closed"
-  | "cancelled";
+  "open" | "acknowledged" | "in_progress" | "completed" | "resolved" | "closed" | "cancelled";
 export type MaintenancePriority = "low" | "normal" | "high" | "urgent" | "emergency";
 
 export type MaintenanceRequest = {
@@ -354,12 +351,7 @@ export type ReviewDispute = {
 };
 
 export type VerificationKind =
-  | "tenancy"
-  | "payment"
-  | "identity"
-  | "lease_document"
-  | "landlord_reported"
-  | "tenant_reported";
+  "tenancy" | "payment" | "identity" | "lease_document" | "landlord_reported" | "tenant_reported";
 
 export type VerificationRecord = {
   id: UUID;
@@ -467,7 +459,8 @@ export type DashboardMetrics = {
 export type OrganizationKind = "landlord" | "property_manager";
 
 /** Claim/verification state for people, businesses, properties and authority. */
-export type VerificationStatus = "unverified" | "pending" | "verified" | "disputed" | "rejected" | "revoked";
+export type VerificationStatus =
+  "unverified" | "pending" | "verified" | "disputed" | "rejected" | "revoked";
 
 export type ListingStatus = "draft" | "published" | "paused" | "leased" | "archived";
 
@@ -574,13 +567,7 @@ export type ListingSyncEvent = {
 
 /** Where a lead or application came from. */
 export type LeadSource =
-  | "rentid"
-  | "zillow"
-  | "apartments_com"
-  | "direct_link"
-  | "qr_code"
-  | "facebook"
-  | "other";
+  "rentid" | "zillow" | "apartments_com" | "direct_link" | "qr_code" | "facebook" | "other";
 
 export type ListingLead = {
   id: UUID;

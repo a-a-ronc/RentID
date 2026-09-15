@@ -1,5 +1,8 @@
 export function money(value: number | null | undefined, opts?: { cents?: boolean }) {
-  const n = Number(value ?? 0);
+  // A malformed Postgres numeric arrives as "" and becomes NaN; render $0
+  // rather than the literal string "$NaN" in a rent figure.
+  const parsed = Number(value ?? 0);
+  const n = Number.isFinite(parsed) ? parsed : 0;
   return n.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
@@ -27,12 +30,14 @@ export function monthLabel(date = new Date()) {
 }
 
 export function initials(name: string | null | undefined) {
-  if (!name) return "··";
-  return name
-    .split(" ")
-    .filter(Boolean)
+  // Split on any whitespace and treat a whitespace-only name as absent, so a
+  // blank profile field renders the placeholder instead of an empty avatar
+  // (or, worse, a raw tab character).
+  const tokens = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return "··";
+  return tokens
     .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
+    .map((part) => part.charAt(0).toUpperCase())
     .join("");
 }
 

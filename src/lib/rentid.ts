@@ -105,8 +105,14 @@ export function useCreateOrganization() {
 export function useUpdateOrganization() {
   const invalidate = useInvalidateRentId();
   return useMutation({
-    mutationFn: ({ orgId, ...patch }: { orgId: UUID; name?: string; legal_entity_name?: string | null }) =>
-      svc.updateOrganization(orgId, patch),
+    mutationFn: ({
+      orgId,
+      ...patch
+    }: {
+      orgId: UUID;
+      name?: string;
+      legal_entity_name?: string | null;
+    }) => svc.updateOrganization(orgId, patch),
     onSuccess: invalidate,
   });
 }
@@ -182,8 +188,13 @@ export function useCreateUnit() {
 export function useUpdateUnit() {
   const invalidate = useInvalidateRentId();
   return useMutation({
-    mutationFn: ({ unitId, patch }: { unitId: UUID; patch: Parameters<typeof svc.updateUnit>[1] }) =>
-      svc.updateUnit(unitId, patch),
+    mutationFn: ({
+      unitId,
+      patch,
+    }: {
+      unitId: UUID;
+      patch: Parameters<typeof svc.updateUnit>[1];
+    }) => svc.updateUnit(unitId, patch),
     onSuccess: invalidate,
   });
 }
@@ -244,7 +255,10 @@ export function useVerifyTenancy() {
 
 export function useEndTenancy() {
   const invalidate = useInvalidateRentId();
-  return useMutation({ mutationFn: (tenancyId: UUID) => svc.endTenancy(tenancyId), onSuccess: invalidate });
+  return useMutation({
+    mutationFn: (tenancyId: UUID) => svc.endTenancy(tenancyId),
+    onSuccess: invalidate,
+  });
 }
 
 export function useInvitations(orgId: UUID | null) {
@@ -452,7 +466,8 @@ const MARKETPLACE_KEYS = [
 export function useInvalidateMarketplace() {
   const qc = useQueryClient();
   return () => {
-    for (const key of [...KEYS, ...MARKETPLACE_KEYS]) void qc.invalidateQueries({ queryKey: [key] });
+    for (const key of [...KEYS, ...MARKETPLACE_KEYS])
+      void qc.invalidateQueries({ queryKey: [key] });
   };
 }
 
@@ -626,8 +641,10 @@ export function useUpdateListing() {
   const { user } = useAuth();
   const invalidate = useInvalidateMarketplace();
   return useMutation({
-    mutationFn: (input: { listingId: UUID; patch: Parameters<typeof svc.updateListing>[0]["patch"] }) =>
-      svc.updateListing({ ...input, actorId: user?.id ?? null }),
+    mutationFn: (input: {
+      listingId: UUID;
+      patch: Parameters<typeof svc.updateListing>[0]["patch"];
+    }) => svc.updateListing({ ...input, actorId: user?.id ?? null }),
     onSuccess: invalidate,
   });
 }
@@ -758,7 +775,10 @@ export function useStudentMetrics(orgId: UUID | null) {
   });
 }
 
-export function useStudentRoster(orgId: UUID | null, filters?: { propertyId?: UUID; unitId?: UUID }) {
+export function useStudentRoster(
+  orgId: UUID | null,
+  filters?: { propertyId?: UUID; unitId?: UUID },
+) {
   return useQuery({
     queryKey: ["student-roster", orgId, filters?.propertyId ?? null, filters?.unitId ?? null],
     enabled: Boolean(orgId),
@@ -850,8 +870,13 @@ export function useUpdateTurnTask() {
   const { user } = useAuth();
   const invalidate = useInvalidateStudent();
   return useMutation({
-    mutationFn: ({ taskId, patch }: { taskId: UUID; patch: Parameters<typeof svc.updateTurnTask>[1] }) =>
-      svc.updateTurnTask(taskId, patch, user?.id ?? null),
+    mutationFn: ({
+      taskId,
+      patch,
+    }: {
+      taskId: UUID;
+      patch: Parameters<typeof svc.updateTurnTask>[1];
+    }) => svc.updateTurnTask(taskId, patch, user?.id ?? null),
     onSuccess: invalidate,
   });
 }
@@ -886,8 +911,13 @@ export function useUpdateStudentConfig() {
   const { user } = useAuth();
   const invalidate = useInvalidateStudent();
   return useMutation({
-    mutationFn: ({ propertyId, patch }: { propertyId: UUID; patch: Parameters<typeof svc.updateStudentConfig>[1] }) =>
-      svc.updateStudentConfig(propertyId, patch, user?.id ?? null),
+    mutationFn: ({
+      propertyId,
+      patch,
+    }: {
+      propertyId: UUID;
+      patch: Parameters<typeof svc.updateStudentConfig>[1];
+    }) => svc.updateStudentConfig(propertyId, patch, user?.id ?? null),
     onSuccess: invalidate,
   });
 }
@@ -1026,7 +1056,13 @@ export function useAcknowledgeDisclosure() {
 function useInvalidateVerification() {
   const qc = useQueryClient();
   return () => {
-    for (const key of ["property-verification", "property-badges", "verification-queue", "properties", "disclosure"]) {
+    for (const key of [
+      "property-verification",
+      "property-badges",
+      "verification-queue",
+      "properties",
+      "disclosure",
+    ]) {
       void qc.invalidateQueries({ queryKey: [key] });
     }
   };

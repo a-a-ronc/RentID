@@ -41,12 +41,7 @@ export type ConfidenceLevel = "none" | "weak" | "moderate" | "strong";
 export type VerificationProposition = "property" | "identity" | "authority";
 
 export type OwnerPartyType =
-  | "individual"
-  | "entity"
-  | "trust"
-  | "estate"
-  | "government"
-  | "unknown";
+  "individual" | "entity" | "trust" | "estate" | "government" | "unknown";
 
 /** Legal capacity in which the owner holds title — never flattened away. */
 export type OwnershipCapacity =

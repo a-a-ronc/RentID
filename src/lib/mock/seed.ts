@@ -334,7 +334,7 @@ export function seedDatabase(): MockDatabase {
       paid_at: late ? null : iso(-((i % 6) + 1)),
       period_label: periodLabel(),
       verified: !late,
-      verification_source: (!late) ? "platform_settled" : "unverified",
+      verification_source: !late ? "platform_settled" : "unverified",
       memo: late ? "Reminder sent, partial arrangement pending" : null,
       created_at: monthDay(1),
       updated_at: iso(-1),
@@ -585,15 +585,96 @@ export function seedDatabase(): MockDatabase {
     error: string | null;
     syncedDaysAgo: number | null;
   }[] = [
-    { listingIndex: 0, marketplace: "rentid", enabled: true, connection: "connected", listing_status: "live", external: "10241", error: null, syncedDaysAgo: -2 },
-    { listingIndex: 0, marketplace: "zillow", enabled: true, connection: "integration_pending", listing_status: "pending_integration", external: null, error: null, syncedDaysAgo: null },
-    { listingIndex: 0, marketplace: "apartments_com", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
-    { listingIndex: 1, marketplace: "rentid", enabled: true, connection: "connected", listing_status: "live", external: "10242", error: null, syncedDaysAgo: -3 },
-    { listingIndex: 1, marketplace: "zillow", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
-    { listingIndex: 1, marketplace: "apartments_com", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
-    { listingIndex: 2, marketplace: "rentid", enabled: false, connection: "connected", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
-    { listingIndex: 2, marketplace: "zillow", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
-    { listingIndex: 2, marketplace: "apartments_com", enabled: false, connection: "integration_pending", listing_status: "not_published", external: null, error: null, syncedDaysAgo: null },
+    {
+      listingIndex: 0,
+      marketplace: "rentid",
+      enabled: true,
+      connection: "connected",
+      listing_status: "live",
+      external: "10241",
+      error: null,
+      syncedDaysAgo: -2,
+    },
+    {
+      listingIndex: 0,
+      marketplace: "zillow",
+      enabled: true,
+      connection: "integration_pending",
+      listing_status: "pending_integration",
+      external: null,
+      error: null,
+      syncedDaysAgo: null,
+    },
+    {
+      listingIndex: 0,
+      marketplace: "apartments_com",
+      enabled: false,
+      connection: "integration_pending",
+      listing_status: "not_published",
+      external: null,
+      error: null,
+      syncedDaysAgo: null,
+    },
+    {
+      listingIndex: 1,
+      marketplace: "rentid",
+      enabled: true,
+      connection: "connected",
+      listing_status: "live",
+      external: "10242",
+      error: null,
+      syncedDaysAgo: -3,
+    },
+    {
+      listingIndex: 1,
+      marketplace: "zillow",
+      enabled: false,
+      connection: "integration_pending",
+      listing_status: "not_published",
+      external: null,
+      error: null,
+      syncedDaysAgo: null,
+    },
+    {
+      listingIndex: 1,
+      marketplace: "apartments_com",
+      enabled: false,
+      connection: "integration_pending",
+      listing_status: "not_published",
+      external: null,
+      error: null,
+      syncedDaysAgo: null,
+    },
+    {
+      listingIndex: 2,
+      marketplace: "rentid",
+      enabled: false,
+      connection: "connected",
+      listing_status: "not_published",
+      external: null,
+      error: null,
+      syncedDaysAgo: null,
+    },
+    {
+      listingIndex: 2,
+      marketplace: "zillow",
+      enabled: false,
+      connection: "integration_pending",
+      listing_status: "not_published",
+      external: null,
+      error: null,
+      syncedDaysAgo: null,
+    },
+    {
+      listingIndex: 2,
+      marketplace: "apartments_com",
+      enabled: false,
+      connection: "integration_pending",
+      listing_status: "not_published",
+      external: null,
+      error: null,
+      syncedDaysAgo: null,
+    },
   ];
 
   const listingChannels: ListingChannel[] = CHANNEL_PLAN.map((c, i) => ({
@@ -651,7 +732,12 @@ export function seedDatabase(): MockDatabase {
     },
   ];
 
-  const LEAD_PLAN: { listingIndex: number; name: string; source: ListingLead["source"]; daysAgo: number }[] = [
+  const LEAD_PLAN: {
+    listingIndex: number;
+    name: string;
+    source: ListingLead["source"];
+    daysAgo: number;
+  }[] = [
     { listingIndex: 0, name: "Alicia Diaz", source: "rentid", daysAgo: 4 },
     { listingIndex: 0, name: "Marcus Webb", source: "zillow", daysAgo: 2 },
     { listingIndex: 0, name: "Tessa Moore", source: "zillow", daysAgo: 2 },
@@ -824,7 +910,11 @@ export function seedDatabase(): MockDatabase {
 
   // Student-housing vertical lives in its own module so the standard
   // residential demo metrics above stay exactly as tuned.
-  const student = seedStudentHousing({ pmOrgId: PM_ORG_ID, managerId: MANAGER_ID, residentUserId: STUDENT_ID });
+  const student = seedStudentHousing({
+    pmOrgId: PM_ORG_ID,
+    managerId: MANAGER_ID,
+    residentUserId: STUDENT_ID,
+  });
   properties.push(...student.properties);
   units.push(...student.units);
   ownerAccounts.push(...student.owner_accounts);
@@ -832,11 +922,31 @@ export function seedDatabase(): MockDatabase {
 
   return {
     users: [
-      { id: LANDLORD_ID, email: DEMO_ACCOUNTS.landlord.email, created_at: created, last_sign_in_at: iso(-1) },
-      { id: TENANT_ID, email: DEMO_ACCOUNTS.tenant.email, created_at: created, last_sign_in_at: iso(-1) },
+      {
+        id: LANDLORD_ID,
+        email: DEMO_ACCOUNTS.landlord.email,
+        created_at: created,
+        last_sign_in_at: iso(-1),
+      },
+      {
+        id: TENANT_ID,
+        email: DEMO_ACCOUNTS.tenant.email,
+        created_at: created,
+        last_sign_in_at: iso(-1),
+      },
       { id: MANAGER_ID, email: "manager@rentid.demo", created_at: created, last_sign_in_at: null },
-      { id: STUDENT_ID, email: DEMO_ACCOUNTS.student.email, created_at: created, last_sign_in_at: iso(-1) },
-      { id: ADMIN_ID, email: DEMO_ACCOUNTS.admin.email, created_at: created, last_sign_in_at: iso(-1) },
+      {
+        id: STUDENT_ID,
+        email: DEMO_ACCOUNTS.student.email,
+        created_at: created,
+        last_sign_in_at: iso(-1),
+      },
+      {
+        id: ADMIN_ID,
+        email: DEMO_ACCOUNTS.admin.email,
+        created_at: created,
+        last_sign_in_at: iso(-1),
+      },
     ],
     credentials: [
       { user_id: LANDLORD_ID, email: DEMO_ACCOUNTS.landlord.email, password: DEMO_PASSWORD },
@@ -931,8 +1041,20 @@ export function seedDatabase(): MockDatabase {
       },
     ],
     organization_members: [
-      { id: id("1200", 1), organization_id: ORG_ID, user_id: LANDLORD_ID, role: "landlord", created_at: created },
-      { id: id("1200", 2), organization_id: PM_ORG_ID, user_id: MANAGER_ID, role: "landlord", created_at: created },
+      {
+        id: id("1200", 1),
+        organization_id: ORG_ID,
+        user_id: LANDLORD_ID,
+        role: "landlord",
+        created_at: created,
+      },
+      {
+        id: id("1200", 2),
+        organization_id: PM_ORG_ID,
+        user_id: MANAGER_ID,
+        role: "landlord",
+        created_at: created,
+      },
     ],
     properties,
     units,

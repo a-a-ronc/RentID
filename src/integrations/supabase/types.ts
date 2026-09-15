@@ -2791,6 +2791,7 @@ export type Database = {
       can_manage_unit: { Args: { _unit_id: string }; Returns: boolean }
       can_operate_listing: { Args: { _listing_id: string }; Returns: boolean }
       can_operate_property: { Args: { _property_id: string }; Returns: boolean }
+      can_review_property: { Args: { _property_id: string }; Returns: boolean }
       can_view_property_verification: {
         Args: { _property_id: string }
         Returns: boolean
@@ -2909,6 +2910,10 @@ export type Database = {
         }[]
       }
       public_listing: { Args: { _ref: string }; Returns: Json }
+      queue_verification_case_for_review: {
+        Args: { _case_id: string; _reason: string }
+        Returns: string
+      }
       record_listing_sync: {
         Args: {
           _action: string
@@ -2919,6 +2924,20 @@ export type Database = {
           _result: string
         }
         Returns: string
+      }
+      record_verification_risk_event: {
+        Args: {
+          _case_id: string
+          _detail: string
+          _kind: string
+          _property_id: string
+          _severity: string
+        }
+        Returns: Json
+      }
+      require_property_reverification: {
+        Args: { _property_id: string; _reason: string }
+        Returns: number
       }
       return_payment: {
         Args: {

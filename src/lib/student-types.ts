@@ -134,12 +134,7 @@ export type RoommateGroup = {
 };
 
 export type GroupMemberState =
-  | "invited"
-  | "profile_incomplete"
-  | "guarantor_incomplete"
-  | "complete"
-  | "approved"
-  | "denied";
+  "invited" | "profile_incomplete" | "guarantor_incomplete" | "complete" | "approved" | "denied";
 
 export type RoommateGroupMember = {
   id: UUID;
@@ -233,13 +228,7 @@ export type Payer = {
 };
 
 export type StudentPaymentMethod =
-  | "rentid_ach"
-  | "card"
-  | "check"
-  | "cash"
-  | "money_order"
-  | "bank_billpay"
-  | "other_external";
+  "rentid_ach" | "card" | "check" | "cash" | "money_order" | "bank_billpay" | "other_external";
 
 export type StudentPaymentState =
   | "initiated"
@@ -388,7 +377,8 @@ export type TurnTask = {
   term_id: UUID | null;
   area: TurnTaskArea;
   label: string;
-  category: "inspection" | "cleaning" | "repair" | "paint" | "flooring" | "keys" | "documents" | "money";
+  category:
+    "inspection" | "cleaning" | "repair" | "paint" | "flooring" | "keys" | "documents" | "money";
   vendor: string | null;
   due_date: DateOnly;
   state: TurnTaskState;
@@ -402,11 +392,7 @@ export type TurnTask = {
 
 export type StudentMaintenanceArea = "private_room" | "shared_area" | "unit" | "unknown";
 export type DamageAllocationTarget =
-  | "unassigned"
-  | "single_resident"
-  | "multiple_residents"
-  | "household"
-  | "owner";
+  "unassigned" | "single_resident" | "multiple_residents" | "household" | "owner";
 
 export type StudentMaintenanceCase = {
   id: UUID;
@@ -545,7 +531,12 @@ export type ResidentHousing = {
   renewal_deadline: DateOnly | null;
   sublease_policy: PolicyMode;
   replacement_policy: PolicyMode;
-  roommates: { name: string; bed_label: string | null; share_pct: number | null; verified: boolean }[];
+  roommates: {
+    name: string;
+    bed_label: string | null;
+    share_pct: number | null;
+    verified: boolean;
+  }[];
   charges: StudentChargeRow[];
   balance: number;
   payers: Payer[];

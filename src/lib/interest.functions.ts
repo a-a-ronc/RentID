@@ -28,8 +28,7 @@ export type InterestRegistration = {
 };
 
 export type RegisterResult =
-  | { status: "created" | "updated" }
-  | { status: "duplicate"; message: string };
+  { status: "created" | "updated" } | { status: "duplicate"; message: string };
 
 const baseSchema = z.object({
   full_name: z
@@ -86,8 +85,7 @@ export const registerInterest = createServerFn({ method: "POST" })
         null,
     };
 
-    const managesUnits =
-      data.roles.includes("landlord") || data.roles.includes("property_manager");
+    const managesUnits = data.roles.includes("landlord") || data.roles.includes("property_manager");
     const units = {
       current_units: managesUnits ? (data.current_units ?? null) : null,
       intended_units: managesUnits ? (data.intended_units ?? null) : null,
@@ -174,7 +172,9 @@ export type InterestStats = {
  * land, an admin bearer token authorises without the code.
  */
 export const listInterestRegistrations = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => z.object({ access_code: z.string().max(200).optional() }).parse(data ?? {}))
+  .inputValidator((data: unknown) =>
+    z.object({ access_code: z.string().max(200).optional() }).parse(data ?? {}),
+  )
   .handler(async ({ data }): Promise<{ rows: InterestRegistration[]; stats: InterestStats }> => {
     const expected = process.env["RENTID_ADMIN_ACCESS_CODE"];
     const authorised = Boolean(expected && data.access_code && data.access_code === expected);
@@ -225,8 +225,6 @@ export function computeInterestStats(rows: InterestRegistration[]): InterestStat
     current_units_yes: sum(yesHolders, "current_units"),
     intended_units_all: sum(holders, "intended_units"),
     intended_units_yes: intendedYes,
-    average_intended_units: yesHolders.length
-      ? Math.round(intendedYes / yesHolders.length)
-      : 0,
+    average_intended_units: yesHolders.length ? Math.round(intendedYes / yesHolders.length) : 0,
   };
 }

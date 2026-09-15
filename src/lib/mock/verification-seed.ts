@@ -131,7 +131,8 @@ export function seedVerification(input: {
       entity_id: entity.id,
       rules_version: VERIFICATION_RULES_VERSION,
       reviewer_id: null,
-      decision_reason: "Recorded deed, entity registry and managing-member authority all confirmed.",
+      decision_reason:
+        "Recorded deed, entity registry and managing-member authority all confirmed.",
       created_at: iso(-125),
       updated_at: iso(-120),
       decided_at: iso(-120),
@@ -155,7 +156,8 @@ export function seedVerification(input: {
       entity_id: null,
       rules_version: VERIFICATION_RULES_VERSION,
       reviewer_id: null,
-      decision_reason: "Owner granted authority in RentID and the management company verified its identity.",
+      decision_reason:
+        "Owner granted authority in RentID and the management company verified its identity.",
       created_at: iso(-80),
       updated_at: iso(-75),
       decided_at: iso(-75),

@@ -90,46 +90,72 @@ export const PropertyDataProvider = {
 
 /** PRIMARY ownership evidence: recorded deeds from the recording authority. */
 export const RecordedDocumentProvider = {
-  info: (): ProviderInfo => ({ id: "recorded_documents", label: "Recorded document provider", mode: MODE }),
-  async currentOwner(_input: { parcelNumber: string | null; jurisdiction: string | null }): Promise<
-    ProviderResult<OwnerFinding[]>
-  > {
+  info: (): ProviderInfo => ({
+    id: "recorded_documents",
+    label: "Recorded document provider",
+    mode: MODE,
+  }),
+  async currentOwner(_input: {
+    parcelNumber: string | null;
+    jurisdiction: string | null;
+  }): Promise<ProviderResult<OwnerFinding[]>> {
     return unavailable("Recorded deed search");
   },
   /** Later transfers that would contradict a claim. */
-  async transfersSince(_input: { parcelNumber: string | null; since: DateOnly }): Promise<
-    ProviderResult<OwnerFinding[]>
-  > {
+  async transfersSince(_input: {
+    parcelNumber: string | null;
+    since: DateOnly;
+  }): Promise<ProviderResult<OwnerFinding[]>> {
     return unavailable("Transfer search");
   },
 };
 
 /** SUPPORTING evidence only — assessor owner fields can lag a recent deed. */
 export const AssessorDataProvider = {
-  info: (): ProviderInfo => ({ id: "assessor", label: "Assessor / appraiser provider", mode: MODE }),
+  info: (): ProviderInfo => ({
+    id: "assessor",
+    label: "Assessor / appraiser provider",
+    mode: MODE,
+  }),
   async owner(_input: { parcelNumber: string | null }): Promise<ProviderResult<OwnerFinding>> {
     return unavailable("Assessor lookup");
   },
 };
 
 export const BusinessRegistryProvider = {
-  info: (): ProviderInfo => ({ id: "business_registry", label: "Business registry provider", mode: MODE }),
-  async lookupEntity(_input: { legalName: string; state?: string | null }): Promise<
-    ProviderResult<EntityFinding>
-  > {
+  info: (): ProviderInfo => ({
+    id: "business_registry",
+    label: "Business registry provider",
+    mode: MODE,
+  }),
+  async lookupEntity(_input: {
+    legalName: string;
+    state?: string | null;
+  }): Promise<ProviderResult<EntityFinding>> {
     return unavailable("Business registry lookup");
   },
 };
 
 export const IdentityVerificationProvider = {
-  info: (): ProviderInfo => ({ id: "identity", label: "Identity verification provider", mode: MODE }),
-  async verifyPerson(_input: { userId: string; legalName: string }): Promise<ProviderResult<IdentityFinding>> {
+  info: (): ProviderInfo => ({
+    id: "identity",
+    label: "Identity verification provider",
+    mode: MODE,
+  }),
+  async verifyPerson(_input: {
+    userId: string;
+    legalName: string;
+  }): Promise<ProviderResult<IdentityFinding>> {
     return unavailable("Identity verification");
   },
 };
 
 export const DocumentVerificationProvider = {
-  info: (): ProviderInfo => ({ id: "document_verification", label: "Document verification provider", mode: MODE }),
+  info: (): ProviderInfo => ({
+    id: "document_verification",
+    label: "Document verification provider",
+    mode: MODE,
+  }),
   async inspect(_input: { storagePath: string }): Promise<ProviderResult<DocumentFinding>> {
     return unavailable("Document verification");
   },
