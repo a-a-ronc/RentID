@@ -81,16 +81,13 @@ end $$;
 -- ------------------------------------------- stranger D cannot accept C's invitation
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-00000000000d","role":"authenticated","email":"stranger-d@test.rentid"}';
 do $$ begin
-  begin
-    perform public.accept_invitation('test-token-c');
-    raise exception 'ASSERT FAILED: stranger accepted an invitation addressed to someone else';
-  exception when insufficient_privilege then null;
-  end;
+  assert (public.accept_invitation('test-token-c') ->> 'error') = 'wrong_email',
+    'stranger cannot accept an invitation addressed to someone else';
 end $$;
 
 -- ------------------------------------------- tenant C accepts
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-00000000000c","role":"authenticated","email":"tenant-c@test.rentid"}';
-select public.accept_invitation('test-token-c') as tenancy_c \gset
+select public.accept_invitation('test-token-c') ->> 'tenancy_id' as tenancy_c \gset
 do $$ declare t public.tenancies%rowtype; begin
   select * into t from public.tenancies where tenant_email = 'tenant-c@test.rentid';
   assert t.tenant_user_id = '00000000-0000-4000-8000-00000000000c', 'tenancy bound to accepting user';
@@ -103,11 +100,7 @@ end $$;
 
 -- second accept must fail
 do $$ begin
-  begin
-    perform public.accept_invitation('test-token-c');
-    raise exception 'ASSERT FAILED: invitation accepted twice';
-  exception when invalid_parameter_value then null;
-  end;
+  assert (public.accept_invitation('test-token-c') ->> 'error') = 'already_accepted', 'invitation cannot be accepted twice';
 end $$;
 
 -- ------------------------------------------- payment verification rules
