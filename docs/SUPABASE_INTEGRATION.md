@@ -47,8 +47,8 @@ src/lib/mock/seed.ts       centralized demo portfolio + demo credentials
    - `services/tenancies.ts` → tenancies, invitations, verification
    - `services/finance.ts` → payments, dashboard metrics
    - `services/operations.ts` → leases, documents, maintenance, messaging
-   Invitation acceptance must move to a server function (it writes a tenancy the
-   caller does not yet own, which client RLS correctly refuses).
+     Invitation acceptance must move to a server function (it writes a tenancy the
+     caller does not yet own, which client RLS correctly refuses).
 7. **Delete the mock layer.** Remove `src/lib/mock/` and the demo-notice copy
    once every service is live.
 8. **Test landlord access:** sign up, onboard, create property, add unit.
@@ -71,7 +71,7 @@ QuickBooks.
 
 ## Student-housing layer (business map §25-§38)
 
-The student vertical is a *category*, not a second product: `properties.management_category`
+The student vertical is a _category_, not a second product: `properties.management_category`
 switches it on, and everything else hangs off the same identity/property/lease/payment graph.
 
 When the backend is reachable:
@@ -85,7 +85,7 @@ When the backend is reachable:
    - `ledger_events`, `approval_steps` and `payment_allocations` are insert-only.
    - `charges` (obligation) stay separate from `payers` (funding source); paying never
      makes someone a lease party.
-   - `student_payments.processed_by_rentid = false` is a *recorded* external payment and
+   - `student_payments.processed_by_rentid = false` is a _recorded_ external payment and
      must never be shown as processed by RentID.
    - A lease change only becomes effective when approvals, documents, signatures and money
      are all complete; `replacement_listing_enabled` gates any public replacement listing.
@@ -94,6 +94,7 @@ When the backend is reachable:
    shows only that resident's money.
 
 ## Listing syndication when partner access is approved
+
 1. Apply the listing/channel/lead/sync tables from `supabase/planned/0001_schema.sql`
    and the policies from `0002_rls.sql`.
 2. Store partner credentials as project secrets (never in code): one secret per
@@ -108,6 +109,7 @@ When the backend is reachable:
    (no anon insert policy on `listing_leads`).
 
 ## Property ownership & authorized representative verification
+
 Files: `supabase/planned/0003_property_verification.sql`,
 `0004_property_verification_rls.sql`, `src/lib/verification-types.ts`,
 `src/lib/verification/address.ts`, `src/lib/verification/providers.ts`,
@@ -125,8 +127,8 @@ Files: `supabase/planned/0003_property_verification.sql`,
    - business registry lookups for entity ownership;
    - identity verification for the claimant;
    - document authenticity checks for uploads.
-   Official APIs, licensed data, or manual review only — no scraping and no
-   circumvention of access controls.
+     Official APIs, licensed data, or manual review only — no scraping and no
+     circumvention of access controls.
 4. Non-negotiables to preserve server-side:
    - Verification is per property. A verified property never verifies another
      property, another user, or a whole portfolio.

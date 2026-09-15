@@ -24,6 +24,38 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
           VITE_SUPABASE_PROJECT_ID: ci
 
+  security:
+    name: Dependency audit · secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      # A known high-severity advisory in a dependency fails the build.
+      - name: Dependency audit
+        run: bun audit --audit-level=high
+      # Nothing that looks like a private key or a service-role key may be
+      # committed. .env is gitignored; this is the backstop.
+      - name: Secret scan
+        run: |
+          set -euo pipefail
+          PATTERN='BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY|sb_secret_[A-Za-z0-9_-]{8,}|service_role.{0,40}eyJ[A-Za-z0-9._-]{20,}|sk_live_[A-Za-z0-9]{16,}'
+          if git grep -nEI "$PATTERN" -- . ':!*.lock' ':!docs/SECURITY.md' ':!.github/workflows/ci.yml'; then
+            echo "::error::A credential-shaped string is committed. Rotate it, then remove it from the history."
+            exit 1
+          fi
+          echo "No credential-shaped strings found."
+      - name: .env must not be tracked
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env is tracked by git."
+            exit 1
+          fi
+
   database:
     name: Migrations apply cleanly · RLS tests
     runs-on: ubuntu-latest

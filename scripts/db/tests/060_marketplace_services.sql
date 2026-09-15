@@ -80,6 +80,11 @@ set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-0000000000c1","r
 insert into public.listings (id, organization_id, property_id, unit_id, status, headline, monthly_rent, available_on, bedrooms, bathrooms)
   values ('80000000-0000-4000-8000-0000000000c1', '60000000-0000-4000-8000-0000000000c1', '10000000-0000-4000-8000-0000000000c1',
           '20000000-0000-4000-8000-0000000000c2', 'published', 'Bright 1BR at Maple Court', 1250, current_date + 7, 1, 1);
+-- a second published listing, so the no-consent application below has a listing
+-- of its own (one open application per applicant per listing)
+insert into public.listings (id, organization_id, property_id, unit_id, status, headline, monthly_rent, available_on, bedrooms, bathrooms)
+  values ('80000000-0000-4000-8000-0000000000c2', '60000000-0000-4000-8000-0000000000c1', '10000000-0000-4000-8000-0000000000c1',
+          '20000000-0000-4000-8000-0000000000c1', 'published', 'Roomy 2BR at Maple Court', 1400, current_date + 21, 2, 1);
 
 -- ------------------------------------------- 1. passport snapshot at apply time
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-0000000000c3","role":"authenticated","email":"tenant-t@mkt.rentid"}';
@@ -95,9 +100,10 @@ insert into public.rental_applications (id, listing_id, organization_id, applica
   values ('90000000-0000-4000-8000-0000000000c1', '80000000-0000-4000-8000-0000000000c1', '60000000-0000-4000-8000-0000000000c1',
           '00000000-0000-4000-8000-0000000000c3', 'Tenant T', 'tenant-t@mkt.rentid', 'submitted', true,
           '{"tenant_name":"Tenant T","verified_payments":999,"on_time_pct":100}'::jsonb);
--- and once more without consent
+-- and once more without consent, on a SECOND listing: one open application per
+-- applicant per listing is an invariant (rental_applications_one_open_per_applicant)
 insert into public.rental_applications (id, listing_id, organization_id, applicant_user_id, applicant_name, applicant_email, status, profile_shared, passport_snapshot)
-  values ('90000000-0000-4000-8000-0000000000c2', '80000000-0000-4000-8000-0000000000c1', '60000000-0000-4000-8000-0000000000c1',
+  values ('90000000-0000-4000-8000-0000000000c2', '80000000-0000-4000-8000-0000000000c2', '60000000-0000-4000-8000-0000000000c1',
           '00000000-0000-4000-8000-0000000000c3', 'Tenant T', 'tenant-t@mkt.rentid', 'submitted', false,
           '{"verified_payments":999}'::jsonb);
 do $$ declare s jsonb; begin

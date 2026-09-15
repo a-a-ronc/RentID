@@ -38,7 +38,10 @@ insert into public.properties (id, organization_id, name, street_address, city, 
 insert into public.units (id, property_id, name, monthly_rent, bedrooms, bathrooms) values
   ('20000000-0000-4000-8000-000000000101', '10000000-0000-4000-8000-000000000101', 'Unit 1', 1450, 2, 1),
   ('20000000-0000-4000-8000-000000000102', '10000000-0000-4000-8000-000000000101', 'Unit 2', 1200, 1, 1),
-  ('20000000-0000-4000-8000-000000000103', '10000000-0000-4000-8000-000000000102', 'Left',   1100, 2, 1);
+  ('20000000-0000-4000-8000-000000000103', '10000000-0000-4000-8000-000000000102', 'Left',   1100, 2, 1),
+  -- unit 4 exists so the manager's draft does not collide with the owner's
+  -- listing on unit 2 (listings_one_live_per_unit)
+  ('20000000-0000-4000-8000-000000000104', '10000000-0000-4000-8000-000000000101', 'Unit 4', 1250, 1, 1);
 
 -- ------------------------------------------ 1. PM org member CRUD on owner_accounts
 set local role authenticated;
@@ -122,7 +125,7 @@ set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-000000000103","r
 do $$ begin
   assert public.has_management_authority('10000000-0000-4000-8000-000000000101'), 'confirmed assignment grants authority';
   assert (select count(*) from public.properties) = 1, 'PM reads the managed property';
-  assert (select count(*) from public.units) = 2, 'PM reads the managed property''s units';
+  assert (select count(*) from public.units) = 3, 'PM reads the managed property''s units';
 end $$;
 
 -- ------------------------------------------------------------- 3. listings
@@ -202,7 +205,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"00000000-0000-4000-8000-000000000103","role":"authenticated","email":"manager-p@test.rentid"}';
 insert into public.listings (id, organization_id, property_id, unit_id, headline, monthly_rent)
   values ('80000000-0000-4000-8000-000000000102', '60000000-0000-4000-8000-000000000103', '10000000-0000-4000-8000-000000000101',
-          '20000000-0000-4000-8000-000000000102', 'Managed 1BR (draft)', 1250);
+          '20000000-0000-4000-8000-000000000104', 'Managed 1BR (draft)', 1250);
 do $$ begin
   assert (select count(*) from public.listings) = 3, 'confirmed manager sees the owner''s drafts and its own';
   assert (select view_count from public.listings where id = '80000000-0000-4000-8000-000000000103') = 0, 'anon view on a draft is not counted';
