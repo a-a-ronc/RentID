@@ -52,7 +52,10 @@ export async function createOrganization(input: {
       ...(input.legalEntityName ? { _legal_entity_name: input.legalEntityName.trim() } : {}),
     }),
   );
-  const row = unwrapOne(await db.from("organizations").select("*").eq("id", id).single(), "Workspace");
+  const row = unwrapOne(
+    await db.from("organizations").select("*").eq("id", id).single(),
+    "Workspace",
+  );
   return toOrganization(row);
 }
 
@@ -62,7 +65,8 @@ export async function updateOrganization(
 ): Promise<Organization> {
   const update: TablesUpdate<"organizations"> = {};
   if (patch.name !== undefined) update.name = patch.name.trim();
-  if (patch.legal_entity_name !== undefined) update.legal_entity_name = patch.legal_entity_name?.trim() || null;
+  if (patch.legal_entity_name !== undefined)
+    update.legal_entity_name = patch.legal_entity_name?.trim() || null;
   const row = unwrapOne(
     await db.from("organizations").update(update).eq("id", orgId).select("*").single(),
     "Workspace",
@@ -72,7 +76,9 @@ export async function updateOrganization(
 
 /* -------------------------------- properties ------------------------------ */
 
-type PropertyRowWithUnits = Parameters<typeof toProperty>[0] & { units: Parameters<typeof toUnit>[0][] };
+type PropertyRowWithUnits = Parameters<typeof toProperty>[0] & {
+  units: Parameters<typeof toUnit>[0][];
+};
 
 function hydrateProperty(row: PropertyRowWithUnits): PropertyWithUnits {
   return {
@@ -99,7 +105,12 @@ export async function getProperties(orgId: UUID | null): Promise<PropertyWithUni
 
 export async function getProperty(propertyId: UUID): Promise<PropertyWithUnits | null> {
   const row = unwrapMaybe(
-    await db.from("properties").select("*, units(*)").eq("id", propertyId).is("deleted_at", null).maybeSingle(),
+    await db
+      .from("properties")
+      .select("*, units(*)")
+      .eq("id", propertyId)
+      .is("deleted_at", null)
+      .maybeSingle(),
   );
   return row ? hydrateProperty(row as PropertyRowWithUnits) : null;
 }
@@ -143,7 +154,8 @@ export async function createProperty(input: {
       .is("deleted_at", null),
   );
   const duplicate = findDuplicateProperty(existing, address);
-  if (duplicate) throw new Error(`That address already exists in this workspace as "${duplicate.name}".`);
+  if (duplicate)
+    throw new Error(`That address already exists in this workspace as "${duplicate.name}".`);
 
   const row = unwrapOne(
     await db
@@ -197,7 +209,11 @@ export async function updateProperty(
   const update: TablesUpdate<"properties"> = { ...patch };
   if (patch.street_address || patch.city || patch.state || patch.zip) {
     const current = unwrapOne(
-      await db.from("properties").select("street_address, city, state, zip").eq("id", propertyId).single(),
+      await db
+        .from("properties")
+        .select("street_address, city, state, zip")
+        .eq("id", propertyId)
+        .single(),
       "Property",
     );
     update.normalized_address = normalizeAddress({ ...current, ...patch });
@@ -212,7 +228,13 @@ export async function updateProperty(
 /** Soft delete the property and its units. History (tenancies, payments) stays. */
 export async function archiveProperty(propertyId: UUID) {
   const at = nowIso();
-  unwrap(await db.from("units").update({ deleted_at: at }).eq("property_id", propertyId).is("deleted_at", null));
+  unwrap(
+    await db
+      .from("units")
+      .update({ deleted_at: at })
+      .eq("property_id", propertyId)
+      .is("deleted_at", null),
+  );
   unwrap(await db.from("properties").update({ deleted_at: at }).eq("id", propertyId));
   await logAudit({ action: "property.archived", entity_type: "property", entity_id: propertyId });
   return true;
@@ -290,6 +312,9 @@ export async function updateUnit(
     >
   >,
 ): Promise<Unit> {
-  const row = unwrapOne(await db.from("units").update(patch).eq("id", unitId).select("*").single(), "Unit");
+  const row = unwrapOne(
+    await db.from("units").update(patch).eq("id", unitId).select("*").single(),
+    "Unit",
+  );
   return toUnit(row);
 }

@@ -19,7 +19,9 @@ export class DbError extends Error {
   readonly details: string | null;
   readonly hint: string | null;
 
-  constructor(error: PostgrestError | { message: string; code?: string; details?: string; hint?: string }) {
+  constructor(
+    error: PostgrestError | { message: string; code?: string; details?: string; hint?: string },
+  ) {
     super(humanizeDbError(error));
     this.name = "DbError";
     this.code = error.code ?? null;
@@ -36,7 +38,11 @@ export class NotFoundError extends Error {
 }
 
 /** Map Postgres/PostgREST error codes to copy the UI can show verbatim. */
-export function humanizeDbError(error: { message: string; code?: string; details?: string }): string {
+export function humanizeDbError(error: {
+  message: string;
+  code?: string;
+  details?: string;
+}): string {
   switch (error.code) {
     case "42501":
       return error.message.startsWith("new row violates row-level security") ||
@@ -138,7 +144,10 @@ export function today() {
 }
 
 /** Group rows by a key, preserving insertion order. */
-export function groupBy<T, K extends string | number | null | undefined>(rows: T[], key: (row: T) => K) {
+export function groupBy<T, K extends string | number | null | undefined>(
+  rows: T[],
+  key: (row: T) => K,
+) {
   const map = new Map<K, T[]>();
   for (const row of rows) {
     const k = key(row);

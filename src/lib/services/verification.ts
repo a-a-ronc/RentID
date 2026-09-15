@@ -20,10 +20,7 @@ import {
   evidenceCanIssueBadge,
   providerStatuses,
 } from "@/lib/verification/providers";
-import {
-  DISCLOSURE_VERSION,
-  VERIFICATION_RULES_VERSION,
-} from "@/lib/verification-types";
+import { DISCLOSURE_VERSION, VERIFICATION_RULES_VERSION } from "@/lib/verification-types";
 import type {
   AuthorizationStatus,
   ConfidenceLevel,
@@ -129,7 +126,8 @@ function currentOwnershipRecord(propertyId: UUID): PropertyOwnershipRecord | nul
     .property_ownership_records.filter((r) => r.property_id === propertyId && r.is_current)
     // A newer recorded deed outranks a stale assessor owner field.
     .sort((a, b) => {
-      const strength = (r: PropertyOwnershipRecord) => (r.source_type === "recorded_document" ? 1 : 0);
+      const strength = (r: PropertyOwnershipRecord) =>
+        r.source_type === "recorded_document" ? 1 : 0;
       if (strength(b) !== strength(a)) return strength(b) - strength(a);
       return (b.recorded_at ?? "").localeCompare(a.recorded_at ?? "");
     });
@@ -315,9 +313,10 @@ export async function submitEvidence(input: {
   }
 
   // Uploaded evidence goes to a human; it can never self-issue a badge.
-  c.status = c.status === "ownership_verified" || c.status === "authorized_representative_verified"
-    ? c.status
-    : "manual_review";
+  c.status =
+    c.status === "ownership_verified" || c.status === "authorized_representative_verified"
+      ? c.status
+      : "manual_review";
   c.updated_at = nowIso();
   logStatus({
     property_id: c.property_id,
@@ -360,11 +359,8 @@ export async function runAutomatedChecks(caseId: UUID): Promise<VerificationCase
     legalName: c.claimant_name,
   });
 
-  const propertyConfidence: ConfidenceLevel = deed.ok && evidenceCanIssueBadge(deed.mode)
-    ? "strong"
-    : assessor.ok
-      ? "weak"
-      : "none";
+  const propertyConfidence: ConfidenceLevel =
+    deed.ok && evidenceCanIssueBadge(deed.mode) ? "strong" : assessor.ok ? "weak" : "none";
   const identityConfidence: ConfidenceLevel =
     identity.ok && identity.data.passed && evidenceCanIssueBadge(identity.mode) ? "strong" : "none";
 
@@ -437,13 +433,14 @@ const DECISION_STATUS: Record<ReviewDecision, VerificationCaseStatus> = {
   fraud_escalation: "fraud_review",
 };
 
-const RELATIONSHIP_STATUS: Partial<Record<VerificationCaseStatus, RelationshipVerificationStatus>> = {
-  ownership_verified: "ownership_verified",
-  authorized_representative_verified: "authorized_representative_verified",
-  unable_to_verify: "unable_to_verify",
-  suspended: "suspended",
-  revoked: "revoked",
-};
+const RELATIONSHIP_STATUS: Partial<Record<VerificationCaseStatus, RelationshipVerificationStatus>> =
+  {
+    ownership_verified: "ownership_verified",
+    authorized_representative_verified: "authorized_representative_verified",
+    unable_to_verify: "unable_to_verify",
+    suspended: "suspended",
+    revoked: "revoked",
+  };
 
 /** Reviewer decision. Material decisions require a reason. */
 export async function decideVerificationCase(input: {
@@ -480,7 +477,8 @@ export async function decideVerificationCase(input: {
       .filter((r) => r.property_id === c.property_id && r.user_id === c.claimant_user_id)
       .forEach((r) => {
         r.status = relationshipStatus;
-        r.recorded_owner_name = input.recordedOwnerName ?? record?.raw_owner_name ?? r.recorded_owner_name;
+        r.recorded_owner_name =
+          input.recordedOwnerName ?? record?.raw_owner_name ?? r.recorded_owner_name;
         r.verified_at =
           relationshipStatus === "ownership_verified" ||
           relationshipStatus === "authorized_representative_verified"
@@ -594,7 +592,9 @@ export async function acceptAuthorization(input: {
   representativeName?: string | null;
 }): Promise<RepresentativeAuthorization> {
   const db = getDb();
-  const authorization = db.representative_authorizations.find((a) => a.id === input.authorizationId);
+  const authorization = db.representative_authorizations.find(
+    (a) => a.id === input.authorizationId,
+  );
   if (!authorization) throw new Error("Authorization not found.");
   const property = db.properties.find((p) => p.id === authorization.property_id);
   if (!property) throw new Error("Property not found.");
@@ -622,7 +622,9 @@ export async function revokeAuthorization(input: {
   reason: string;
 }): Promise<RepresentativeAuthorization> {
   const db = getDb();
-  const authorization = db.representative_authorizations.find((a) => a.id === input.authorizationId);
+  const authorization = db.representative_authorizations.find(
+    (a) => a.id === input.authorizationId,
+  );
   if (!authorization) throw new Error("Authorization not found.");
   const now = nowIso();
   authorization.status = "revoked";
@@ -676,7 +678,9 @@ function buildVerification(propertyId: UUID): PropertyVerification {
   const relationships = db.property_party_relationships.filter((r) => r.property_id === propertyId);
   const badge = badgeFor(relationships);
   const record = currentOwnershipRecord(propertyId);
-  const authorizations = db.representative_authorizations.filter((a) => a.property_id === propertyId);
+  const authorizations = db.representative_authorizations.filter(
+    (a) => a.property_id === propertyId,
+  );
   const winning = relationships.find(
     (r) =>
       r.revoked_at === null &&
@@ -690,7 +694,8 @@ function buildVerification(propertyId: UUID): PropertyVerification {
     property_id: propertyId,
     badge,
     recorded_owner_name: record?.raw_owner_name ?? winning?.recorded_owner_name ?? null,
-    representative_name: badge === "authorized_representative" ? activeRep?.representative_name ?? null : null,
+    representative_name:
+      badge === "authorized_representative" ? (activeRep?.representative_name ?? null) : null,
     verified_at: winning?.verified_at ?? null,
     verification_version: verificationVersion(propertyId),
     case:
@@ -703,7 +708,9 @@ function buildVerification(propertyId: UUID): PropertyVerification {
   };
 }
 
-export async function getPropertyVerification(propertyId: UUID | null): Promise<PropertyVerification | null> {
+export async function getPropertyVerification(
+  propertyId: UUID | null,
+): Promise<PropertyVerification | null> {
   if (!propertyId) return null;
   return latency(clone(buildVerification(propertyId)), 140);
 }
@@ -749,7 +756,9 @@ export async function getVerificationQueue(): Promise<VerificationQueueItem[]> {
           : "—",
         recorded_owner_name: currentOwnershipRecord(c.property_id)?.raw_owner_name ?? null,
         evidence: db.verification_evidence.filter((e) => e.case_id === c.id),
-        ownership_records: db.property_ownership_records.filter((r) => r.property_id === c.property_id),
+        ownership_records: db.property_ownership_records.filter(
+          (r) => r.property_id === c.property_id,
+        ),
         entity: db.verified_entities.find((e) => e.id === c.entity_id) ?? null,
         risk_events: db.verification_risk_events.filter((r) => r.case_id === c.id),
         history: db.verification_status_events.filter((h) => h.case_id === c.id),
@@ -807,7 +816,12 @@ export async function getDisclosureRequirement(input: {
   const verification = buildVerification(input.propertyId);
   if (verification.badge) {
     return latency(
-      { ...empty, badge: verification.badge, verified: true, verification_version: verification.verification_version },
+      {
+        ...empty,
+        badge: verification.badge,
+        verified: true,
+        verification_version: verification.verification_version,
+      },
       80,
     );
   }

@@ -49,7 +49,9 @@ function hydrate(row: TenancyDetailRow): TenancyDetail {
         .sort((a, b) => desc(a.created_at, b.created_at))
         .map(toLease)[0] ?? null,
     payments: row.payments.map(toPayment).sort((a, b) => desc(a.due_date, b.due_date)),
-    maintenance: row.maintenance_requests.map(toMaintenance).sort((a, b) => desc(a.created_at, b.created_at)),
+    maintenance: row.maintenance_requests
+      .map(toMaintenance)
+      .sort((a, b) => desc(a.created_at, b.created_at)),
     documents: row.documents
       .filter((d) => d.deleted_at === null)
       .map(toDocument)
@@ -208,7 +210,12 @@ export async function verifyTenancy(tenancyId: UUID, actorId?: UUID | null) {
   // Tenant is linked but the flag is off (e.g. linked through an older path):
   // activate and occupy; the platform re-verification job handles the flag.
   const row = unwrapOne(
-    await db.from("tenancies").update({ status: "active" }).eq("id", tenancyId).select("*").single(),
+    await db
+      .from("tenancies")
+      .update({ status: "active" })
+      .eq("id", tenancyId)
+      .select("*")
+      .single(),
     "Tenancy",
   );
   unwrap(await db.from("units").update({ occupancy_status: "occupied" }).eq("id", row.unit_id));
@@ -358,14 +365,19 @@ export async function revokeInvitation(invitationId: UUID) {
       .single(),
     "Invitation",
   );
-  await logAudit({ action: "invitation.revoked", entity_type: "tenant_invitation", entity_id: invitationId });
+  await logAudit({
+    action: "invitation.revoked",
+    entity_type: "tenant_invitation",
+    entity_id: invitationId,
+  });
   return true;
 }
 
 const ACCEPT_ERRORS: Record<string, string> = {
   not_found: "Invitation not found.",
   expired: "This invitation has expired — ask your landlord to send a new one.",
-  wrong_email: "This invitation was sent to a different email address. Sign in with that address to accept it.",
+  wrong_email:
+    "This invitation was sent to a different email address. Sign in with that address to accept it.",
   already_accepted: "This invitation was already accepted.",
   already_revoked: "This invitation was withdrawn by the landlord.",
   already_expired: "This invitation has expired — ask your landlord to send a new one.",
@@ -387,7 +399,11 @@ export async function acceptInvitation(input: {
   if (!token) {
     if (!input.invitationId) throw new Error("Invitation not found.");
     const row = unwrapMaybe<{ token: string }>(
-      await db.from("tenant_invitations").select("token").eq("id", input.invitationId).maybeSingle(),
+      await db
+        .from("tenant_invitations")
+        .select("token")
+        .eq("id", input.invitationId)
+        .maybeSingle(),
     );
     token = row?.token ?? null;
   }
@@ -400,7 +416,10 @@ export async function acceptInvitation(input: {
     throw new Error(ACCEPT_ERRORS[result.error ?? ""] ?? "Could not accept this invitation.");
   }
   if (input.fullName) {
-    await db.from("tenancies").update({ tenant_name: input.fullName.trim() }).eq("id", result.tenancy_id);
+    await db
+      .from("tenancies")
+      .update({ tenant_name: input.fullName.trim() })
+      .eq("id", result.tenancy_id);
   }
   return { tenancyId: result.tenancy_id };
 }

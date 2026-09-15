@@ -187,7 +187,16 @@ export const toDocument = (r: Tables<"documents">): Document => ({
   deleted_at: r.deleted_at,
 });
 
-const PAYMENT_METHODS: PaymentMethod[] = ["manual", "ach", "same_day_ach", "rtp", "fednow", "card", "cash", "check"];
+const PAYMENT_METHODS: PaymentMethod[] = [
+  "manual",
+  "ach",
+  "same_day_ach",
+  "rtp",
+  "fednow",
+  "card",
+  "cash",
+  "check",
+];
 
 export const toPayment = (r: Tables<"payments">): Payment => ({
   id: r.id,
@@ -197,7 +206,9 @@ export const toPayment = (r: Tables<"payments">): Payment => ({
   amount: num0(r.amount),
   platform_fee_amount: num(r.platform_fee_amount),
   status: r.status,
-  method: (PAYMENT_METHODS as string[]).includes(r.method ?? "") ? (r.method as PaymentMethod) : "manual",
+  method: (PAYMENT_METHODS as string[]).includes(r.method ?? "")
+    ? (r.method as PaymentMethod)
+    : "manual",
   due_date: r.due_date ?? r.created_at.slice(0, 10),
   paid_at: r.paid_at,
   period_label: r.period_label ?? "",
@@ -282,7 +293,9 @@ export const toReviewDispute = (r: Tables<"review_disputes">): ReviewDispute => 
   review_id: r.review_id,
   raised_by: r.raised_by,
   reason: r.reason,
-  status: (["open", "resolved", "rejected"].includes(r.status) ? r.status : "open") as ReviewDispute["status"],
+  status: (["open", "resolved", "rejected"].includes(r.status)
+    ? r.status
+    : "open") as ReviewDispute["status"],
   resolved_at: r.resolved_at,
   created_at: r.created_at,
   updated_at: r.updated_at,
@@ -448,7 +461,9 @@ export const toOwnerAccount = (r: Tables<"owner_accounts">): OwnerAccount => ({
   updated_at: r.updated_at,
 });
 
-export const toManagementAssignment = (r: Tables<"management_assignments">): ManagementAssignment => ({
+export const toManagementAssignment = (
+  r: Tables<"management_assignments">,
+): ManagementAssignment => ({
   id: r.id,
   organization_id: r.organization_id,
   owner_account_id: r.owner_account_id,

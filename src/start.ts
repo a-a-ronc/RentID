@@ -1,7 +1,23 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { withSecurityHeaders } from "./lib/security-headers";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+
+const securityEnv = () => ({
+  supabaseUrl: process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"],
+  dev: process.env["NODE_ENV"] !== "production",
+});
+
+// Strict transport + CSP + frame/referrer/permissions policies on every
+// response, including error pages. See src/lib/security-headers.ts.
+const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => {
+  const result = await next();
+  if (result instanceof Response) return withSecurityHeaders(result, securityEnv());
+  const maybe = result as { response?: Response };
+  if (maybe && maybe.response instanceof Response) withSecurityHeaders(maybe.response, securityEnv());
+  return result;
+});
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -11,10 +27,13 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
       throw error;
     }
     console.error(error);
-    return new Response(renderErrorPage(), {
-      status: 500,
-      headers: { "content-type": "text/html; charset=utf-8" },
-    });
+    return withSecurityHeaders(
+      new Response(renderErrorPage(), {
+        status: 500,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }),
+      securityEnv(),
+    );
   }
 });
 
@@ -27,5 +46,5 @@ const csrfMiddleware = createCsrfMiddleware({
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
+  requestMiddleware: [securityHeadersMiddleware, errorMiddleware, csrfMiddleware],
 }));

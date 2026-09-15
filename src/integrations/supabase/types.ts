@@ -1763,6 +1763,7 @@ export type Database = {
           move_in_date: string | null
           note: string | null
           organization_id: string
+          passport_snapshot: Json | null
           prefilled_from_resume: boolean
           profile_shared: boolean
           references_text: string | null
@@ -1789,6 +1790,7 @@ export type Database = {
           move_in_date?: string | null
           note?: string | null
           organization_id: string
+          passport_snapshot?: Json | null
           prefilled_from_resume?: boolean
           profile_shared?: boolean
           references_text?: string | null
@@ -1815,6 +1817,7 @@ export type Database = {
           move_in_date?: string | null
           note?: string | null
           organization_id?: string
+          passport_snapshot?: Json | null
           prefilled_from_resume?: boolean
           profile_shared?: boolean
           references_text?: string | null
@@ -2865,6 +2868,7 @@ export type Database = {
       is_tenant_of_unit: { Args: { _unit_id: string }; Returns: boolean }
       is_trusted_write: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_verified_tenancy: { Args: { _tenancy_id: string }; Returns: boolean }
+      manages_tenancy: { Args: { _tenancy_id: string }; Returns: boolean }
       notify_user: {
         Args: {
           _body?: string
@@ -2890,7 +2894,32 @@ export type Database = {
           verified_properties: number
         }[]
       }
+      provider_public_stats: {
+        Args: { _org_ids: string[] }
+        Returns: {
+          collection_rate_pct: number
+          median_first_response_hours: number
+          open_disputes: number
+          organization_id: string
+          owner_rating: number
+          owners_served: number
+          resolved_under_72h_pct: number
+          tenant_rating: number
+          verified_units: number
+        }[]
+      }
       public_listing: { Args: { _ref: string }; Returns: Json }
+      record_listing_sync: {
+        Args: {
+          _action: string
+          _external_listing_id?: string
+          _listing_id: string
+          _marketplace_id: string
+          _message?: string
+          _result: string
+        }
+        Returns: string
+      }
       return_payment: {
         Args: {
           _payment_id: string
@@ -2909,6 +2938,10 @@ export type Database = {
           _settled_at?: string
         }
         Returns: string
+      }
+      tenant_passport_snapshot: {
+        Args: { _email: string; _user_id: string }
+        Returns: Json
       }
       verification_writer_unlocked: {
         Args: Record<PropertyKey, never>

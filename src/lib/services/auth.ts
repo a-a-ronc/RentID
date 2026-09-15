@@ -94,7 +94,10 @@ export function onAuthStateChange(listener: (s: AppSession | null) => void) {
 }
 
 export async function signIn(email: string, password: string): Promise<AppSession> {
-  const { data, error } = await db.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+  const { data, error } = await db.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  });
   if (error) throw new Error(friendlyAuthError(error.message));
   current = await buildSession(data.session);
   emit();
@@ -117,7 +120,9 @@ export async function signUp(input: {
     options: {
       // consumed by public.handle_new_user() → profile + role (never admin)
       data: { full_name: input.fullName.trim(), role: input.role, phone: input.phone ?? null },
-      ...(typeof window !== "undefined" ? { emailRedirectTo: `${window.location.origin}/auth` } : {}),
+      ...(typeof window !== "undefined"
+        ? { emailRedirectTo: `${window.location.origin}/auth` }
+        : {}),
     },
   });
   if (error) throw new Error(friendlyAuthError(error.message));
@@ -164,7 +169,10 @@ export async function updateProfile(
   if (patch.phone !== undefined) update.phone = patch.phone;
   if (patch.avatar_url !== undefined) update.avatar_url = patch.avatar_url;
   if (patch.onboarded !== undefined) update.onboarding_completed = patch.onboarded;
-  const row = unwrapOne(await db.from("profiles").update(update).eq("id", userId).select("*").single(), "Profile");
+  const row = unwrapOne(
+    await db.from("profiles").update(update).eq("id", userId).select("*").single(),
+    "Profile",
+  );
   return toProfile(row);
 }
 
@@ -191,7 +199,8 @@ export async function addRole(userId: UUID, role: AppRole) {
 function friendlyAuthError(message: string): string {
   const m = message.toLowerCase();
   if (m.includes("invalid login credentials")) return "Incorrect email or password.";
-  if (m.includes("email not confirmed")) return "Confirm your email address first — check your inbox.";
+  if (m.includes("email not confirmed"))
+    return "Confirm your email address first — check your inbox.";
   if (m.includes("already registered")) return "An account with that email already exists.";
   if (m.includes("rate limit")) return "Too many attempts — please wait a minute and try again.";
   if (m.includes("password")) return message;
