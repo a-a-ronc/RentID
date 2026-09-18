@@ -6,7 +6,6 @@ import {
   AppShell,
   Button,
   DataTable,
-  DemoNotice,
   EmptyState,
   Field,
   FormGrid,
@@ -20,15 +19,19 @@ import {
   TextInput,
 } from "@/components/rentid/patterns";
 import { shortDate } from "@/lib/format";
-import { useActiveOrg, useDocuments, useProperties, useTenancies, useUploadDocument } from "@/lib/rentid";
+import { OpenDocumentButton } from "@/components/rentid/OpenDocumentButton";
+import {
+  useActiveOrg,
+  useDocuments,
+  useProperties,
+  useTenancies,
+  useUploadDocument,
+} from "@/lib/rentid";
 import type { DocumentKind, DocumentWithContext } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/documents")({
   head: () => ({
-    meta: [
-      { title: "Documents — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Documents — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: DocumentsPage,
 });
@@ -69,6 +72,7 @@ function DocumentsPage() {
         fileName: file?.name ?? null,
         fileSize: file?.size ?? null,
         mimeType: file?.type ?? null,
+        file,
         visibleToTenant: form.get("visibleToTenant") === "on",
       });
       toast.success("Document filed.");
@@ -83,7 +87,9 @@ function DocumentsPage() {
     <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
       <PageHeader
         title="Documents"
-        subtitle={active.org ? `${active.org.name} · ${(documents.data ?? []).length} filed` : undefined}
+        subtitle={
+          active.org ? `${active.org.name} · ${(documents.data ?? []).length} filed` : undefined
+        }
         action={
           <Button size="sm" onClick={() => setOpen(true)} disabled={!active.orgId}>
             Upload document
@@ -92,15 +98,13 @@ function DocumentsPage() {
       />
 
       <div className="mt-5 space-y-4">
-        <DemoNotice>
-          Metadata is stored now; the file itself is kept only in this session. When storage reconnects the same upload
-          form writes the file to the private documents bucket.
-        </DemoNotice>
-
         {documents.isLoading ? (
           <LoadingCard label="Loading documents…" />
         ) : documents.isError ? (
-          <InlineError message="Documents could not be loaded." onRetry={() => void documents.refetch()} />
+          <InlineError
+            message="Documents could not be loaded."
+            onRetry={() => void documents.refetch()}
+          />
         ) : (
           <SectionCard title="All documents" aside={`${(documents.data ?? []).length} total`}>
             <DataTable<DocumentWithContext>
@@ -120,12 +124,18 @@ function DocumentsPage() {
                     <div className="min-w-0">
                       <p className="truncate font-medium">{d.title}</p>
                       <p className="truncate text-[11.5px] text-muted-foreground">
-                        {[d.property_name, d.unit_name, d.tenant_name].filter(Boolean).join(" · ") || "Unassigned"}
+                        {[d.property_name, d.unit_name, d.tenant_name]
+                          .filter(Boolean)
+                          .join(" · ") || "Unassigned"}
                       </p>
                     </div>
                   ),
                 },
-                { key: "kind", header: "Kind", cell: (d) => <StatusPill status={d.kind} tone="accent" /> },
+                {
+                  key: "kind",
+                  header: "Kind",
+                  cell: (d) => <StatusPill status={d.kind} tone="accent" />,
+                },
                 {
                   key: "shared",
                   header: "Tenant access",
@@ -148,21 +158,7 @@ function DocumentsPage() {
                   key: "actions",
                   header: "",
                   align: "right",
-                  cell: (d) => (
-                    <Button
-                      tone="secondary"
-                      size="sm"
-                      onClick={() =>
-                        toast.info(
-                          d.storage_path
-                            ? `${d.storage_path.split("/").pop()} opens once document storage is connected.`
-                            : "No file attached to this record yet.",
-                        )
-                      }
-                    >
-                      Open
-                    </Button>
-                  ),
+                  cell: (d) => <OpenDocumentButton storagePath={d.storage_path} />,
                 },
               ]}
             />
@@ -201,7 +197,11 @@ function DocumentsPage() {
               </Select>
             </Field>
           </FormGrid>
-          <Field label="Tenancy" htmlFor="tenancyId" hint="Links the document to a tenant and unit.">
+          <Field
+            label="Tenancy"
+            htmlFor="tenancyId"
+            hint="Links the document to a tenant and unit."
+          >
             <Select id="tenancyId" name="tenancyId" defaultValue="">
               <option value="">—</option>
               {(tenancies.data ?? []).map((tenancy) => (
@@ -211,7 +211,11 @@ function DocumentsPage() {
               ))}
             </Select>
           </Field>
-          <Field label="File" htmlFor="file" hint="PDF or image. Stored in-session until storage reconnects.">
+          <Field
+            label="File"
+            htmlFor="file"
+            hint="PDF or image. Stored in-session until storage reconnects."
+          >
             <input
               id="file"
               type="file"
@@ -221,7 +225,12 @@ function DocumentsPage() {
             />
           </Field>
           <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
-            <input type="checkbox" name="visibleToTenant" defaultChecked className="size-4 accent-[var(--brand)]" />
+            <input
+              type="checkbox"
+              name="visibleToTenant"
+              defaultChecked
+              className="size-4 accent-[var(--brand)]"
+            />
             Visible to the tenant
           </label>
           <div className="flex justify-end gap-2 pt-1">

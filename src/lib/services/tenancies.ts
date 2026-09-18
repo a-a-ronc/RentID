@@ -434,3 +434,37 @@ export async function getVerificationRecords(tenancyId: UUID): Promise<Verificat
   );
   return rows.map(toVerificationRecord);
 }
+
+/* --------------------------------------------------------------------------
+ * Invitation preview
+ *
+ * Reads a pending invitation by its token so an invited tenant can see who is
+ * inviting them, and to which unit, before accepting. The RPC is granted to
+ * `authenticated` only, so the caller must be signed in; a signed-out visitor
+ * on /invite is asked to create an account first.
+ * ------------------------------------------------------------------------ */
+
+export type InvitationPreview = {
+  id: UUID;
+  status: string;
+  email: string;
+  full_name: string | null;
+  expires_at: string;
+  monthly_rent: number | null;
+  lease_start: string | null;
+  lease_end: string | null;
+  organization_name: string;
+  property_name: string | null;
+  street_address: string | null;
+  city: string | null;
+  state: string | null;
+  unit_name: string | null;
+};
+
+export async function previewInvitation(token: string): Promise<InvitationPreview | null> {
+  if (!token.trim()) return null;
+  const { data, error } = await db.rpc("invitation_preview", { _token: token });
+  if (error) throw new DbError(error);
+  const row = Array.isArray(data) ? data[0] : data;
+  return (row as InvitationPreview | undefined) ?? null;
+}

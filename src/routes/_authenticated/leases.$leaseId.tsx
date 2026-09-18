@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
 
+import { OpenDocumentButton } from "@/components/rentid/OpenDocumentButton";
+
 import {
   AppShell,
   EmptyState,
@@ -17,10 +19,7 @@ import type { LeaseStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/leases/$leaseId")({
   head: () => ({
-    meta: [
-      { title: "Lease — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Lease — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: LeaseDetailPage,
 });
@@ -48,7 +47,9 @@ function LeaseDetailPage() {
     return (
       <AppShell>
         <InlineError
-          message={lease.error instanceof Error ? lease.error.message : "Could not load this lease."}
+          message={
+            lease.error instanceof Error ? lease.error.message : "Could not load this lease."
+          }
           onRetry={() => lease.refetch()}
         />
       </AppShell>
@@ -62,7 +63,10 @@ function LeaseDetailPage() {
           title="Lease not found"
           description="This lease may belong to a different workspace."
           action={
-            <Link to="/leases" className="rounded-full bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground">
+            <Link
+              to="/leases"
+              className="rounded-full bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground"
+            >
               Back to leases
             </Link>
           }
@@ -72,29 +76,49 @@ function LeaseDetailPage() {
   }
 
   const daysLeft = daysUntil(detail.end_date);
-  const expiringSoon = daysLeft != null && daysLeft >= 0 && daysLeft <= 30 && detail.status !== "ended" && detail.status !== "terminated";
+  const expiringSoon =
+    daysLeft != null &&
+    daysLeft >= 0 &&
+    daysLeft <= 30 &&
+    detail.status !== "ended" &&
+    detail.status !== "terminated";
 
   return (
     <AppShell subtitle="Landlord">
       <PageHeader
         title={`Lease · ${detail.tenancy?.tenant_name ?? "Tenant"}`}
-        subtitle={[detail.property?.name ?? "", detail.unit?.name ?? ""].filter(Boolean).join(" · ")}
+        subtitle={[detail.property?.name ?? "", detail.unit?.name ?? ""]
+          .filter(Boolean)
+          .join(" · ")}
         action={<StatusPill status={detail.status} tone={TONE[detail.status]} />}
       />
 
       {expiringSoon ? (
         <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-warning/25 bg-warning/8 px-4 py-3 text-[12.5px] text-muted-foreground">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-          <span>This lease ends in {daysLeft} day{daysLeft === 1 ? "" : "s"} — consider renewing or ending the tenancy.</span>
+          <span>
+            This lease ends in {daysLeft} day{daysLeft === 1 ? "" : "s"} — consider renewing or
+            ending the tenancy.
+          </span>
         </div>
       ) : null}
 
       <SectionCard title="Terms" className="mt-4">
-        <ListRow title="Term" subtitle={`${shortDate(detail.start_date)} → ${shortDate(detail.end_date)}`} value={`${money(detail.monthly_rent)}/mo`} />
+        <ListRow
+          title="Term"
+          subtitle={`${shortDate(detail.start_date)} → ${shortDate(detail.end_date)}`}
+          value={`${money(detail.monthly_rent)}/mo`}
+        />
         <ListRow title="Security deposit" value={money(detail.security_deposit ?? 0)} />
         <ListRow title="Rent due day" value={String(detail.rent_due_day)} />
-        <ListRow title="Late fee" value={detail.late_fee != null ? money(detail.late_fee) : "None"} />
-        <ListRow title="Signed" value={detail.signed_at ? shortDate(detail.signed_at) : "Not signed"} />
+        <ListRow
+          title="Late fee"
+          value={detail.late_fee != null ? money(detail.late_fee) : "None"}
+        />
+        <ListRow
+          title="Signed"
+          value={detail.signed_at ? shortDate(detail.signed_at) : "Not signed"}
+        />
       </SectionCard>
 
       <SectionCard title="Linked records" className="mt-4">
@@ -103,7 +127,11 @@ function LeaseDetailPage() {
           subtitle={detail.tenancy?.tenant_name ?? "—"}
           value={
             detail.tenancy ? (
-              <Link to="/tenants/$tenancyId" params={{ tenancyId: detail.tenancy.id }} className="text-[12.5px] font-medium text-brand">
+              <Link
+                to="/tenants/$tenancyId"
+                params={{ tenancyId: detail.tenancy.id }}
+                className="text-[12.5px] font-medium text-brand"
+              >
                 View tenancy
               </Link>
             ) : undefined
@@ -120,13 +148,13 @@ function LeaseDetailPage() {
               title={detail.document.title}
               subtitle={`${detail.document.mime_type ?? "unknown type"} · ${detail.document.size_bytes ? `${Math.round(detail.document.size_bytes / 1024)} KB` : "size unknown"}`}
               pill={<StatusPill status={detail.document.kind} tone="neutral" />}
+              value={<OpenDocumentButton storagePath={detail.document.storage_path} />}
             />
-            <div className="px-4 py-3 text-[11.5px] text-muted-foreground">
-              Document downloads will activate once Supabase Storage is connected.
-            </div>
           </>
         ) : (
-          <div className="px-4 py-4 text-[12.5px] text-muted-foreground">No document attached to this lease.</div>
+          <div className="px-4 py-4 text-[12.5px] text-muted-foreground">
+            No document attached to this lease.
+          </div>
         )}
       </SectionCard>
     </AppShell>

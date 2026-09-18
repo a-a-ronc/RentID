@@ -15,6 +15,7 @@ import type {
   MaintenanceRequest,
   MaintenanceStatus,
   Organization,
+  Payment,
   PropertyType,
   RoommateGroupStage,
   UUID,
@@ -96,8 +97,11 @@ export function useCreateOrganization() {
   const { user } = useAuth();
   const invalidate = useInvalidateRentId();
   return useMutation({
-    mutationFn: (input: { name: string; legalEntityName?: string | null }) =>
-      svc.createOrganization({ ...input, ownerId: user!.id }),
+    mutationFn: (input: {
+      name: string;
+      legalEntityName?: string | null;
+      kind?: "landlord" | "property_manager";
+    }) => svc.createOrganization({ ...input, ownerId: user!.id }),
     onSuccess: invalidate,
   });
 }
@@ -162,6 +166,9 @@ export function useCreateProperty() {
 export function useUnits(propertyId?: UUID | null, orgId?: UUID | null) {
   return useQuery({
     queryKey: ["units", propertyId ?? null, orgId ?? null],
+    // Without this the first render fetches every unit RLS allows, then swaps
+    // once the active org resolves — a visible flash of the wrong rows.
+    enabled: Boolean(propertyId ?? orgId),
     queryFn: () => svc.getUnits(propertyId ?? null, orgId ?? null),
   });
 }
@@ -320,6 +327,27 @@ export function useMarkPaymentPaid() {
   });
 }
 
+/**
+ * Landlord records rent received outside RentID. Lands as `landlord_reported`,
+ * so it shows on both ledgers but never carries the verified badge — that is
+ * reserved for payments the platform itself settled.
+ */
+export function useRecordPayment() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateRentId();
+  return useMutation({
+    mutationFn: (input: {
+      organizationId: UUID;
+      tenancyId: UUID;
+      amount: number;
+      dueDate: string;
+      method?: Payment["method"];
+      memo?: string | null;
+    }) => svc.recordPayment({ ...input, actorId: user?.id ?? null }),
+    onSuccess: invalidate,
+  });
+}
+
 /* ------------------------------- operations ------------------------------- */
 
 export function useLeases(orgId: UUID | null) {
@@ -366,6 +394,9 @@ export function useUploadDocument() {
       fileName?: string | null;
       fileSize?: number | null;
       mimeType?: string | null;
+      /** The bytes. Without this the row is filed at a `pending-upload/` path
+       *  that can never resolve, so the document is unopenable forever. */
+      file?: File | Blob | null;
       visibleToTenant?: boolean;
     }) => svc.uploadDocument({ ...input, actorId: user?.id ?? null }),
     onSuccess: invalidate,
@@ -448,6 +479,9 @@ export { tenancyVerification } from "@/lib/services/tenancies";
 const MARKETPLACE_KEYS = [
   "listings",
   "listing",
+  // Edit a listing from /listings/$id and /manager/listings kept showing the
+  // stale copy — this key was in neither invalidation list.
+  "managed-listings",
   "public-listings",
   "applications",
   "my-applications",
@@ -1066,4 +1100,32 @@ function useInvalidateVerification() {
       void qc.invalidateQueries({ queryKey: [key] });
     }
   };
+}
+
+/* ------------------------------- invitations ------------------------------ */
+
+/**
+ * Preview a tenant invitation by token. The RPC is granted to `authenticated`
+ * only, so this stays disabled until the visitor has signed in — /invite shows
+ * a sign-up prompt in the meantime.
+ */
+export function useInvitationPreview(token: string | null) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["invitation-preview", token],
+    enabled: Boolean(token && user?.id),
+    retry: false,
+    queryFn: () => svc.previewInvitation(token!),
+  });
+}
+
+/** Accept an invitation from its token (the shareable /invite link). */
+export function useAcceptInvitationToken() {
+  const { user } = useAuth();
+  const invalidate = useInvalidateRentId();
+  return useMutation({
+    mutationFn: (token: string) =>
+      svc.acceptInvitation({ token, userId: user!.id }).then((r) => r.tenancyId),
+    onSuccess: invalidate,
+  });
 }

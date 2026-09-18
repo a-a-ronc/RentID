@@ -23,10 +23,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/tenant/")({
   head: () => ({
-    meta: [
-      { title: "My home — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "My home — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: TenantHome,
 });
@@ -38,7 +35,8 @@ function TenantHome() {
   const accept = useAcceptInvitation();
   const invalidate = useInvalidateRentId();
 
-  const activeTenancy = (tenancies.data ?? []).find((t) => t.status === "active") ?? (tenancies.data ?? [])[0];
+  const activeTenancy =
+    (tenancies.data ?? []).find((t) => t.status === "active") ?? (tenancies.data ?? [])[0];
   const conversations = useConversations({
     tenancyIds: (tenancies.data ?? []).map((t) => t.id),
     viewerRole: "tenant",
@@ -51,17 +49,16 @@ function TenantHome() {
     : undefined;
 
   const openMaintenance = activeTenancy
-    ? activeTenancy.maintenance.filter((m) => m.status === "open" || m.status === "in_progress" || m.status === "acknowledged")
+    ? activeTenancy.maintenance.filter(
+        (m) => m.status === "open" || m.status === "in_progress" || m.status === "acknowledged",
+      )
     : [];
 
   const recentMessages = (conversations.data ?? []).slice(0, 3);
 
   return (
     <AppShell subtitle="Tenant">
-      <PageHeader
-        title={greeting(profile.data?.full_name)}
-        subtitle="Your rental record"
-      />
+      <PageHeader title={greeting(profile.data?.full_name)} subtitle="Your rental record" />
 
       {(invitations.data ?? []).length > 0 && (
         <SectionCard title="Pending invitations" aside="Action needed" className="mt-5">
@@ -78,7 +75,8 @@ function TenantHome() {
                         toast.success("Tenancy verified — welcome home.");
                         invalidate();
                       },
-                      onError: (err) => toast.error(err instanceof Error ? err.message : "Could not accept."),
+                      onError: (err) =>
+                        toast.error(err instanceof Error ? err.message : "Could not accept."),
                     })
                   }
                   disabled={accept.isPending}
@@ -140,19 +138,34 @@ function TenantHome() {
             <SectionCard title="Rent" aside="Next payment" className="mt-4">
               <ListRow
                 title={`Due ${shortDate(upcomingRent.due_date)}`}
-                subtitle={upcomingRent.status === "late" ? "Past due — please contact your landlord" : "Recorded by your landlord"}
+                subtitle={
+                  upcomingRent.status === "late"
+                    ? "Past due — please contact your landlord"
+                    : "Recorded by your landlord"
+                }
                 value={money(upcomingRent.amount)}
-                pill={<StatusPill status={upcomingRent.status} tone={upcomingRent.status === "late" ? "danger" : "neutral"} />}
+                pill={
+                  <StatusPill
+                    status={upcomingRent.status}
+                    tone={upcomingRent.status === "late" ? "danger" : "neutral"}
+                  />
+                }
               />
             </SectionCard>
           )}
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Link to="/tenant/tenancy" className="glass rounded-2xl p-4 transition-opacity hover:opacity-90">
+            <Link
+              to="/tenant/tenancy"
+              className="glass rounded-2xl p-4 transition-opacity hover:opacity-90"
+            >
               <p className="font-display text-[13px] font-semibold">My tenancy</p>
               <p className="mt-1 text-[11.5px] text-muted-foreground">Unit, term & verification</p>
             </Link>
-            <Link to="/tenant/lease" className="glass rounded-2xl p-4 transition-opacity hover:opacity-90">
+            <Link
+              to="/tenant/lease"
+              className="glass rounded-2xl p-4 transition-opacity hover:opacity-90"
+            >
               <FileText className="size-4 text-accent" />
               <p className="mt-1.5 font-display text-[13px] font-semibold">Lease</p>
               <p className="mt-1 text-[11.5px] text-muted-foreground">Terms & documents</p>
@@ -162,12 +175,20 @@ function TenantHome() {
           {openMaintenance.length > 0 && (
             <SectionCard title="Open requests" aside="Maintenance" className="mt-4">
               {openMaintenance.map((m) => (
-                <ListRow key={m.id} title={m.title} pill={<StatusPill status={m.status.replace("_", " ")} tone="warning" />} />
+                <ListRow
+                  key={m.id}
+                  title={m.title}
+                  pill={<StatusPill status={m.status.replace("_", " ")} tone="warning" />}
+                />
               ))}
             </SectionCard>
           )}
 
-          <SectionCard title="Messages" aside={`${recentMessages.length} conversations`} className="mt-4">
+          <SectionCard
+            title="Messages"
+            aside={`${recentMessages.length} conversations`}
+            className="mt-4"
+          >
             {recentMessages.length === 0 ? (
               <p className="px-4 py-5 text-[13px] text-muted-foreground">No messages yet.</p>
             ) : (
@@ -176,8 +197,11 @@ function TenantHome() {
                   key={c.id}
                   title={c.subject}
                   subtitle={c.messages[c.messages.length - 1]?.body ?? ""}
-                  value={c.unread > 0 ? <StatusPill status={`${c.unread} new`} tone="accent" /> : undefined}
-                  onClick={() => {}}
+                  value={
+                    c.unread > 0 ? (
+                      <StatusPill status={`${c.unread} new`} tone="accent" />
+                    ) : undefined
+                  }
                 />
               ))
             )}

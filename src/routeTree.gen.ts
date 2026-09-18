@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForLandlordsRouteImport } from './routes/for-landlords'
 import { Route as ForPropertyManagersRouteImport } from './routes/for-property-managers'
 import { Route as ForTenantsRouteImport } from './routes/for-tenants'
+import { Route as InviteRouteImport } from './routes/invite'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
@@ -90,6 +91,11 @@ const ForPropertyManagersRoute = ForPropertyManagersRouteImport.update({
 const ForTenantsRoute = ForTenantsRouteImport.update({
   id: '/for-tenants',
   path: '/for-tenants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JoinRoute = JoinRouteImport.update({
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/invite': typeof InviteRoute
   '/join': typeof JoinRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/applications': typeof AuthenticatedApplicationsRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByTo {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/invite': typeof InviteRoute
   '/join': typeof JoinRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/applications': typeof AuthenticatedApplicationsRoute
@@ -470,6 +478,7 @@ export interface FileRoutesById {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/invite': typeof InviteRoute
   '/join': typeof JoinRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
@@ -526,6 +535,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/invite'
     | '/join'
     | '/admin'
     | '/applications'
@@ -580,6 +590,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/invite'
     | '/join'
     | '/admin'
     | '/applications'
@@ -633,6 +644,7 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/invite'
     | '/join'
     | '/_authenticated/admin'
     | '/_authenticated/applications'
@@ -689,6 +701,7 @@ export interface RootRouteChildren {
   ForLandlordsRoute: typeof ForLandlordsRoute
   ForPropertyManagersRoute: typeof ForPropertyManagersRoute
   ForTenantsRoute: typeof ForTenantsRoute
+  InviteRoute: typeof InviteRoute
   JoinRoute: typeof JoinRoute
   ApplyListingRefRoute: typeof ApplyListingRefRoute
   ListingListingRefRoute: typeof ListingListingRefRoute
@@ -739,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/for-tenants'
       fullPath: '/for-tenants'
       preLoaderRoute: typeof ForTenantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/join': {
@@ -1203,6 +1223,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForLandlordsRoute: ForLandlordsRoute,
   ForPropertyManagersRoute: ForPropertyManagersRoute,
   ForTenantsRoute: ForTenantsRoute,
+  InviteRoute: InviteRoute,
   JoinRoute: JoinRoute,
   ApplyListingRefRoute: ApplyListingRefRoute,
   ListingListingRefRoute: ListingListingRefRoute,

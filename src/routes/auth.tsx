@@ -2,14 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import {
-  Button,
-  DemoNotice,
-  Eyebrow,
-  Field,
-  Glass,
-  TextInput,
-} from "@/components/rentid/patterns";
+import { Button, DemoNotice, Eyebrow, Field, Glass, TextInput } from "@/components/rentid/patterns";
 import { RentIDLogo } from "@/components/rentid/Logo";
 import { authService } from "@/lib/auth";
 import type { AppRole } from "@/lib/types";
@@ -28,7 +21,8 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: "Sign in — RentID" },
       {
         property: "og:description",
-        content: "Landlords and tenants sign in to RentID to manage tenancies and verified rental history.",
+        content:
+          "Landlords and tenants sign in to RentID to manage tenancies and verified rental history.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -154,8 +148,21 @@ function AuthPage() {
                   <div className="grid grid-cols-3 gap-2">
                     {(
                       [
-                        { value: "landlord", title: "Landlord", copy: "Manage properties and tenancies" },
-                        { value: "tenant", title: "Tenant", copy: "Accept an invitation, build history" },
+                        {
+                          value: "landlord",
+                          title: "Landlord",
+                          copy: "Manage properties and tenancies",
+                        },
+                        {
+                          value: "tenant",
+                          title: "Tenant",
+                          copy: "Accept an invitation, build history",
+                        },
+                        {
+                          value: "property_manager",
+                          title: "Property manager",
+                          copy: "Manage on behalf of owners",
+                        },
                       ] as const
                     ).map((option) => (
                       <button
@@ -178,9 +185,22 @@ function AuthPage() {
             ) : null}
 
             <Field label="Email" htmlFor="email">
-              <TextInput id="email" name="email" type="email" required autoComplete="email" placeholder="you@email.com" />
+              <TextInput
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@email.com"
+              />
             </Field>
-            <Field label="Password" htmlFor="password" {...(mode === "signup" ? { hint: "At least 12 characters — a passphrase works well." } : {})}>
+            <Field
+              label="Password"
+              htmlFor="password"
+              {...(mode === "signup"
+                ? { hint: "At least 12 characters — a passphrase works well." }
+                : {})}
+            >
               <TextInput
                 id="password"
                 name="password"
@@ -212,8 +232,8 @@ function AuthPage() {
           {confirmEmail ? (
             <div className="mt-4">
               <DemoNotice>
-                We sent a confirmation link to <strong>{confirmEmail}</strong>. Open it to activate your account, then
-                sign in.
+                We sent a confirmation link to <strong>{confirmEmail}</strong>. Open it to activate
+                your account, then sign in.
               </DemoNotice>
             </div>
           ) : null}

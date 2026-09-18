@@ -26,10 +26,7 @@ import type { MaintenancePriority, MaintenanceStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/tenant/maintenance")({
   head: () => ({
-    meta: [
-      { title: "Maintenance — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Maintenance — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: TenantMaintenancePage,
 });
@@ -79,7 +76,9 @@ function TenantMaintenancePage() {
     <AppShell subtitle="Tenant">
       <PageHeader
         title="Maintenance"
-        subtitle={tenancy?.property ? `${tenancy.property.name} · ${tenancy.unit?.name ?? ""}` : undefined}
+        subtitle={
+          tenancy?.property ? `${tenancy.property.name} · ${tenancy.unit?.name ?? ""}` : undefined
+        }
         action={
           tenancy ? (
             <Button size="sm" onClick={() => setOpen(true)}>
@@ -93,7 +92,10 @@ function TenantMaintenancePage() {
         {tenancies.isLoading ? (
           <LoadingCard label="Loading your requests…" />
         ) : tenancies.isError ? (
-          <InlineError message="Your maintenance history could not be loaded." onRetry={() => void tenancies.refetch()} />
+          <InlineError
+            message="Your maintenance history could not be loaded."
+            onRetry={() => void tenancies.refetch()}
+          />
         ) : !tenancy ? (
           <EmptyState
             title="No active tenancy"
@@ -101,11 +103,6 @@ function TenantMaintenancePage() {
           />
         ) : (
           <>
-            <DemoNotice>
-              Requests are stored locally in this preview. When the backend reconnects they are written to your
-              landlord&apos;s workspace and tracked with the same statuses.
-            </DemoNotice>
-
             <SectionCard title="Your requests" aside={`${requests.length} total`}>
               {requests.length === 0 ? (
                 <EmptyState
@@ -117,10 +114,15 @@ function TenantMaintenancePage() {
                   <ListRow
                     key={request.id}
                     title={request.title}
-                    subtitle={[shortDate(request.created_at), request.description ?? ""].filter(Boolean).join(" · ")}
+                    subtitle={[shortDate(request.created_at), request.description ?? ""]
+                      .filter(Boolean)
+                      .join(" · ")}
                     pill={
                       <div className="flex items-center gap-2">
-                        <StatusPill status={request.priority} tone={request.priority === "emergency" ? "danger" : "neutral"} />
+                        <StatusPill
+                          status={request.priority}
+                          tone={request.priority === "emergency" ? "danger" : "neutral"}
+                        />
                         <StatusPill
                           status={request.status.replace("_", " ")}
                           tone={STATUS_TONE[request.status] ?? "neutral"}
@@ -134,8 +136,14 @@ function TenantMaintenancePage() {
 
             <SectionCard title="How requests are handled">
               <div className="space-y-2 px-4 py-3 text-[12.5px] text-muted-foreground">
-                <p>Emergencies (flooding, no heat, electrical risk) are flagged to your landlord immediately.</p>
-                <p>Completed work is recorded on your tenancy history as a verified maintenance event.</p>
+                <p>
+                  Emergencies (flooding, no heat, electrical risk) are flagged to your landlord
+                  immediately.
+                </p>
+                <p>
+                  Completed work is recorded on your tenancy history as a verified maintenance
+                  event.
+                </p>
                 <div className="pt-1">
                   <TrustBadge kind="tenant_reported" />
                 </div>
@@ -163,8 +171,16 @@ function TenantMaintenancePage() {
               <option value="emergency">Emergency — unsafe or urgent</option>
             </Select>
           </Field>
-          <Field label="Details" htmlFor="description" hint="When it started, what you've tried, access notes.">
-            <TextArea id="description" name="description" placeholder="Water pools under the cabinet after use…" />
+          <Field
+            label="Details"
+            htmlFor="description"
+            hint="When it started, what you've tried, access notes."
+          >
+            <TextArea
+              id="description"
+              name="description"
+              placeholder="Water pools under the cabinet after use…"
+            />
           </Field>
           <div className="flex justify-end gap-2 pt-1">
             <Button tone="secondary" onClick={() => setOpen(false)}>
