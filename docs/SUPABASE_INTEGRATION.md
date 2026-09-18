@@ -1,4 +1,11 @@
-# RentID — backend integration checklist
+# RentID — backend integration checklist _(completed — historical)_
+
+> **This document describes the mock-data era and is kept only as a record of
+> how the backend was connected.** Every service listed here now runs real,
+> RLS-scoped Supabase queries. For the current architecture see the
+> [README](../README.md); for the security posture see [SECURITY.md](SECURITY.md).
+
+---
 
 The app currently runs entirely on a local mock data layer so no alternative
 backend is introduced while the database is unavailable. Nothing in the UI talks
