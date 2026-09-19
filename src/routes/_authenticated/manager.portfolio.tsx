@@ -1,6 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { AppShell, ListRow, PageHeader, SectionCard, StatusPill } from "@/components/rentid/patterns";
+import {
+  AppShell,
+  ListRow,
+  PageHeader,
+  SectionCard,
+  StatusPill,
+} from "@/components/rentid/patterns";
 import { InlineError, LoadingCard } from "@/components/rentid/kit";
 import { EmptyState } from "@/components/rentid/Surface";
 import { money } from "@/lib/format";
@@ -8,10 +14,7 @@ import { useManagedProperties, useManagementOrg } from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/manager/portfolio")({
   head: () => ({
-    meta: [
-      { title: "Managed portfolio — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Managed portfolio — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: ManagerPortfolio,
 });
@@ -35,7 +38,10 @@ function ManagerPortfolio() {
         {properties.isPending ? (
           <LoadingCard label="Loading portfolio…" rows={4} />
         ) : properties.isError ? (
-          <InlineError message="We couldn't load the portfolio." onRetry={() => void properties.refetch()} />
+          <InlineError
+            message="We couldn't load the portfolio."
+            onRetry={() => void properties.refetch()}
+          />
         ) : properties.data && properties.data.length > 0 ? (
           properties.data.map((property) => {
             const occupied = property.units.filter((u) => u.occupancy_status === "occupied").length;

@@ -15,7 +15,8 @@ const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => 
   const result = await next();
   if (result instanceof Response) return withSecurityHeaders(result, securityEnv());
   const maybe = result as { response?: Response };
-  if (maybe && maybe.response instanceof Response) withSecurityHeaders(maybe.response, securityEnv());
+  if (maybe && maybe.response instanceof Response)
+    withSecurityHeaders(maybe.response, securityEnv());
   return result;
 });
 

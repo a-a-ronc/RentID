@@ -86,11 +86,7 @@ export function TrustBadge({
 }
 
 /** Checklist of the five associations required for a Verified Tenancy. */
-export function VerificationChecklist({
-  checks,
-}: {
-  checks: { label: string; ok: boolean }[];
-}) {
+export function VerificationChecklist({ checks }: { checks: { label: string; ok: boolean }[] }) {
   return (
     <ul className="grid gap-2 sm:grid-cols-2">
       {checks.map((check) => (
@@ -103,7 +99,9 @@ export function VerificationChecklist({
           >
             {check.ok ? "✓" : "·"}
           </span>
-          <span className={check.ok ? "text-foreground" : "text-muted-foreground"}>{check.label}</span>
+          <span className={check.ok ? "text-foreground" : "text-muted-foreground"}>
+            {check.label}
+          </span>
         </li>
       ))}
     </ul>

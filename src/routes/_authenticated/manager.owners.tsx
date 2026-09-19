@@ -25,10 +25,7 @@ import { useCreateOwnerAccount, useManagementOrg, useOwnerAccounts } from "@/lib
 
 export const Route = createFileRoute("/_authenticated/manager/owners")({
   head: () => ({
-    meta: [
-      { title: "Owners — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Owners — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: ManagerOwners,
 });
@@ -111,7 +108,9 @@ function ManagerOwners() {
                 subtitle="Granted by the owner, stored separately from ownership"
                 pill={
                   <StatusPill
-                    status={owner.authority_status === "verified" ? "authorized" : owner.authority_status}
+                    status={
+                      owner.authority_status === "verified" ? "authorized" : owner.authority_status
+                    }
                     tone={owner.authority_status === "verified" ? "success" : "warning"}
                   />
                 }
@@ -150,7 +149,11 @@ function ManagerOwners() {
               <TextInput value={contactName} onChange={(e) => setContactName(e.target.value)} />
             </Field>
             <Field label="Contact email">
-              <TextInput type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+              <TextInput
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+              />
             </Field>
             <Field label="Management fee %" hint="Applied to collected rent">
               <TextInput
@@ -162,8 +165,8 @@ function ManagerOwners() {
             </Field>
           </FormGrid>
           <p className="mt-3 text-[12px] text-muted-foreground">
-            Property authority starts pending until the owner confirms it. Badges, listings and payout
-            changes stay locked until then.
+            Property authority starts pending until the owner confirms it. Badges, listings and
+            payout changes stay locked until then.
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <Button tone="ghost" onClick={() => setOpen(false)}>

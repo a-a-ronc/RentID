@@ -6,10 +6,7 @@ import { useActiveOrg } from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/reviews")({
   head: () => ({
-    meta: [
-      { title: "Reviews — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Reviews — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: ReviewsPage,
 });

@@ -21,10 +21,7 @@ import { useActiveOrg, useConversations, useSendMessage, useTenancies } from "@/
 
 export const Route = createFileRoute("/_authenticated/messages")({
   head: () => ({
-    meta: [
-      { title: "Messages — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Messages — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: MessagesPage,
 });
@@ -57,7 +54,9 @@ function MessagesPage() {
         conversationId: thread?.id ?? null,
         organizationId: active.orgId,
         tenancyId: target,
-        subject: thread?.subject ?? `${tenancy?.property?.name ?? "Tenancy"} — ${tenancy?.unit?.name ?? ""}`,
+        subject:
+          thread?.subject ??
+          `${tenancy?.property?.name ?? "Tenancy"} — ${tenancy?.unit?.name ?? ""}`,
         senderId: user?.id ?? null,
         senderName: profile.data?.full_name ?? "Landlord",
         senderRole: "landlord",
@@ -75,18 +74,24 @@ function MessagesPage() {
 
       <div className="mt-5 space-y-4">
         <DemoNotice>
-          Every thread is attached to a tenancy, so conversation history stays with the lease instead of an inbox.
+          Every thread is attached to a tenancy, so conversation history stays with the lease
+          instead of an inbox.
         </DemoNotice>
 
         {conversations.isLoading ? (
           <LoadingCard label="Loading conversations…" />
         ) : conversations.isError ? (
-          <InlineError message="Messages could not be loaded." onRetry={() => void conversations.refetch()} />
+          <InlineError
+            message="Messages could not be loaded."
+            onRetry={() => void conversations.refetch()}
+          />
         ) : (
           <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
             <SectionCard title="Threads" aside={`${threads.length}`}>
               {threads.length === 0 ? (
-                <p className="px-4 py-4 text-[12.5px] text-muted-foreground">No conversations yet.</p>
+                <p className="px-4 py-4 text-[12.5px] text-muted-foreground">
+                  No conversations yet.
+                </p>
               ) : (
                 threads.map((item) => (
                   <button
@@ -116,7 +121,10 @@ function MessagesPage() {
                   {(thread?.messages ?? []).map((message) => {
                     const mine = message.sender_role !== "tenant";
                     return (
-                      <div key={message.id} className={mine ? "flex justify-end" : "flex justify-start"}>
+                      <div
+                        key={message.id}
+                        className={mine ? "flex justify-end" : "flex justify-start"}
+                      >
                         <div
                           className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[13px] ${
                             mine ? "bg-brand text-brand-foreground" : "bg-secondary text-foreground"
@@ -124,7 +132,9 @@ function MessagesPage() {
                         >
                           <p className="label-eyebrow mb-1 opacity-70">{message.sender_name}</p>
                           <p className="whitespace-pre-wrap">{message.body}</p>
-                          <p className="mt-1 text-[10.5px] opacity-70">{shortDate(message.created_at)}</p>
+                          <p className="mt-1 text-[10.5px] opacity-70">
+                            {shortDate(message.created_at)}
+                          </p>
                         </div>
                       </div>
                     );

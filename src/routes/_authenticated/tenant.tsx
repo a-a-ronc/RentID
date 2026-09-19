@@ -6,10 +6,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
  */
 export const Route = createFileRoute("/_authenticated/tenant")({
   head: () => ({
-    meta: [
-      { title: "Tenant · RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Tenant · RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: () => <Outlet />,
 });

@@ -9,7 +9,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { ListRow, SectionCard, StatusPill } from "@/components/rentid/patterns";
-import { Button, Field, FormGrid, Modal, Select, TextArea, TextInput } from "@/components/rentid/kit";
+import {
+  Button,
+  Field,
+  FormGrid,
+  Modal,
+  Select,
+  TextArea,
+  TextInput,
+} from "@/components/rentid/kit";
 import {
   OwnershipNotice,
   PropertyVerificationBadgeButton,
@@ -29,8 +37,15 @@ import type {
   VerificationProposition,
 } from "@/lib/types";
 
-const STATUS_COPY: Record<VerificationCaseStatus, { label: string; tone: "success" | "warning" | "danger" | "neutral"; hint: string }> = {
-  pending: { label: "Claim started", tone: "neutral", hint: "Add the recorded deed and a matching ID to continue." },
+const STATUS_COPY: Record<
+  VerificationCaseStatus,
+  { label: string; tone: "success" | "warning" | "danger" | "neutral"; hint: string }
+> = {
+  pending: {
+    label: "Claim started",
+    tone: "neutral",
+    hint: "Add the recorded deed and a matching ID to continue.",
+  },
   collecting_evidence: {
     label: "Collecting evidence",
     tone: "warning",
@@ -41,13 +56,21 @@ const STATUS_COPY: Record<VerificationCaseStatus, { label: string; tone: "succes
     tone: "warning",
     hint: "A RentID reviewer is checking the records. No badge is shown while this is open.",
   },
-  ownership_verified: { label: "Ownership verified", tone: "success", hint: "The recorded owner and this account match." },
+  ownership_verified: {
+    label: "Ownership verified",
+    tone: "success",
+    hint: "The recorded owner and this account match.",
+  },
   authorized_representative_verified: {
     label: "Authority verified",
     tone: "success",
     hint: "You are authorized to act for this property's owner.",
   },
-  unable_to_verify: { label: "Not verified", tone: "danger", hint: "RentID could not establish this claim. You can start again with new records." },
+  unable_to_verify: {
+    label: "Not verified",
+    tone: "danger",
+    hint: "RentID could not establish this claim. You can start again with new records.",
+  },
   suspended: {
     label: "Verification suspended",
     tone: "danger",
@@ -108,7 +131,11 @@ export function PropertyVerificationCard({
   async function submitClaim(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await startClaim.mutateAsync({ propertyId, relationship, claimantName: claimantName || null });
+      await startClaim.mutateAsync({
+        propertyId,
+        relationship,
+        claimantName: claimantName || null,
+      });
       toast.success("Ownership claim started.");
       setClaimOpen(false);
     } catch (err) {
@@ -268,7 +295,11 @@ export function PropertyVerificationCard({
         </form>
       </Modal>
 
-      <Modal open={evidenceOpen} onClose={() => setEvidenceOpen(false)} title="Add verification evidence">
+      <Modal
+        open={evidenceOpen}
+        onClose={() => setEvidenceOpen(false)}
+        title="Add verification evidence"
+      >
         <form onSubmit={submitEvidenceForm} className="space-y-3.5">
           <Field label="Document type">
             <Select value={evidenceIndex} onChange={(e) => setEvidenceIndex(e.target.value)}>
@@ -283,8 +314,8 @@ export function PropertyVerificationCard({
             <TextArea rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} />
           </Field>
           <p className="text-[12px] text-muted-foreground">
-            Uploaded documents are treated as unverified until a RentID reviewer checks them, and are
-            stored privately — never shown to tenants or on public pages.
+            Uploaded documents are treated as unverified until a RentID reviewer checks them, and
+            are stored privately — never shown to tenants or on public pages.
           </p>
           <Button type="submit" loading={submitEvidence.isPending} className="w-full">
             Submit for review
@@ -296,7 +327,11 @@ export function PropertyVerificationCard({
         <form onSubmit={submitAuthorization} className="space-y-3.5">
           <FormGrid>
             <Field label="Owner name">
-              <TextInput required value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
+              <TextInput
+                required
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+              />
             </Field>
             <Field label="Representative or company">
               <TextInput required value={repName} onChange={(e) => setRepName(e.target.value)} />

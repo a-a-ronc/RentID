@@ -37,7 +37,9 @@ function ForLandlords() {
       />
 
       <section className="pb-12">
-        <h2 className="font-display text-[19px] font-semibold tracking-tight">Run your Portfolio</h2>
+        <h2 className="font-display text-[19px] font-semibold tracking-tight">
+          Run your Portfolio
+        </h2>
         <div className="mt-4">
           <PublicGrid
             items={[

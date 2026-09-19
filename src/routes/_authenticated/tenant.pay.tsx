@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AppShell, DataTable, PageHeader, SectionCard, StatusPill, TrustBadge } from "@/components/rentid/patterns";
+import {
+  AppShell,
+  DataTable,
+  PageHeader,
+  SectionCard,
+  StatusPill,
+  TrustBadge,
+} from "@/components/rentid/patterns";
 import { DemoNotice, EmptyState } from "@/components/rentid/patterns";
 import { DisclosureNotice } from "@/components/rentid/verification-ui";
 import { money, shortDate } from "@/lib/format";
@@ -23,9 +30,14 @@ const STATUS_TONE: Record<string, "success" | "danger" | "warning" | "neutral"> 
 
 function PayPage() {
   const tenancies = useMyTenancies();
-  const active = (tenancies.data ?? []).find((t) => t.status === "active") ?? (tenancies.data ?? [])[0];
-  const payments = [...(active?.payments ?? [])].sort((a, b) => b.due_date.localeCompare(a.due_date));
-  const upcoming = payments.filter((p) => p.status !== "paid").sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+  const active =
+    (tenancies.data ?? []).find((t) => t.status === "active") ?? (tenancies.data ?? [])[0];
+  const payments = [...(active?.payments ?? [])].sort((a, b) =>
+    b.due_date.localeCompare(a.due_date),
+  );
+  const upcoming = payments
+    .filter((p) => p.status !== "paid")
+    .sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
 
   return (
     <AppShell subtitle="Tenant">
@@ -43,9 +55,16 @@ function PayPage() {
       </div>
 
       {tenancies.isLoading ? (
-        <div className="mt-4"><EmptyState title="Loading…" description="Fetching payment history." /></div>
+        <div className="mt-4">
+          <EmptyState title="Loading…" description="Fetching payment history." />
+        </div>
       ) : !active ? (
-        <div className="mt-4"><EmptyState title="No tenancy yet" description="Payment history will appear once you have an active tenancy." /></div>
+        <div className="mt-4">
+          <EmptyState
+            title="No tenancy yet"
+            description="Payment history will appear once you have an active tenancy."
+          />
+        </div>
       ) : (
         <>
           {upcoming && (
@@ -53,24 +72,42 @@ function PayPage() {
               <div className="flex items-center justify-between px-4 py-4">
                 <div>
                   <p className="text-[13.5px] font-medium">Due {shortDate(upcoming.due_date)}</p>
-                  <p className="mt-0.5 text-[11.5px] text-muted-foreground">{upcoming.period_label}</p>
+                  <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                    {upcoming.period_label}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <StatusPill status={upcoming.status} tone={STATUS_TONE[upcoming.status] ?? "neutral"} />
+                  <StatusPill
+                    status={upcoming.status}
+                    tone={STATUS_TONE[upcoming.status] ?? "neutral"}
+                  />
                   <span className="num text-[16px] font-semibold">{money(upcoming.amount)}</span>
                 </div>
               </div>
             </SectionCard>
           )}
 
-          <SectionCard title="Payment history" aside={`${payments.length} records`} className="mt-4">
+          <SectionCard
+            title="Payment history"
+            aside={`${payments.length} records`}
+            className="mt-4"
+          >
             <div className="px-2 py-2">
               <DataTable<Payment>
                 rows={payments}
-                empty={<p className="px-4 py-6 text-center text-[13px] text-muted-foreground">No payments recorded yet.</p>}
+                empty={
+                  <p className="px-4 py-6 text-center text-[13px] text-muted-foreground">
+                    No payments recorded yet.
+                  </p>
+                }
                 columns={[
                   { key: "period", header: "Period", cell: (p) => p.period_label },
-                  { key: "due", header: "Due", cell: (p) => shortDate(p.due_date), hideOnMobile: true },
+                  {
+                    key: "due",
+                    header: "Due",
+                    cell: (p) => shortDate(p.due_date),
+                    hideOnMobile: true,
+                  },
                   { key: "amount", header: "Amount", cell: (p) => money(p.amount), align: "right" },
                   {
                     key: "status",

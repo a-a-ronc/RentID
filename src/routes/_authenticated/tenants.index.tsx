@@ -18,10 +18,7 @@ import { useActiveOrg, useTenancies } from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/tenants/")({
   head: () => ({
-    meta: [
-      { title: "Tenants — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Tenants — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: TenantsPage,
 });
@@ -51,7 +48,10 @@ function TenantsPage() {
     })
     .filter((t) => {
       if (!q.trim()) return true;
-      const haystack = [t.tenant_name, t.property?.name, t.unit?.name].filter(Boolean).join(" ").toLowerCase();
+      const haystack = [t.tenant_name, t.property?.name, t.unit?.name]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
       return haystack.includes(q.trim().toLowerCase());
     })
     .sort((a, b) => (a.tenant_name ?? "").localeCompare(b.tenant_name ?? ""));
@@ -90,7 +90,9 @@ function TenantsPage() {
           <LoadingCard label="Fetching tenancies…" />
         ) : tenancies.isError ? (
           <InlineError
-            message={tenancies.error instanceof Error ? tenancies.error.message : "Could not load tenants."}
+            message={
+              tenancies.error instanceof Error ? tenancies.error.message : "Could not load tenants."
+            }
             onRetry={() => tenancies.refetch()}
           />
         ) : filtered.length === 0 ? (

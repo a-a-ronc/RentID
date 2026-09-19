@@ -53,7 +53,6 @@ function AdminProspects() {
     retry: false,
   });
 
-
   const [search, setSearch] = useState("");
   const [answer, setAnswer] = useState<"all" | "yes" | "no">("all");
   const [role, setRole] = useState<"all" | "renter" | "landlord" | "property_manager">("all");
@@ -178,7 +177,11 @@ function AdminProspects() {
               </p>
             ) : null}
             <div className="mt-3 flex flex-wrap items-end gap-2">
-              <Field label="Administrator access code" htmlFor="prospect-code" className="min-w-[240px]">
+              <Field
+                label="Administrator access code"
+                htmlFor="prospect-code"
+                className="min-w-[240px]"
+              >
                 <TextInput
                   id="prospect-code"
                   type="password"
@@ -217,7 +220,11 @@ function AdminProspects() {
                 { label: "Renters", value: stats.renters },
                 { label: "Landlords", value: stats.landlords },
                 { label: "Property managers", value: stats.property_managers },
-                { label: "This week", value: stats.this_week, hint: `${stats.this_month} this month` },
+                {
+                  label: "This week",
+                  value: stats.this_week,
+                  hint: `${stats.this_month} this month`,
+                },
               ]}
             />
             <Glass className="p-5">
@@ -279,7 +286,11 @@ function AdminProspects() {
               </Select>
             </Field>
             <Field label="Role" htmlFor="prospect-role">
-              <Select id="prospect-role" value={role} onChange={(e) => setRole(e.target.value as typeof role)}>
+              <Select
+                id="prospect-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as typeof role)}
+              >
                 <option value="all">All roles</option>
                 <option value="renter">Renter</option>
                 <option value="landlord">Landlord</option>
@@ -287,10 +298,20 @@ function AdminProspects() {
               </Select>
             </Field>
             <Field label="From" htmlFor="prospect-from">
-              <TextInput id="prospect-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+              <TextInput
+                id="prospect-from"
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+              />
             </Field>
             <Field label="To" htmlFor="prospect-to">
-              <TextInput id="prospect-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              <TextInput
+                id="prospect-to"
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
             </Field>
           </div>
 
@@ -308,7 +329,12 @@ function AdminProspects() {
               { key: "name", header: "Name", cell: (r) => r.full_name },
               { key: "email", header: "Email", cell: (r) => r.email },
               { key: "phone", header: "Phone", cell: (r) => r.phone, hideOnMobile: true },
-              { key: "roles", header: "User role", cell: (r) => roleText(r.roles), hideOnMobile: true },
+              {
+                key: "roles",
+                header: "User role",
+                cell: (r) => roleText(r.roles),
+                hideOnMobile: true,
+              },
               {
                 key: "would",
                 header: "Would use RentID?",
@@ -317,14 +343,14 @@ function AdminProspects() {
               {
                 key: "current_units",
                 header: "Current units",
-                cell: (r) => (r.current_units ?? "—"),
+                cell: (r) => r.current_units ?? "—",
                 hideOnMobile: true,
                 align: "right",
               },
               {
                 key: "intended_units",
                 header: "Intended units",
-                cell: (r) => (r.intended_units ?? "—"),
+                cell: (r) => r.intended_units ?? "—",
                 hideOnMobile: true,
                 align: "right",
               },

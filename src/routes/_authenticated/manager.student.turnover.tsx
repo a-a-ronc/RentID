@@ -1,8 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { AppShell, PageHeader, SectionCard, StatusPill, SummaryGrid } from "@/components/rentid/patterns";
-import { Button, DemoNotice, Field, LoadingCard, Modal, Select, TextInput } from "@/components/rentid/kit";
+import {
+  AppShell,
+  PageHeader,
+  SectionCard,
+  StatusPill,
+  SummaryGrid,
+} from "@/components/rentid/patterns";
+import {
+  Button,
+  DemoNotice,
+  Field,
+  LoadingCard,
+  Modal,
+  Select,
+  TextInput,
+} from "@/components/rentid/kit";
 import { EmptyState, Eyebrow, Glass, Pill } from "@/components/rentid/Surface";
 import { money } from "@/lib/format";
 import {
@@ -16,10 +30,7 @@ import type { StudentMaintenanceCase } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/manager/student/turnover")({
   head: () => ({
-    meta: [
-      { title: "Turnover & damage — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Turnover & damage — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: TurnoverPage,
 });
@@ -43,36 +54,53 @@ function TurnoverPage() {
   if (!t) {
     return (
       <AppShell subtitle="Property manager" role="manager">
-        <EmptyState title="No turnover data" description="Student properties will show their turn board here." />
+        <EmptyState
+          title="No turnover data"
+          description="Student properties will show their turn board here."
+        />
       </AppShell>
     );
   }
 
   return (
     <AppShell subtitle="Property manager" role="manager">
-      <PageHeader title="Turnover & damage" subtitle="Bed-level readiness, blockers and damage responsibility" />
+      <PageHeader
+        title="Turnover & damage"
+        subtitle="Bed-level readiness, blockers and damage responsibility"
+      />
 
       <SummaryGrid
         className="mt-4"
         items={[
           { label: "Beds ready", value: t.beds_ready, tone: "success" },
-          { label: "Inspections remaining", value: t.inspection_remaining, tone: t.inspection_remaining ? "warning" : "success" },
+          {
+            label: "Inspections remaining",
+            value: t.inspection_remaining,
+            tone: t.inspection_remaining ? "warning" : "success",
+          },
           { label: "Make-ready open", value: t.make_ready_open, tone: "warning" },
-          { label: "Blocked move-ins", value: t.move_in_blocked, tone: t.move_in_blocked ? "danger" : "success" },
+          {
+            label: "Blocked move-ins",
+            value: t.move_in_blocked,
+            tone: t.move_in_blocked ? "danger" : "success",
+          },
         ]}
       />
 
       <div className="mt-4">
         <DemoNotice>
-          Readiness is tracked per bed and per shared area, so one blocked room never marks a whole unit
-          ready — and never quietly delays the other residents' move-in.
+          Readiness is tracked per bed and per shared area, so one blocked room never marks a whole
+          unit ready — and never quietly delays the other residents' move-in.
         </DemoNotice>
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.4fr_1fr]">
         <SectionCard title="Turn board" aside={`${t.tasks.length} tasks`}>
           {t.tasks.length === 0 ? (
-            <EmptyState title="No turn tasks" description="Move-out and make-ready work will appear here." />
+            <EmptyState
+              title="No turn tasks"
+              description="Move-out and make-ready work will appear here."
+            />
           ) : (
             t.tasks.map((task) => (
               <div key={task.id} className="px-4 py-3">
@@ -102,16 +130,27 @@ function TurnoverPage() {
                   </div>
                 </div>
                 {task.blocker_reason ? (
-                  <p className="mt-1.5 text-[12px] text-destructive">Blocked: {task.blocker_reason}</p>
+                  <p className="mt-1.5 text-[12px] text-destructive">
+                    Blocked: {task.blocker_reason}
+                  </p>
                 ) : null}
                 <div className="mt-2 flex flex-wrap gap-2">
                   {task.state !== "in_progress" && task.state !== "complete" ? (
-                    <Button tone="secondary" onClick={() => updateTask.mutate({ taskId: task.id, patch: { state: "in_progress" } })}>
+                    <Button
+                      tone="secondary"
+                      onClick={() =>
+                        updateTask.mutate({ taskId: task.id, patch: { state: "in_progress" } })
+                      }
+                    >
                       Start
                     </Button>
                   ) : null}
                   {task.state !== "complete" ? (
-                    <Button onClick={() => updateTask.mutate({ taskId: task.id, patch: { state: "complete" } })}>
+                    <Button
+                      onClick={() =>
+                        updateTask.mutate({ taskId: task.id, patch: { state: "complete" } })
+                      }
+                    >
                       Mark complete
                     </Button>
                   ) : null}
@@ -119,7 +158,10 @@ function TurnoverPage() {
                     <Button
                       tone="ghost"
                       onClick={() =>
-                        updateTask.mutate({ taskId: task.id, patch: { state: "blocked", blocker_reason: "Waiting on vendor" } })
+                        updateTask.mutate({
+                          taskId: task.id,
+                          patch: { state: "blocked", blocker_reason: "Waiting on vendor" },
+                        })
                       }
                     >
                       Flag blocker
@@ -131,9 +173,15 @@ function TurnoverPage() {
           )}
         </SectionCard>
 
-        <SectionCard title="Maintenance & damage cases" aside={`${(cases.data ?? []).length} cases`}>
+        <SectionCard
+          title="Maintenance & damage cases"
+          aside={`${(cases.data ?? []).length} cases`}
+        >
           {(cases.data ?? []).length === 0 ? (
-            <EmptyState title="No cases" description="Private-room and shared-area cases appear here." />
+            <EmptyState
+              title="No cases"
+              description="Private-room and shared-area cases appear here."
+            />
           ) : (
             (cases.data ?? []).map((c) => (
               <button
@@ -146,12 +194,22 @@ function TurnoverPage() {
                   <p className="truncate text-[13.5px] font-medium">{c.issue}</p>
                   <StatusPill
                     status={c.status.replace(/_/g, " ")}
-                    tone={c.status === "disputed" ? "warning" : c.status === "resolved" ? "success" : "accent"}
+                    tone={
+                      c.status === "disputed"
+                        ? "warning"
+                        : c.status === "resolved"
+                          ? "success"
+                          : "accent"
+                    }
                   />
                 </div>
                 <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-                  {c.area === "private_room" ? "Private room" : c.area === "shared_area" ? "Shared area" : "Unit"} ·{" "}
-                  {c.area_label} · {c.requester_name}
+                  {c.area === "private_room"
+                    ? "Private room"
+                    : c.area === "shared_area"
+                      ? "Shared area"
+                      : "Unit"}{" "}
+                  · {c.area_label} · {c.requester_name}
                   {c.damage_amount ? ` · ${money(c.damage_amount)}` : ""}
                 </p>
               </button>
@@ -165,7 +223,13 @@ function TurnoverPage() {
   );
 }
 
-function DamageModal({ record, onClose }: { record: StudentMaintenanceCase | null; onClose: () => void }) {
+function DamageModal({
+  record,
+  onClose,
+}: {
+  record: StudentMaintenanceCase | null;
+  onClose: () => void;
+}) {
   const allocate = useAllocateDamage();
   const [target, setTarget] = useState<StudentMaintenanceCase["damage_allocation"]>("unassigned");
   const [amount, setAmount] = useState("");
@@ -212,8 +276,16 @@ function DamageModal({ record, onClose }: { record: StudentMaintenanceCase | nul
             </>
           ) : null}
         </Glass>
-        <Field label="Responsibility" hint="Damage responsibility is a documented decision, never a score.">
-          <Select value={target} onChange={(e) => setTarget(e.target.value as StudentMaintenanceCase["damage_allocation"])}>
+        <Field
+          label="Responsibility"
+          hint="Damage responsibility is a documented decision, never a score."
+        >
+          <Select
+            value={target}
+            onChange={(e) =>
+              setTarget(e.target.value as StudentMaintenanceCase["damage_allocation"])
+            }
+          >
             <option value="unassigned">Unassigned — still under review</option>
             <option value="single_resident">One resident</option>
             <option value="multiple_residents">Multiple residents</option>

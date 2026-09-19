@@ -109,8 +109,12 @@ function Landing() {
               className="glass rounded-2xl p-5 transition-opacity hover:opacity-90"
               style={{ animationDelay: `${i * 70}ms` }}
             >
-              <p className="font-display text-[15px] font-semibold tracking-tight">{audience.label}</p>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{audience.body}</p>
+              <p className="font-display text-[15px] font-semibold tracking-tight">
+                {audience.label}
+              </p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                {audience.body}
+              </p>
               <span className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-accent">
                 Learn more
                 <ArrowRight className="size-3.5" />
@@ -123,11 +127,17 @@ function Landing() {
       <section className="pb-14">
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
           {FEATURES.map((f, i) => (
-            <div key={f.title} className="glass rounded-2xl p-5" style={{ animationDelay: `${i * 70}ms` }}>
+            <div
+              key={f.title}
+              className="glass rounded-2xl p-5"
+              style={{ animationDelay: `${i * 70}ms` }}
+            >
               <div className="grid size-9 place-items-center rounded-xl bg-accent/12">
                 <f.icon className="size-4 text-accent" strokeWidth={1.75} />
               </div>
-              <h3 className="mt-3.5 font-display text-[15px] font-semibold tracking-tight">{f.title}</h3>
+              <h3 className="mt-3.5 font-display text-[15px] font-semibold tracking-tight">
+                {f.title}
+              </h3>
               <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{f.body}</p>
             </div>
           ))}

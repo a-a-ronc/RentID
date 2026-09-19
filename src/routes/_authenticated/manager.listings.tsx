@@ -1,17 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
-import { AppShell, PageHeader, SectionCard, StatusPill, SummaryGrid } from "@/components/rentid/patterns";
+import {
+  AppShell,
+  PageHeader,
+  SectionCard,
+  StatusPill,
+  SummaryGrid,
+} from "@/components/rentid/patterns";
 import { Field, InlineError, LoadingCard, Select, TextInput } from "@/components/rentid/kit";
 import { EmptyState, Eyebrow, Pill } from "@/components/rentid/Surface";
 import { SOURCE_LABELS } from "@/components/rentid/listing-ui";
 import { MARKETPLACE_ADAPTERS, marketplaceName } from "@/lib/syndication/adapters";
 import { money, shortDate } from "@/lib/format";
-import {
-  useListingSources,
-  useManagedListings,
-  useManagementOrg,
-} from "@/lib/rentid";
+import { useListingSources, useManagedListings, useManagementOrg } from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/manager/listings")({
   head: () => ({
@@ -38,7 +40,6 @@ function ManagerListingsPage() {
   const [availableBy, setAvailableBy] = useState("");
 
   const rows = listings.data ?? [];
-
 
   const options = useMemo(() => {
     const uniq = (values: (string | null | undefined)[]) =>
@@ -146,7 +147,11 @@ function ManagerListingsPage() {
           </Select>
         </Field>
         <Field label="Available by">
-          <TextInput type="date" value={availableBy} onChange={(e) => setAvailableBy(e.target.value)} />
+          <TextInput
+            type="date"
+            value={availableBy}
+            onChange={(e) => setAvailableBy(e.target.value)}
+          />
         </Field>
       </div>
 
@@ -195,7 +200,10 @@ function ManagerListingsPage() {
                         {listing.channels
                           .filter((c) => c.enabled)
                           .map((c) => (
-                            <Pill key={c.id} tone={c.listing_status === "live" ? "accent" : "warning"}>
+                            <Pill
+                              key={c.id}
+                              tone={c.listing_status === "live" ? "accent" : "warning"}
+                            >
                               {marketplaceName(c.marketplace_id)}
                               {c.listing_status === "live" ? " · live" : " · pending"}
                             </Pill>

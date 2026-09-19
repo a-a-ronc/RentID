@@ -56,7 +56,10 @@ export function PublicShell({ children }: { children: ReactNode }) {
               >
                 <Menu className="size-4" strokeWidth={1.75} />
               </SheetTrigger>
-              <SheetContent side="bottom" className="rounded-t-3xl border-none bg-background px-5 pb-8">
+              <SheetContent
+                side="bottom"
+                className="rounded-t-3xl border-none bg-background px-5 pb-8"
+              >
                 <SheetTitle className="font-display text-base">RentID</SheetTitle>
                 <div className="mt-4 grid gap-2">
                   {PUBLIC_NAV.map((item) => (
@@ -151,7 +154,11 @@ export function PublicGrid({
   return (
     <div className={columns === 3 ? "grid gap-3 sm:grid-cols-3" : "grid gap-3 sm:grid-cols-2"}>
       {items.map((item, i) => (
-        <div key={item.title} className="glass rounded-2xl p-5" style={{ animationDelay: `${i * 60}ms` }}>
+        <div
+          key={item.title}
+          className="glass rounded-2xl p-5"
+          style={{ animationDelay: `${i * 60}ms` }}
+        >
           <h3 className="font-display text-[15px] font-semibold tracking-tight">{item.title}</h3>
           <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{item.body}</p>
         </div>

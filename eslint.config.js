@@ -38,9 +38,9 @@ export default tseslint.config(
   },
   eslintPluginPrettier,
   {
-    // The codebase was never run through its own Prettier config (≈1,850 formatting
-    // diffs). Keep formatting advisory until a single dedicated `bun run format`
-    // commit lands, so `lint` can gate CI on real problems in the meantime.
-    rules: { "prettier/prettier": "warn" },
+    // The dedicated `bun run format` commit has landed, so formatting is clean and
+    // stays that way: a formatting drift is now an error rather than 3,000 lines of
+    // advisory noise that made `bun run lint` useless as a signal.
+    rules: { "prettier/prettier": "error" },
   },
 );

@@ -122,7 +122,12 @@ function AddPropertyModal({ orgId }: { orgId: string | null }) {
           </Field>
           <FormGrid className="sm:grid-cols-3">
             <Field label="City" htmlFor="p-city">
-              <TextInput id="p-city" value={form.city} onChange={(e) => set("city", e.target.value)} required />
+              <TextInput
+                id="p-city"
+                value={form.city}
+                onChange={(e) => set("city", e.target.value)}
+                required
+              />
             </Field>
             <Field label="State" htmlFor="p-state">
               <TextInput
@@ -135,11 +140,20 @@ function AddPropertyModal({ orgId }: { orgId: string | null }) {
               />
             </Field>
             <Field label="ZIP" htmlFor="p-zip">
-              <TextInput id="p-zip" value={form.zip} onChange={(e) => set("zip", e.target.value)} required />
+              <TextInput
+                id="p-zip"
+                value={form.zip}
+                onChange={(e) => set("zip", e.target.value)}
+                required
+              />
             </Field>
           </FormGrid>
           <Field label="Type" htmlFor="p-type">
-            <Select id="p-type" value={form.propertyType} onChange={(e) => set("propertyType", e.target.value)}>
+            <Select
+              id="p-type"
+              value={form.propertyType}
+              onChange={(e) => set("propertyType", e.target.value)}
+            >
               {PROPERTY_TYPES.map(([v, l]) => (
                 <option key={v} value={v}>
                   {l}
@@ -152,7 +166,11 @@ function AddPropertyModal({ orgId }: { orgId: string | null }) {
             htmlFor="p-rel"
             hint="RentID verifies ownership property by property. Nothing is claimed on your behalf."
           >
-            <Select id="p-rel" value={form.relationship} onChange={(e) => set("relationship", e.target.value)}>
+            <Select
+              id="p-rel"
+              value={form.relationship}
+              onChange={(e) => set("relationship", e.target.value)}
+            >
               {(Object.keys(CLAIM_LABELS) as PropertyClaimRelationship[]).map((key) => (
                 <option key={key} value={key}>
                   {CLAIM_LABELS[key]}
@@ -172,18 +190,34 @@ function AddPropertyModal({ orgId }: { orgId: string | null }) {
               id="p-owner"
               value={form.claimedOwnerName}
               onChange={(e) => set("claimedOwnerName", e.target.value)}
-              placeholder={form.relationship === "individual_owner" ? "Jordan A. Lucas" : "Lucas Holding Co. LLC"}
+              placeholder={
+                form.relationship === "individual_owner"
+                  ? "Jordan A. Lucas"
+                  : "Lucas Holding Co. LLC"
+              }
             />
           </Field>
           <FormGrid>
             <Field label="County" htmlFor="p-county" hint="Used to locate the recorded deed">
-              <TextInput id="p-county" value={form.county} onChange={(e) => set("county", e.target.value)} />
+              <TextInput
+                id="p-county"
+                value={form.county}
+                onChange={(e) => set("county", e.target.value)}
+              />
             </Field>
             <Field label="Parcel / APN / PIN / folio" htmlFor="p-parcel">
-              <TextInput id="p-parcel" value={form.parcelNumber} onChange={(e) => set("parcelNumber", e.target.value)} />
+              <TextInput
+                id="p-parcel"
+                value={form.parcelNumber}
+                onChange={(e) => set("parcelNumber", e.target.value)}
+              />
             </Field>
           </FormGrid>
-          <Field label="Recording jurisdiction" htmlFor="p-jur" hint="Optional — register of deeds or recorder's office">
+          <Field
+            label="Recording jurisdiction"
+            htmlFor="p-jur"
+            hint="Optional — register of deeds or recorder's office"
+          >
             <TextInput
               id="p-jur"
               value={form.recordingJurisdiction}
@@ -191,8 +225,8 @@ function AddPropertyModal({ orgId }: { orgId: string | null }) {
             />
           </Field>
           <p className="text-[12px] text-muted-foreground">
-            Adding a property does not verify ownership. RentID reviews the recorded deed and supporting
-            records before any public badge appears.
+            Adding a property does not verify ownership. RentID reviews the recorded deed and
+            supporting records before any public badge appears.
           </p>
           <Button type="submit" loading={createProperty.isPending} className="w-full">
             Save property
@@ -228,7 +262,10 @@ function PropertiesPage() {
 
       <div className="mt-5 space-y-3">
         {properties.isError ? (
-          <InlineError message="Couldn't load properties." onRetry={() => void properties.refetch()} />
+          <InlineError
+            message="Couldn't load properties."
+            onRetry={() => void properties.refetch()}
+          />
         ) : properties.isLoading ? (
           <LoadingCard label="Loading properties…" />
         ) : (properties.data ?? []).length === 0 ? (
@@ -243,8 +280,17 @@ function PropertiesPage() {
             const occupied = units.filter((u) => u.occupancy_status === "occupied").length;
             const potential = units.reduce((sum, u) => sum + Number(u.monthly_rent ?? 0), 0);
             return (
-              <Link key={p.id} to="/properties/$propertyId" params={{ propertyId: p.id }} className="block">
-                <SectionCard title={p.name} aside={`${p.city}, ${p.state}`} className="transition-opacity hover:opacity-90">
+              <Link
+                key={p.id}
+                to="/properties/$propertyId"
+                params={{ propertyId: p.id }}
+                className="block"
+              >
+                <SectionCard
+                  title={p.name}
+                  aside={`${p.city}, ${p.state}`}
+                  className="transition-opacity hover:opacity-90"
+                >
                   <ListRow
                     title={`${units.length} unit${units.length === 1 ? "" : "s"} · ${occupied} occupied`}
                     subtitle={`${p.street_address} · ${money(potential)}/mo potential`}

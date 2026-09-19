@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 
-
 import {
   AppShell,
   DataTable,
@@ -45,19 +44,19 @@ function UnitsPage() {
     return map;
   }, [tenancies.data]);
 
-  const rows = (units.data ?? [])
-    .slice()
-    .sort((a, b) => {
-      const pa = propertyById.get(a.property_id)?.name ?? "";
-      const pb = propertyById.get(b.property_id)?.name ?? "";
-      return pa.localeCompare(pb) || a.name.localeCompare(b.name);
-    });
+  const rows = (units.data ?? []).slice().sort((a, b) => {
+    const pa = propertyById.get(a.property_id)?.name ?? "";
+    const pb = propertyById.get(b.property_id)?.name ?? "";
+    return pa.localeCompare(pb) || a.name.localeCompare(b.name);
+  });
 
   return (
     <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
       <PageHeader
         title="Units"
-        subtitle={active.org ? `${active.org.name} · ${rows.length} units portfolio-wide` : undefined}
+        subtitle={
+          active.org ? `${active.org.name} · ${rows.length} units portfolio-wide` : undefined
+        }
       />
 
       <div className="mt-5">
@@ -70,7 +69,10 @@ function UnitsPage() {
             title="No units yet"
             description="Add a property and units to see your portfolio here."
             action={
-              <Link to="/properties" className="rounded-full bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground">
+              <Link
+                to="/properties"
+                className="rounded-full bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground"
+              >
                 Go to properties
               </Link>
             }
@@ -101,7 +103,8 @@ function UnitsPage() {
                 {
                   key: "rent",
                   header: "Rent",
-                  cell: (u) => (u.monthly_rent != null ? `${money(Number(u.monthly_rent))}/mo` : "—"),
+                  cell: (u) =>
+                    u.monthly_rent != null ? `${money(Number(u.monthly_rent))}/mo` : "—",
                 },
                 {
                   key: "tenant",

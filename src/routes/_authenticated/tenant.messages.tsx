@@ -20,10 +20,7 @@ import { useConversations, useMyTenancies, useSendMessage } from "@/lib/rentid";
 
 export const Route = createFileRoute("/_authenticated/tenant/messages")({
   head: () => ({
-    meta: [
-      { title: "Messages — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Messages — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: TenantMessagesPage,
 });
@@ -52,7 +49,8 @@ function TenantMessagesPage() {
         conversationId: active?.id ?? null,
         organizationId: tenancy.organization_id,
         tenancyId: tenancy.id,
-        subject: active?.subject ?? `${tenancy.property?.name ?? "Tenancy"} — ${tenancy.unit?.name ?? ""}`,
+        subject:
+          active?.subject ?? `${tenancy.property?.name ?? "Tenancy"} — ${tenancy.unit?.name ?? ""}`,
         senderId: user?.id ?? null,
         senderName: profile.data?.full_name ?? "Tenant",
         senderRole: "tenant",
@@ -75,7 +73,10 @@ function TenantMessagesPage() {
         {tenancies.isLoading || conversations.isLoading ? (
           <LoadingCard label="Loading your conversations…" />
         ) : conversations.isError ? (
-          <InlineError message="Messages could not be loaded." onRetry={() => void conversations.refetch()} />
+          <InlineError
+            message="Messages could not be loaded."
+            onRetry={() => void conversations.refetch()}
+          />
         ) : !tenancy ? (
           <EmptyState
             title="No active tenancy"
@@ -84,7 +85,8 @@ function TenantMessagesPage() {
         ) : (
           <>
             <DemoNotice>
-              Threads stay attached to your tenancy, so the history follows the lease rather than a personal inbox.
+              Threads stay attached to your tenancy, so the history follows the lease rather than a
+              personal inbox.
             </DemoNotice>
 
             <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
@@ -115,21 +117,29 @@ function TenantMessagesPage() {
                 <div className="flex-1 space-y-3 overflow-y-auto">
                   {(active?.messages ?? []).length === 0 ? (
                     <p className="text-[12.5px] text-muted-foreground">
-                      Ask about rent, repairs or your lease — your landlord sees it in the same thread.
+                      Ask about rent, repairs or your lease — your landlord sees it in the same
+                      thread.
                     </p>
                   ) : (
                     (active?.messages ?? []).map((message) => {
                       const mine = message.sender_role === "tenant";
                       return (
-                        <div key={message.id} className={mine ? "flex justify-end" : "flex justify-start"}>
+                        <div
+                          key={message.id}
+                          className={mine ? "flex justify-end" : "flex justify-start"}
+                        >
                           <div
                             className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-[13px] ${
-                              mine ? "bg-brand text-brand-foreground" : "bg-secondary text-foreground"
+                              mine
+                                ? "bg-brand text-brand-foreground"
+                                : "bg-secondary text-foreground"
                             }`}
                           >
                             <p className="label-eyebrow mb-1 opacity-70">{message.sender_name}</p>
                             <p className="whitespace-pre-wrap">{message.body}</p>
-                            <p className="mt-1 text-[10.5px] opacity-70">{shortDate(message.created_at)}</p>
+                            <p className="mt-1 text-[10.5px] opacity-70">
+                              {shortDate(message.created_at)}
+                            </p>
                           </div>
                         </div>
                       );
@@ -145,7 +155,12 @@ function TenantMessagesPage() {
                     className="min-h-20"
                   />
                   <div className="flex justify-end">
-                    <Button type="submit" size="sm" loading={send.isPending} disabled={!body.trim()}>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      loading={send.isPending}
+                      disabled={!body.trim()}
+                    >
                       Send
                     </Button>
                   </div>
