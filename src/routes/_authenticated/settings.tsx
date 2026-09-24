@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import {
   AppShell,
   Button,
-  DemoNotice,
   Field,
   FormGrid,
   Glass,
@@ -16,14 +15,10 @@ import {
 } from "@/components/rentid/patterns";
 import { useAuth, usePrimaryRole, useProfile, useSignOut, useUpdateProfile } from "@/lib/auth";
 import { useActiveOrg, useInvalidateRentId, useUpdateOrganization } from "@/lib/rentid";
-import { resetDemoData } from "@/lib/services";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
-    meta: [
-      { title: "Settings — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Settings — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: SettingsPage,
 });
@@ -80,7 +75,11 @@ function SettingsPage() {
           <form onSubmit={saveProfile} className="space-y-3 px-4 py-4">
             <FormGrid>
               <Field label="Full name" htmlFor="fullName">
-                <TextInput id="fullName" name="fullName" defaultValue={profile.data?.full_name ?? ""} />
+                <TextInput
+                  id="fullName"
+                  name="fullName"
+                  defaultValue={profile.data?.full_name ?? ""}
+                />
               </Field>
               <Field label="Phone" htmlFor="phone">
                 <TextInput id="phone" name="phone" defaultValue={profile.data?.phone ?? ""} />
@@ -144,30 +143,6 @@ function SettingsPage() {
             }
           />
         </SectionCard>
-
-        <Glass className="p-5">
-          <p className="font-display text-[14px] font-semibold">Preview data</p>
-          <p className="mt-1 text-[12.5px] text-muted-foreground">
-            Reset the demo portfolio back to its seeded state — properties, tenancies, payments and documents.
-          </p>
-          <Button
-            tone="danger"
-            size="sm"
-            className="mt-3"
-            onClick={() => {
-              resetDemoData();
-              invalidate();
-              toast.success("Demo data reset.");
-            }}
-          >
-            Reset demo data
-          </Button>
-        </Glass>
-
-        <DemoNotice>
-          When the backend reconnects: authentication, storage and row-level security take over these screens without
-          UI changes — see the integration checklist in the repository.
-        </DemoNotice>
       </div>
     </AppShell>
   );

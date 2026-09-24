@@ -1,118 +1,118 @@
-/** Organizations, properties and units. Mock-backed; Supabase-shaped. */
-import { clone, commit, getDb, latency, logAudit, nowIso, uuid } from "@/lib/mock/db";
+/** Organizations, properties and units — Supabase-backed (RLS-scoped). */
+import { db, logAudit, nowIso, unwrap, unwrapMaybe, unwrapOne } from "@/lib/db";
+import { toOrganization, toProperty, toUnit } from "@/lib/db/mappers";
 import { openPropertyClaim } from "@/lib/services/verification";
 import { findDuplicateProperty, normalizeAddress } from "@/lib/verification/address";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 import type {
   ManagementCategory,
-  PropertyClaimRelationship,
   Organization,
   OrganizationKind,
   Property,
+  PropertyClaimRelationship,
   PropertyType,
   PropertyWithUnits,
   Unit,
   UUID,
 } from "@/lib/types";
 
-const notDeleted = <T extends { deleted_at: string | null }>(row: T) => row.deleted_at === null;
+const byName = <T extends { name: string }>(a: T, b: T) => a.name.localeCompare(b.name);
 
 /* ------------------------------ organizations ----------------------------- */
 
-/** Landlord workspaces. Property-management workspaces live in `management.ts`. */
+/**
+ * Landlord workspaces the signed-in user owns or belongs to. RLS already
+ * scopes the rows; `userId` is kept for hook compatibility.
+ */
 export async function getOrganizations(userId: UUID | null): Promise<Organization[]> {
-  const db = getDb();
-  const memberOrgIds = new Set(
-    db.organization_members.filter((m) => m.user_id === userId).map((m) => m.organization_id),
+  if (!userId) return [];
+  const rows = unwrap(
+    await db
+      .from("organizations")
+      .select("*")
+      .eq("kind", "landlord")
+      .is("deleted_at", null)
+      .order("is_demo", { ascending: true })
+      .order("created_at", { ascending: false }),
   );
-  const rows = db.organizations
-    .filter(notDeleted)
-    .filter((o) => o.kind === "landlord")
-    .filter((o) => o.is_demo || o.owner_id === userId || memberOrgIds.has(o.id))
-    .sort((a, b) => Number(a.is_demo) - Number(b.is_demo));
-  return latency(clone(rows));
+  return rows.map(toOrganization);
 }
 
+/** Atomic org + owner membership + role via the create_organization() RPC. */
 export async function createOrganization(input: {
   name: string;
   legalEntityName?: string | null;
   ownerId: UUID;
   kind?: OrganizationKind;
 }): Promise<Organization> {
-  const db = getDb();
-  const now = nowIso();
-  const org: Organization = {
-    id: uuid(),
-    name: input.name.trim(),
-    legal_entity_name: input.legalEntityName?.trim() || null,
-    owner_id: input.ownerId,
-    kind: input.kind ?? "landlord",
-    // Business/ownership verification is a separate gate; new workspaces start unverified.
-    verification_status: "unverified",
-    is_demo: false,
-    created_at: now,
-    updated_at: now,
-    deleted_at: null,
-  };
-  db.organizations.unshift(org);
-  db.organization_members.push({
-    id: uuid(),
-    organization_id: org.id,
-    user_id: input.ownerId,
-    role: "owner",
-    created_at: now,
-  });
-  logAudit({
-    organization_id: org.id,
-    actor_id: input.ownerId,
-    actor_role: "landlord",
-    action: "organization.created",
-    entity_type: "organization",
-    entity_id: org.id,
-  });
-  commit();
-  return latency(clone(org), 220);
+  const id = unwrap(
+    await db.rpc("create_organization", {
+      _name: input.name.trim(),
+      _kind: input.kind ?? "landlord",
+      ...(input.legalEntityName ? { _legal_entity_name: input.legalEntityName.trim() } : {}),
+    }),
+  );
+  const row = unwrapOne(
+    await db.from("organizations").select("*").eq("id", id).single(),
+    "Workspace",
+  );
+  return toOrganization(row);
 }
 
 export async function updateOrganization(
   orgId: UUID,
   patch: Partial<Pick<Organization, "name" | "legal_entity_name">>,
 ): Promise<Organization> {
-  const org = getDb().organizations.find((o) => o.id === orgId);
-  if (!org) throw new Error("Workspace not found.");
-  Object.assign(org, patch, { updated_at: nowIso() });
-  commit();
-  return latency(clone(org), 140);
+  const update: TablesUpdate<"organizations"> = {};
+  if (patch.name !== undefined) update.name = patch.name.trim();
+  if (patch.legal_entity_name !== undefined)
+    update.legal_entity_name = patch.legal_entity_name?.trim() || null;
+  const row = unwrapOne(
+    await db.from("organizations").update(update).eq("id", orgId).select("*").single(),
+    "Workspace",
+  );
+  return toOrganization(row);
 }
 
 /* -------------------------------- properties ------------------------------ */
 
+type PropertyRowWithUnits = Parameters<typeof toProperty>[0] & {
+  units: Parameters<typeof toUnit>[0][];
+};
+
+function hydrateProperty(row: PropertyRowWithUnits): PropertyWithUnits {
+  return {
+    ...toProperty(row),
+    units: row.units
+      .filter((u) => u.deleted_at === null)
+      .map(toUnit)
+      .sort(byName),
+  };
+}
+
 export async function getProperties(orgId: UUID | null): Promise<PropertyWithUnits[]> {
   if (!orgId) return [];
-  const db = getDb();
-  const rows = db.properties
-    .filter(notDeleted)
-    .filter((p) => p.organization_id === orgId)
-    .map((p) => ({
-      ...p,
-      units: db.units.filter(notDeleted).filter((u) => u.property_id === p.id),
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  return latency(clone(rows));
+  const rows = unwrap(
+    await db
+      .from("properties")
+      .select("*, units(*)")
+      .eq("organization_id", orgId)
+      .is("deleted_at", null)
+      .order("name"),
+  );
+  return (rows as PropertyRowWithUnits[]).map(hydrateProperty).sort(byName);
 }
 
 export async function getProperty(propertyId: UUID): Promise<PropertyWithUnits | null> {
-  const db = getDb();
-  const property = db.properties.filter(notDeleted).find((p) => p.id === propertyId);
-  if (!property) return latency(null);
-  return latency(
-    clone({
-      ...property,
-      units: db.units
-        .filter(notDeleted)
-        .filter((u) => u.property_id === property.id)
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    }),
+  const row = unwrapMaybe(
+    await db
+      .from("properties")
+      .select("*, units(*)")
+      .eq("id", propertyId)
+      .is("deleted_at", null)
+      .maybeSingle(),
   );
+  return row ? hydrateProperty(row as PropertyRowWithUnits) : null;
 }
 
 export async function createProperty(input: {
@@ -139,45 +139,51 @@ export async function createProperty(input: {
   claimRelationship?: PropertyClaimRelationship;
   claimedOwnerName?: string | null;
 }): Promise<Property> {
-  const now = nowIso();
-  const db = getDb();
-  // Reuse the canonical property when the same address already exists.
-  const duplicate = findDuplicateProperty(
-    db.properties.filter(notDeleted).filter((p) => p.organization_id === input.organizationId),
-    { street_address: input.streetAddress, city: input.city, state: input.state, zip: input.zip },
-  );
-  if (duplicate) throw new Error(`That address already exists in this workspace as "${duplicate.name}".`);
-  const property: Property = {
-    id: uuid(),
-    organization_id: input.organizationId,
-    name: input.name.trim(),
-    property_type: input.propertyType,
-    management_category: input.managementCategory ?? "standard_residential",
-    street_address: input.streetAddress.trim(),
-    unit_label: null,
-    city: input.city.trim(),
-    state: input.state.trim().toUpperCase(),
-    zip: input.zip.trim(),
-    year_built: input.yearBuilt ?? null,
-    notes: input.notes?.trim() || null,
-    normalized_address: normalizeAddress({
-      street_address: input.streetAddress,
-      city: input.city,
-      state: input.state,
-      zip: input.zip,
-    }),
-    county: input.county?.trim() || null,
-    parcel_number: input.parcelNumber?.trim() || null,
-    recording_jurisdiction: input.recordingJurisdiction?.trim() || null,
-    legal_description: null,
-    created_at: now,
-    updated_at: now,
-    deleted_at: null,
+  const address = {
+    street_address: input.streetAddress,
+    city: input.city,
+    state: input.state,
+    zip: input.zip,
   };
-  getDb().properties.push(property);
-  logAudit({
+  // Reuse the canonical property when the same address already exists in this workspace.
+  const existing = unwrap(
+    await db
+      .from("properties")
+      .select("id, name, street_address, city, state, zip, normalized_address")
+      .eq("organization_id", input.organizationId)
+      .is("deleted_at", null),
+  );
+  const duplicate = findDuplicateProperty(existing, address);
+  if (duplicate)
+    throw new Error(`That address already exists in this workspace as "${duplicate.name}".`);
+
+  const row = unwrapOne(
+    await db
+      .from("properties")
+      .insert({
+        organization_id: input.organizationId,
+        name: input.name.trim(),
+        property_type: input.propertyType,
+        management_category: input.managementCategory ?? "standard_residential",
+        street_address: input.streetAddress.trim(),
+        city: input.city.trim(),
+        state: input.state.trim().toUpperCase(),
+        zip: input.zip.trim(),
+        year_built: input.yearBuilt ?? null,
+        notes: input.notes?.trim() || null,
+        normalized_address: normalizeAddress(address),
+        county: input.county?.trim() || null,
+        parcel_number: input.parcelNumber?.trim() || null,
+        recording_jurisdiction: input.recordingJurisdiction?.trim() || null,
+      })
+      .select("*")
+      .single(),
+    "Property",
+  );
+  const property = toProperty(row);
+
+  await logAudit({
     organization_id: input.organizationId,
-    actor_id: input.actorId ?? null,
     action: "property.created",
     entity_type: "property",
     entity_id: property.id,
@@ -185,7 +191,7 @@ export async function createProperty(input: {
   });
 
   if (input.claimRelationship) {
-    openPropertyClaim({
+    await openPropertyClaim({
       property,
       claimantUserId: input.actorId ?? null,
       claimantName: input.claimedOwnerName?.trim() || null,
@@ -193,45 +199,59 @@ export async function createProperty(input: {
       organizationId: input.organizationId,
     });
   }
-  commit();
-  return latency(clone(property), 240);
+  return property;
 }
 
 export async function updateProperty(
   propertyId: UUID,
   patch: Partial<Pick<Property, "name" | "notes" | "street_address" | "city" | "state" | "zip">>,
 ): Promise<Property> {
-  const property = getDb().properties.find((p) => p.id === propertyId);
-  if (!property) throw new Error("Property not found.");
-  Object.assign(property, patch, { updated_at: nowIso() });
-  commit();
-  return latency(clone(property), 140);
+  const update: TablesUpdate<"properties"> = { ...patch };
+  if (patch.street_address || patch.city || patch.state || patch.zip) {
+    const current = unwrapOne(
+      await db
+        .from("properties")
+        .select("street_address, city, state, zip")
+        .eq("id", propertyId)
+        .single(),
+      "Property",
+    );
+    update.normalized_address = normalizeAddress({ ...current, ...patch });
+  }
+  const row = unwrapOne(
+    await db.from("properties").update(update).eq("id", propertyId).select("*").single(),
+    "Property",
+  );
+  return toProperty(row);
 }
 
-/** Soft delete — matches the planned `deleted_at` column. */
+/** Soft delete the property and its units. History (tenancies, payments) stays. */
 export async function archiveProperty(propertyId: UUID) {
-  const db = getDb();
-  const property = db.properties.find((p) => p.id === propertyId);
-  if (!property) throw new Error("Property not found.");
-  property.deleted_at = nowIso();
-  db.units.filter((u) => u.property_id === propertyId).forEach((u) => (u.deleted_at = nowIso()));
-  commit();
-  return latency(true, 160);
+  const at = nowIso();
+  unwrap(
+    await db
+      .from("units")
+      .update({ deleted_at: at })
+      .eq("property_id", propertyId)
+      .is("deleted_at", null),
+  );
+  unwrap(await db.from("properties").update({ deleted_at: at }).eq("id", propertyId));
+  await logAudit({ action: "property.archived", entity_type: "property", entity_id: propertyId });
+  return true;
 }
 
 /* ---------------------------------- units --------------------------------- */
 
 export async function getUnits(propertyId?: UUID | null, orgId?: UUID | null): Promise<Unit[]> {
-  const rows = getDb()
-    .units.filter(notDeleted)
-    .filter((u) => (propertyId ? u.property_id === propertyId : true))
-    .filter((u) => (orgId ? u.organization_id === orgId : true))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  return latency(clone(rows));
+  let query = db.from("units").select("*").is("deleted_at", null).order("name");
+  if (propertyId) query = query.eq("property_id", propertyId);
+  if (orgId) query = query.eq("organization_id", orgId);
+  return unwrap(await query).map(toUnit);
 }
 
 export async function getUnit(unitId: UUID): Promise<Unit | null> {
-  return latency(clone(getDb().units.find((u) => u.id === unitId) ?? null));
+  const row = unwrapMaybe(await db.from("units").select("*").eq("id", unitId).maybeSingle());
+  return row ? toUnit(row) : null;
 }
 
 export async function createUnit(input: {
@@ -246,34 +266,34 @@ export async function createUnit(input: {
   securityDeposit?: number | null;
   rentDueDay?: number;
 }): Promise<Unit> {
-  const now = nowIso();
-  const unit: Unit = {
-    id: uuid(),
-    organization_id: input.organizationId,
-    property_id: input.propertyId,
-    name: input.name.trim(),
-    bedrooms: input.bedrooms ?? null,
-    bathrooms: input.bathrooms ?? null,
-    square_feet: input.squareFeet ?? null,
-    monthly_rent: input.monthlyRent ?? null,
-    security_deposit: input.securityDeposit ?? null,
-    rent_due_day: input.rentDueDay ?? 1,
-    occupancy_status: "vacant",
-    created_at: now,
-    updated_at: now,
-    deleted_at: null,
-  };
-  getDb().units.push(unit);
-  logAudit({
-    organization_id: input.organizationId,
-    actor_id: input.actorId ?? null,
+  const row = unwrapOne(
+    await db
+      .from("units")
+      .insert({
+        organization_id: input.organizationId, // overwritten from the property by trigger
+        property_id: input.propertyId,
+        name: input.name.trim(),
+        bedrooms: input.bedrooms ?? null,
+        bathrooms: input.bathrooms ?? null,
+        square_feet: input.squareFeet ?? null,
+        monthly_rent: input.monthlyRent ?? null,
+        security_deposit: input.securityDeposit ?? null,
+        rent_due_day: input.rentDueDay ?? 1,
+        occupancy_status: "vacant",
+      })
+      .select("*")
+      .single(),
+    "Unit",
+  );
+  const unit = toUnit(row);
+  await logAudit({
+    organization_id: unit.organization_id,
     action: "unit.created",
     entity_type: "unit",
     entity_id: unit.id,
     metadata: { name: unit.name },
   });
-  commit();
-  return latency(clone(unit), 220);
+  return unit;
 }
 
 export async function updateUnit(
@@ -292,9 +312,9 @@ export async function updateUnit(
     >
   >,
 ): Promise<Unit> {
-  const unit = getDb().units.find((u) => u.id === unitId);
-  if (!unit) throw new Error("Unit not found.");
-  Object.assign(unit, patch, { updated_at: nowIso() });
-  commit();
-  return latency(clone(unit), 140);
+  const row = unwrapOne(
+    await db.from("units").update(patch).eq("id", unitId).select("*").single(),
+    "Unit",
+  );
+  return toUnit(row);
 }

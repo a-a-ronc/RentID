@@ -106,9 +106,7 @@ export function PropertyVerificationBadgeButton({
 
 /** Small neutral line for verified-free properties. Never alarming. */
 export function OwnershipNotice({ className }: { className?: string }) {
-  return (
-    <p className={cn("text-[12px] text-muted-foreground", className)}>{NOT_VERIFIED_NOTE}</p>
-  );
+  return <p className={cn("text-[12px] text-muted-foreground", className)}>{NOT_VERIFIED_NOTE}</p>;
 }
 
 const CONTEXT_ACTION: Record<DisclosureContext, string> = {
@@ -136,12 +134,16 @@ export function UnverifiedPropertyDisclosure({
 }) {
   const [checked, setChecked] = useState(false);
   return (
-    <Modal open={open} onClose={onClose} title="Important: Property Ownership Has Not Been Verified">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Important: Property Ownership Has Not Been Verified"
+    >
       <div className="space-y-3 text-[13px] leading-relaxed">
         <p>
-          RentID has not been able to independently verify that the person or company associated with
-          this property is the legal owner of the property or an authorized representative of the legal
-          owner.
+          RentID has not been able to independently verify that the person or company associated
+          with this property is the legal owner of the property or an authorized representative of
+          the legal owner.
         </p>
         <p>
           This does not necessarily mean that the listing, landlord, or property manager is
@@ -156,13 +158,15 @@ export function UnverifiedPropertyDisclosure({
           <li>Verify the identity of the landlord or property manager.</li>
           <li>Confirm that the person or company has legal authority to rent this property.</li>
           <li>
-            Review and sign a complete lease identifying the property, landlord, rent amount, security
-            deposit, and other important terms.
+            Review and sign a complete lease identifying the property, landlord, rent amount,
+            security deposit, and other important terms.
           </li>
-          <li>Independently confirm that the property exists and is actually available for rent.</li>
           <li>
-            Whenever possible, meet the landlord or authorized representative and inspect the property
-            before sending substantial funds.
+            Independently confirm that the property exists and is actually available for rent.
+          </li>
+          <li>
+            Whenever possible, meet the landlord or authorized representative and inspect the
+            property before sending substantial funds.
           </li>
           <li>
             Be cautious if you are pressured to send money immediately, communicate only through
@@ -170,10 +174,10 @@ export function UnverifiedPropertyDisclosure({
           </li>
         </ul>
         <p className="text-muted-foreground">
-          A signed lease, access to the property, communication with a purported landlord, or payment
-          through RentID does not by itself establish legal ownership or authority to rent the
-          property. RentID is providing rental-management and payment tools for this transaction but is
-          not representing that ownership of this property has been verified.
+          A signed lease, access to the property, communication with a purported landlord, or
+          payment through RentID does not by itself establish legal ownership or authority to rent
+          the property. RentID is providing rental-management and payment tools for this transaction
+          but is not representing that ownership of this property has been verified.
         </p>
         <label className="flex items-start gap-2.5 rounded-xl bg-muted/50 p-3 text-[13px]">
           <input
@@ -188,7 +192,11 @@ export function UnverifiedPropertyDisclosure({
           <Button tone="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={!checked || Boolean(loading)} loading={Boolean(loading)} onClick={onAcknowledge}>
+          <Button
+            disabled={!checked || Boolean(loading)}
+            loading={Boolean(loading)}
+            onClick={onAcknowledge}
+          >
             Continue to {CONTEXT_ACTION[context]}
           </Button>
         </div>
@@ -282,7 +290,8 @@ export function DisclosureNotice({
         onClose={() => setOpen(false)}
         onAcknowledge={() => {
           setOpen(false);
-          if (user && propertyId) void acknowledge.mutateAsync({ propertyId, context }).catch(() => {});
+          if (user && propertyId)
+            void acknowledge.mutateAsync({ propertyId, context }).catch(() => {});
         }}
       />
     </div>

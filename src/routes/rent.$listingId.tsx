@@ -81,7 +81,10 @@ function ListingDetail() {
     return (
       <PublicShell>
         <div className="py-8">
-          <InlineError message="We couldn't load this listing." onRetry={() => void listing.refetch()} />
+          <InlineError
+            message="We couldn't load this listing."
+            onRetry={() => void listing.refetch()}
+          />
         </div>
       </PublicShell>
     );
@@ -121,7 +124,9 @@ function ListingDetail() {
           <div className="space-y-4">
             <Glass className="p-5">
               <Eyebrow>
-                {data.property ? `${data.property.city}, ${data.property.state}` : "Location on request"}
+                {data.property
+                  ? `${data.property.city}, ${data.property.state}`
+                  : "Location on request"}
               </Eyebrow>
               <h1 className="mt-2 font-display text-[26px] leading-tight font-bold tracking-tight">
                 {data.headline}
@@ -165,7 +170,10 @@ function ListingDetail() {
                 <h2 className="font-display text-[15px] font-semibold tracking-tight">Amenities</h2>
                 <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                   {data.amenities.map((amenity) => (
-                    <li key={amenity} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                    <li
+                      key={amenity}
+                      className="flex items-center gap-2 text-[13px] text-muted-foreground"
+                    >
                       <Check className="size-3.5 text-success" strokeWidth={2.5} />
                       {amenity}
                     </li>
@@ -231,8 +239,8 @@ function ListingDetail() {
                 </h2>
                 <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
                   {data.provider?.name ?? "The landlord"} can now see your application
-                  {share ? " and the verified history you shared" : ""}. Create a RentID to track the
-                  decision and reuse this application.
+                  {share ? " and the verified history you shared" : ""}. Create a RentID to track
+                  the decision and reuse this application.
                 </p>
                 <Link
                   to="/auth"
@@ -273,7 +281,11 @@ function ListingDetail() {
                     />
                   </Field>
                   <Field label="Move-in date">
-                    <TextInput type="date" value={moveIn} onChange={(e) => setMoveIn(e.target.value)} />
+                    <TextInput
+                      type="date"
+                      value={moveIn}
+                      onChange={(e) => setMoveIn(e.target.value)}
+                    />
                   </Field>
                   <Field label="Anything else?">
                     <TextArea rows={3} value={note} onChange={(e) => setNote(e.target.value)} />

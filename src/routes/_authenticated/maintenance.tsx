@@ -33,10 +33,7 @@ import type { MaintenancePriority, MaintenanceStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({
   head: () => ({
-    meta: [
-      { title: "Maintenance — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Maintenance — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: MaintenancePage,
 });
@@ -46,6 +43,8 @@ const STATUS_TONE: Record<MaintenanceStatus, "warning" | "neutral" | "success" |
   acknowledged: "neutral",
   in_progress: "neutral",
   completed: "success",
+  resolved: "success",
+  closed: "neutral",
   cancelled: "danger",
 };
 
@@ -59,6 +58,7 @@ const PRIORITY_TONE: Record<MaintenancePriority, "neutral" | "warning" | "danger
   low: "neutral",
   normal: "neutral",
   high: "warning",
+  urgent: "danger",
   emergency: "danger",
 };
 
@@ -93,7 +93,9 @@ function MaintenancePage() {
     event.preventDefault();
     if (!active.orgId) return;
     const form = new FormData(event.currentTarget);
-    const tenancy = (tenancies.data ?? []).find((t) => t.id === String(form.get("tenancyId") ?? ""));
+    const tenancy = (tenancies.data ?? []).find(
+      (t) => t.id === String(form.get("tenancyId") ?? ""),
+    );
     if (!tenancy?.property_id || !tenancy.unit_id) {
       toast.error("Choose a tenancy so the request is attached to a unit.");
       return;
@@ -130,8 +132,16 @@ function MaintenancePage() {
       <SummaryGrid
         className="mt-5"
         items={[
-          { label: "Open", value: String(openItems.length), tone: openItems.length > 0 ? "warning" : "success" },
-          { label: "Urgent", value: String(urgent.length), tone: urgent.length > 0 ? "danger" : "neutral" },
+          {
+            label: "Open",
+            value: String(openItems.length),
+            tone: openItems.length > 0 ? "warning" : "success",
+          },
+          {
+            label: "Urgent",
+            value: String(urgent.length),
+            tone: urgent.length > 0 ? "danger" : "neutral",
+          },
           {
             label: "Completed",
             value: String(all.filter((m) => m.status === "completed").length),
@@ -157,14 +167,17 @@ function MaintenancePage() {
 
       <div className="mt-3 space-y-4">
         <DemoNotice>
-          Tenant-reported issues land here the moment they are submitted, with the tenancy, unit and property already
-          attached.
+          Tenant-reported issues land here the moment they are submitted, with the tenancy, unit and
+          property already attached.
         </DemoNotice>
 
         {maintenance.isLoading ? (
           <LoadingCard label="Loading requests…" />
         ) : maintenance.isError ? (
-          <InlineError message="Maintenance could not be loaded." onRetry={() => void maintenance.refetch()} />
+          <InlineError
+            message="Maintenance could not be loaded."
+            onRetry={() => void maintenance.refetch()}
+          />
         ) : rows.length === 0 ? (
           <EmptyState
             title={filter === "open" ? "No open work" : "No requests yet"}
@@ -176,18 +189,30 @@ function MaintenancePage() {
               <ListRow
                 key={request.id}
                 title={request.title}
-                subtitle={[request.property_name, request.unit_name, request.tenant_name, shortDate(request.created_at)]
+                subtitle={[
+                  request.property_name,
+                  request.unit_name,
+                  request.tenant_name,
+                  shortDate(request.created_at),
+                ]
                   .filter(Boolean)
                   .join(" · ")}
                 pill={
                   <div className="flex items-center gap-2">
                     <StatusPill status={request.priority} tone={PRIORITY_TONE[request.priority]} />
-                    <StatusPill status={request.status.replace("_", " ")} tone={STATUS_TONE[request.status]} />
+                    <StatusPill
+                      status={request.status.replace("_", " ")}
+                      tone={STATUS_TONE[request.status]}
+                    />
                   </div>
                 }
                 value={
                   NEXT_STATUS[request.status] ? (
-                    <Button size="sm" tone="secondary" onClick={() => void next(request.id, request.status)}>
+                    <Button
+                      size="sm"
+                      tone="secondary"
+                      onClick={() => void next(request.id, request.status)}
+                    >
                       {NEXT_STATUS[request.status]!.replace("_", " ")}
                     </Button>
                   ) : undefined
@@ -224,7 +249,11 @@ function MaintenancePage() {
             </Field>
           </FormGrid>
           <Field label="Details" htmlFor="description">
-            <TextArea id="description" name="description" placeholder="Vendor notes, access instructions…" />
+            <TextArea
+              id="description"
+              name="description"
+              placeholder="Vendor notes, access instructions…"
+            />
           </Field>
           <div className="flex justify-end gap-2 pt-1">
             <Button tone="secondary" onClick={() => setOpen(false)}>

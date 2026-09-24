@@ -9,7 +9,15 @@ import {
   StatusPill,
   SummaryGrid,
 } from "@/components/rentid/patterns";
-import { DataTable, DemoNotice, InlineError, LoadingCard, Modal, Select, Field } from "@/components/rentid/kit";
+import {
+  DataTable,
+  DemoNotice,
+  InlineError,
+  LoadingCard,
+  Modal,
+  Select,
+  Field,
+} from "@/components/rentid/kit";
 import { EmptyState, Eyebrow, Glass, Pill } from "@/components/rentid/Surface";
 import { money } from "@/lib/format";
 import {
@@ -23,15 +31,15 @@ import type { PolicyMode, StudentRosterRow } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/manager/student/")({
   head: () => ({
-    meta: [
-      { title: "Student housing — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Student housing — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: StudentCommandCenter,
 });
 
-const PAYMENT_TONE: Record<StudentRosterRow["payment_state"], "success" | "warning" | "danger" | "accent"> = {
+const PAYMENT_TONE: Record<
+  StudentRosterRow["payment_state"],
+  "success" | "warning" | "danger" | "accent"
+> = {
   paid: "success",
   recorded_external: "accent",
   partial: "warning",
@@ -64,7 +72,10 @@ function StudentCommandCenter() {
   if (!active.orgId) {
     return (
       <AppShell subtitle="Property manager" role="manager">
-        <EmptyState title="No management workspace" description="This account isn't part of a management company yet." />
+        <EmptyState
+          title="No management workspace"
+          description="This account isn't part of a management company yet."
+        />
       </AppShell>
     );
   }
@@ -101,11 +112,27 @@ function StudentCommandCenter() {
           className="mt-4"
           items={[
             { label: "Collected this month", value: money(m.collected_this_month) },
-            { label: "Unpaid residents", value: m.unpaid_beds, tone: m.unpaid_beds ? "danger" : "success" },
-            { label: "Partial payments", value: m.partial_residents, tone: m.partial_residents ? "warning" : "neutral" },
+            {
+              label: "Unpaid residents",
+              value: m.unpaid_beds,
+              tone: m.unpaid_beds ? "danger" : "success",
+            },
+            {
+              label: "Partial payments",
+              value: m.partial_residents,
+              tone: m.partial_residents ? "warning" : "neutral",
+            },
             { label: "Pending lease changes", value: m.pending_lease_changes, tone: "warning" },
-            { label: "Guarantors incomplete", value: m.incomplete_guarantors, tone: m.incomplete_guarantors ? "warning" : "success" },
-            { label: "Turn tasks open", value: m.turns_not_ready, tone: m.turns_not_ready ? "warning" : "success" },
+            {
+              label: "Guarantors incomplete",
+              value: m.incomplete_guarantors,
+              tone: m.incomplete_guarantors ? "warning" : "success",
+            },
+            {
+              label: "Turn tasks open",
+              value: m.turns_not_ready,
+              tone: m.turns_not_ready ? "warning" : "success",
+            },
             { label: "Beds tracked", value: m.beds_total },
             { label: "Student properties", value: properties.length },
           ]}
@@ -118,7 +145,11 @@ function StudentCommandCenter() {
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <Eyebrow>Property</Eyebrow>
-        <Select value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="max-w-xs">
+        <Select
+          value={propertyId}
+          onChange={(e) => setPropertyId(e.target.value)}
+          className="max-w-xs"
+        >
           <option value="all">All student properties</option>
           {properties.map((p) => (
             <option key={p.property_id} value={p.property_id}>
@@ -141,7 +172,12 @@ function StudentCommandCenter() {
           ) : (
             <DataTable
               rows={rows}
-              empty={<EmptyState title="No residents yet" description="Add beds and occupancies to see the roster." />}
+              empty={
+                <EmptyState
+                  title="No residents yet"
+                  description="Add beds and occupancies to see the roster."
+                />
+              }
               columns={[
                 {
                   key: "resident",
@@ -150,7 +186,8 @@ function StudentCommandCenter() {
                     <div className="min-w-0">
                       <p className="truncate font-medium">{r.resident_name}</p>
                       <p className="num text-[11.5px] text-muted-foreground">
-                        {r.unit_name} · {r.bed_label ? `Bed ${r.bed_label}` : `${r.share_pct ?? 0}% joint share`}
+                        {r.unit_name} ·{" "}
+                        {r.bed_label ? `Bed ${r.bed_label}` : `${r.share_pct ?? 0}% joint share`}
                       </p>
                     </div>
                   ),
@@ -179,10 +216,18 @@ function StudentCommandCenter() {
                   align: "right",
                   cell: (r) => (
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
-                      <StatusPill status={PAYMENT_LABEL[r.payment_state]} tone={PAYMENT_TONE[r.payment_state]} />
-                      {!r.guarantor_complete ? <StatusPill status="Guarantor" tone="warning" /> : null}
+                      <StatusPill
+                        status={PAYMENT_LABEL[r.payment_state]}
+                        tone={PAYMENT_TONE[r.payment_state]}
+                      />
+                      {!r.guarantor_complete ? (
+                        <StatusPill status="Guarantor" tone="warning" />
+                      ) : null}
                       {r.pending_request ? (
-                        <StatusPill status={r.pending_request.request_type.replace(/_/g, " ")} tone="accent" />
+                        <StatusPill
+                          status={r.pending_request.request_type.replace(/_/g, " ")}
+                          tone="accent"
+                        />
                       ) : null}
                     </div>
                   ),
@@ -209,14 +254,22 @@ function StudentCommandCenter() {
         <div className="space-y-4">
           <SectionCard title="Property configuration" aside="Category-driven">
             {properties.length === 0 ? (
-              <EmptyState title="No student properties" description="Turn on the student category on a property to configure it." />
+              <EmptyState
+                title="No student properties"
+                description="Turn on the student category on a property to configure it."
+              />
             ) : (
               properties.map((p) => (
                 <ListRow
                   key={p.property_id}
                   title={p.property_name}
                   subtitle={`${p.config.campus} · ${p.config.lease_model.replace(/_/g, " ")} · term ${p.current_term?.label ?? "—"}`}
-                  pill={<StatusPill status={p.config.requires_owner_approval ? "Owner approval" : "PM approval"} tone="accent" />}
+                  pill={
+                    <StatusPill
+                      status={p.config.requires_owner_approval ? "Owner approval" : "PM approval"}
+                      tone="accent"
+                    />
+                  }
                   onClick={() => setConfigOpen(p.property_id)}
                 />
               ))
@@ -227,10 +280,15 @@ function StudentCommandCenter() {
             <Eyebrow>Exception queue</Eyebrow>
             <div className="mt-3 space-y-2">
               {rows
-                .filter((r) => r.payment_state !== "paid" || !r.guarantor_complete || !r.move_in_ready)
+                .filter(
+                  (r) => r.payment_state !== "paid" || !r.guarantor_complete || !r.move_in_ready,
+                )
                 .slice(0, 6)
                 .map((r) => (
-                  <div key={r.occupancy_id} className="flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-3 py-2">
+                  <div
+                    key={r.occupancy_id}
+                    className="flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-3 py-2"
+                  >
                     <div className="min-w-0">
                       <p className="truncate text-[13px] font-medium">{r.resident_name}</p>
                       <p className="text-[11.5px] text-muted-foreground">
@@ -244,7 +302,9 @@ function StudentCommandCenter() {
                     <Pill>{r.unit_name}</Pill>
                   </div>
                 ))}
-              {rows.every((r) => r.payment_state === "paid" && r.guarantor_complete && r.move_in_ready) ? (
+              {rows.every(
+                (r) => r.payment_state === "paid" && r.guarantor_complete && r.move_in_ready,
+              ) ? (
                 <p className="text-[12.5px] text-muted-foreground">No exceptions right now.</p>
               ) : null}
             </div>
@@ -263,15 +323,22 @@ function ConfigModal({
   property,
   onClose,
 }: {
-  property: { property_id: string; property_name: string; config: import("@/lib/types").StudentHousingConfig } | null;
+  property: {
+    property_id: string;
+    property_name: string;
+    config: import("@/lib/types").StudentHousingConfig;
+  } | null;
   onClose: () => void;
 }) {
   const update = useUpdateStudentConfig();
   if (!property) return null;
   const c = property.config;
 
-  const setPolicy = (key: "sublease_policy" | "assignment_policy" | "replacement_policy" | "early_termination_policy", value: PolicyMode) =>
-    update.mutate({ propertyId: property.property_id, patch: { [key]: value } });
+  const setPolicy = (
+    key:
+      "sublease_policy" | "assignment_policy" | "replacement_policy" | "early_termination_policy",
+    value: PolicyMode,
+  ) => update.mutate({ propertyId: property.property_id, patch: { [key]: value } });
 
   return (
     <Modal
@@ -317,9 +384,13 @@ function ConfigModal({
         </Field>
         <div className="rounded-xl bg-secondary/50 p-3">
           <Eyebrow>Accepted rails</Eyebrow>
-          <p className="mt-1 text-[12.5px] text-muted-foreground">{c.accepted_payment_rails.join(" · ")}</p>
+          <p className="mt-1 text-[12.5px] text-muted-foreground">
+            {c.accepted_payment_rails.join(" · ")}
+          </p>
           <Eyebrow className="mt-3">Required documents</Eyebrow>
-          <p className="mt-1 text-[12.5px] text-muted-foreground">{c.required_documents.join(" · ")}</p>
+          <p className="mt-1 text-[12.5px] text-muted-foreground">
+            {c.required_documents.join(" · ")}
+          </p>
         </div>
       </div>
     </Modal>

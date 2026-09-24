@@ -1,17 +1,11 @@
 import { createFileRoute, Link, useParams, useSearch } from "@tanstack/react-router";
 import { Check, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { PublicShell } from "@/components/rentid/PublicShell";
 import { EmptyState, Eyebrow, Glass, Pill } from "@/components/rentid/Surface";
-import {
-  Button,
-  Field,
-  FormGrid,
-  LoadingCard,
-  TextArea,
-  TextInput,
-} from "@/components/rentid/kit";
+import { Button, Field, FormGrid, LoadingCard, TextArea, TextInput } from "@/components/rentid/kit";
 import { SOURCE_LABELS } from "@/components/rentid/listing-ui";
 import { useAuth, useProfile } from "@/lib/auth";
 import { money, fullDate } from "@/lib/format";
@@ -109,15 +103,19 @@ function ApplyPage() {
   const listingId = listing.data?.id;
   useEffect(() => {
     if (!listingId) return;
-    void recordLead.mutateAsync({
-      listingId,
-      source,
-      utmSource: search.utm_source ?? null,
-      utmMedium: search.utm_medium ?? null,
-      utmCampaign: search.utm_campaign ?? null,
-      referrer: typeof document === "undefined" ? null : document.referrer || null,
-      ...(user?.email ? { email: user.email } : {}),
-    });
+    // Telemetry, not the applicant's problem: a failed lead write must never
+    // surface to them, and must not become an unhandled rejection either.
+    recordLead
+      .mutateAsync({
+        listingId,
+        source,
+        utmSource: search.utm_source ?? null,
+        utmMedium: search.utm_medium ?? null,
+        utmCampaign: search.utm_campaign ?? null,
+        referrer: typeof document === "undefined" ? null : document.referrer || null,
+        ...(user?.email ? { email: user.email } : {}),
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listingId]);
 
@@ -126,7 +124,15 @@ function ApplyPage() {
     if (!listing.data) return;
     // A property with no verified ownership chain requires the one-time
     // disclosure before the application is sent.
-    trust.guard(() => void send());
+    trust.guard(() => {
+      send().catch((err) =>
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Your application could not be sent. Please try again.",
+        ),
+      );
+    });
   }
 
   async function send() {
@@ -232,7 +238,8 @@ function ApplyPage() {
         {prefilled ? (
           <Glass className="mt-5 p-4">
             <p className="flex items-center gap-2 text-[13.5px] font-medium">
-              <ShieldCheck className="size-4 text-accent" /> Filled in from your RentID rental resume
+              <ShieldCheck className="size-4 text-accent" /> Filled in from your RentID rental
+              resume
             </p>
             <p className="mt-1 text-[12.5px] text-muted-foreground">
               {passport.data
@@ -271,7 +278,10 @@ function ApplyPage() {
             <Field label="Phone">
               <TextInput value={phone} onChange={(e) => setPhone(e.target.value)} />
             </Field>
-            <Field label="Monthly income" {...(l.income_requirement ? { hint: l.income_requirement } : {})}>
+            <Field
+              label="Monthly income"
+              {...(l.income_requirement ? { hint: l.income_requirement } : {})}
+            >
               <TextInput
                 type="number"
                 inputMode="numeric"
@@ -291,7 +301,11 @@ function ApplyPage() {
                 onChange={(e) => setCurrentAddress(e.target.value)}
               />
             </Field>
-            <Field label="References" hint="Previous landlord name and contact" className="sm:col-span-2">
+            <Field
+              label="References"
+              hint="Previous landlord name and contact"
+              className="sm:col-span-2"
+            >
               <TextInput value={references} onChange={(e) => setReferences(e.target.value)} />
             </Field>
             <Field label="Anything the landlord should know" className="sm:col-span-2">

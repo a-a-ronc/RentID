@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import {
   AppShell,
@@ -42,10 +43,7 @@ import type { ApplicationStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/listings/$listingId")({
   head: () => ({
-    meta: [
-      { title: "Listing distribution — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Listing distribution — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: ListingDistributionPage,
 });
@@ -125,7 +123,10 @@ function ListingDistributionPage() {
               <Button
                 size="sm"
                 onClick={() =>
-                  void updateStatus.mutateAsync({ listingId: data.id, status: "published" })
+                  report(
+                    updateStatus.mutateAsync({ listingId: data.id, status: "published" }),
+                    "Could not relist.",
+                  )
                 }
               >
                 Relist
@@ -133,7 +134,12 @@ function ListingDistributionPage() {
             ) : (
               <Button
                 size="sm"
-                onClick={() => void updateStatus.mutateAsync({ listingId: data.id, status: "leased" })}
+                onClick={() =>
+                  report(
+                    updateStatus.mutateAsync({ listingId: data.id, status: "leased" }),
+                    "Could not mark it rented.",
+                  )
+                }
               >
                 Mark rented
               </Button>
@@ -145,7 +151,13 @@ function ListingDistributionPage() {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <StatusPill
           status={data.status === "leased" ? "rented" : data.status}
-          tone={data.status === "published" ? "success" : data.status === "leased" ? "accent" : "neutral"}
+          tone={
+            data.status === "published"
+              ? "success"
+              : data.status === "leased"
+                ? "accent"
+                : "neutral"
+          }
         />
         <Pill tone="accent">Listing ID {data.public_ref ?? data.id.slice(0, 8)}</Pill>
         <Pill>{money(data.monthly_rent)} / month</Pill>
@@ -186,17 +198,23 @@ function ListingDistributionPage() {
                 channel={channel}
                 busy={busy}
                 onToggle={(enabled) =>
-                  void setChannel.mutateAsync({
-                    listingId: data.id,
-                    marketplaceId: channel.marketplace_id,
-                    enabled,
-                  })
+                  report(
+                    setChannel.mutateAsync({
+                      listingId: data.id,
+                      marketplaceId: channel.marketplace_id,
+                      enabled,
+                    }),
+                    "Could not update that channel.",
+                  )
                 }
                 onResync={() =>
-                  void resync.mutateAsync({
-                    listingId: data.id,
-                    marketplaceId: channel.marketplace_id,
-                  })
+                  report(
+                    resync.mutateAsync({
+                      listingId: data.id,
+                      marketplaceId: channel.marketplace_id,
+                    }),
+                    "Could not resync that channel.",
+                  )
                 }
               />
             ))
@@ -228,30 +246,38 @@ function ListingDistributionPage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Sync history" aside={`${distribution.data?.events.length ?? 0} events`}>
+          <SectionCard
+            title="Sync history"
+            aside={`${distribution.data?.events.length ?? 0} events`}
+          >
             {(distribution.data?.events ?? []).length > 0 ? (
-              (distribution.data?.events ?? []).slice(0, 8).map((event) => (
-                <ListRow
-                  key={event.id}
-                  title={`${event.action} · ${event.marketplace_id}`}
-                  subtitle={event.message}
-                  pill={
-                    <StatusPill
-                      status={event.result.replace("_", " ")}
-                      tone={
-                        event.result === "succeeded"
-                          ? "success"
-                          : event.result === "failed"
-                            ? "danger"
-                            : "warning"
-                      }
-                    />
-                  }
-                  value={fullDate(event.created_at)}
-                />
-              ))
+              (distribution.data?.events ?? [])
+                .slice(0, 8)
+                .map((event) => (
+                  <ListRow
+                    key={event.id}
+                    title={`${event.action} · ${event.marketplace_id}`}
+                    subtitle={event.message}
+                    pill={
+                      <StatusPill
+                        status={event.result.replace("_", " ")}
+                        tone={
+                          event.result === "succeeded"
+                            ? "success"
+                            : event.result === "failed"
+                              ? "danger"
+                              : "warning"
+                        }
+                      />
+                    }
+                    value={fullDate(event.created_at)}
+                  />
+                ))
             ) : (
-              <ListRow title="No sync activity yet" subtitle="Publishing a channel records an event" />
+              <ListRow
+                title="No sync activity yet"
+                subtitle="Publishing a channel records an event"
+              />
             )}
           </SectionCard>
         </div>
@@ -264,7 +290,9 @@ function ListingDistributionPage() {
               <div key={application.id} className="px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-[13.5px] font-medium">{application.applicant_name}</p>
+                    <p className="truncate text-[13.5px] font-medium">
+                      {application.applicant_name}
+                    </p>
                     <p className="num mt-0.5 text-[11.5px] text-muted-foreground">
                       {SOURCE_LABELS[application.source ?? "rentid"]} ·{" "}
                       {money(application.monthly_income ?? 0)} income · applied{" "}
@@ -280,10 +308,13 @@ function ListingDistributionPage() {
                       className="w-auto py-1.5 text-[12px]"
                       value={application.status}
                       onChange={(e) =>
-                        void updateApplication.mutateAsync({
-                          applicationId: application.id,
-                          status: e.target.value as ApplicationStatus,
-                        })
+                        report(
+                          updateApplication.mutateAsync({
+                            applicationId: application.id,
+                            status: e.target.value as ApplicationStatus,
+                          }),
+                          "Could not update the application.",
+                        )
                       }
                     >
                       {APPLICATION_STATUSES.map((s) => (
@@ -297,7 +328,10 @@ function ListingDistributionPage() {
               </div>
             ))
           ) : (
-            <ListRow title="No applicants yet" subtitle="Applications land here from every channel" />
+            <ListRow
+              title="No applicants yet"
+              subtitle="Applications land here from every channel"
+            />
           )}
         </SectionCard>
 
@@ -332,4 +366,12 @@ function ListingDistributionPage() {
       </Modal>
     </AppShell>
   );
+}
+
+/**
+ * These controls fire and forget. Without this, an RLS or validation failure is
+ * swallowed and the button simply appears not to work.
+ */
+function report(p: Promise<unknown>, fallback: string) {
+  p.catch((err) => toast.error(err instanceof Error ? err.message : fallback));
 }

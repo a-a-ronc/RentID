@@ -2,17 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import {
-  Button,
-  DemoNotice,
-  Eyebrow,
-  Field,
-  Glass,
-  TextInput,
-} from "@/components/rentid/patterns";
+import { Button, DemoNotice, Eyebrow, Field, Glass, TextInput } from "@/components/rentid/patterns";
 import { RentIDLogo } from "@/components/rentid/Logo";
 import { authService } from "@/lib/auth";
-import { DEMO_ACCOUNTS } from "@/lib/services";
 import type { AppRole } from "@/lib/types";
 
 export const Route = createFileRoute("/auth")({
@@ -29,7 +21,8 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: "Sign in — RentID" },
       {
         property: "og:description",
-        content: "Landlords and tenants sign in to RentID to manage tenancies and verified rental history.",
+        content:
+          "Landlords and tenants sign in to RentID to manage tenancies and verified rental history.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -43,6 +36,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [role, setRole] = useState<AppRole>("landlord");
   const [busy, setBusy] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
 
   async function route(roles: AppRole[]) {
     if (roles.includes("admin") && !roles.includes("landlord")) {
@@ -68,16 +62,21 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const session = await authService.signUp({
+        const result = await authService.signUp({
           email,
           password,
           fullName: String(form.get("fullName") ?? ""),
           role,
         });
+        if (result.needsEmailConfirmation || !result.session) {
+          setConfirmEmail(email);
+          toast.success("Account created — check your email to confirm it.");
+          return null;
+        }
         toast.success("Account created.");
         if (role === "tenant") await navigate({ to: "/tenant", replace: true });
         else await navigate({ to: "/onboarding", replace: true });
-        return session;
+        return result.session;
       }
       const session = await authService.signIn(email, password);
       toast.success("Welcome back.");
@@ -91,22 +90,15 @@ function AuthPage() {
     }
   }
 
-  async function demoSignIn(kind: "landlord" | "tenant" | "manager" | "student" | "admin") {
-    const account = DEMO_ACCOUNTS[kind];
+  async function resetPassword() {
+    const email = window.prompt("Enter the email address for your RentID account:");
+    if (!email) return;
     setBusy(true);
     try {
-      const session = await authService.signIn(account.email, account.password);
-      if (kind === "student") {
-        await navigate({ to: "/tenant/housing", replace: true });
-        return;
-      }
-      if (kind === "admin") {
-        await navigate({ to: "/admin/prospects", replace: true });
-        return;
-      }
-      await route(session.roles);
+      await authService.requestPasswordReset(email);
+      toast.success("If that address has an account, a reset link is on its way.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Demo sign in failed.");
+      toast.error(error instanceof Error ? error.message : "Could not send the reset email.");
     } finally {
       setBusy(false);
     }
@@ -156,8 +148,21 @@ function AuthPage() {
                   <div className="grid grid-cols-3 gap-2">
                     {(
                       [
-                        { value: "landlord", title: "Landlord", copy: "Manage properties and tenancies" },
-                        { value: "tenant", title: "Tenant", copy: "Accept an invitation, build history" },
+                        {
+                          value: "landlord",
+                          title: "Landlord",
+                          copy: "Manage properties and tenancies",
+                        },
+                        {
+                          value: "tenant",
+                          title: "Tenant",
+                          copy: "Accept an invitation, build history",
+                        },
+                        {
+                          value: "property_manager",
+                          title: "Property manager",
+                          copy: "Manage on behalf of owners",
+                        },
                       ] as const
                     ).map((option) => (
                       <button
@@ -180,15 +185,28 @@ function AuthPage() {
             ) : null}
 
             <Field label="Email" htmlFor="email">
-              <TextInput id="email" name="email" type="email" required autoComplete="email" placeholder="you@email.com" />
+              <TextInput
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@email.com"
+              />
             </Field>
-            <Field label="Password" htmlFor="password" {...(mode === "signup" ? { hint: "At least 8 characters." } : {})}>
+            <Field
+              label="Password"
+              htmlFor="password"
+              {...(mode === "signup"
+                ? { hint: "At least 12 characters — a passphrase works well." }
+                : {})}
+            >
               <TextInput
                 id="password"
                 name="password"
                 type="password"
                 required
-                minLength={8}
+                minLength={mode === "signup" ? 12 : 1}
                 autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 placeholder="••••••••"
               />
@@ -199,33 +217,26 @@ function AuthPage() {
             </Button>
           </form>
 
-          <div className="mt-4 space-y-2">
-            <Eyebrow>Explore the demo</Eyebrow>
-            <div className="grid grid-cols-3 gap-2">
-              <Button tone="secondary" size="sm" onClick={() => void demoSignIn("landlord")} disabled={busy}>
-                Landlord demo
-              </Button>
-              <Button tone="secondary" size="sm" onClick={() => void demoSignIn("tenant")} disabled={busy}>
-                Tenant demo
-              </Button>
-              <Button tone="secondary" size="sm" onClick={() => void demoSignIn("manager")} disabled={busy}>
-                Manager demo
-              </Button>
-              <Button tone="secondary" size="sm" onClick={() => void demoSignIn("student")} disabled={busy}>
-                Student demo
-              </Button>
-              <Button tone="secondary" size="sm" onClick={() => void demoSignIn("admin")} disabled={busy}>
-                Admin demo
-              </Button>
-            </div>
+          <div className="mt-4 flex items-center justify-between text-[12px] text-muted-foreground">
+            <button
+              type="button"
+              className="underline-offset-2 hover:underline"
+              onClick={() => void resetPassword()}
+              disabled={busy}
+            >
+              Forgot your password?
+            </button>
+            <span>Protected by row-level security and encrypted at rest.</span>
           </div>
 
-          <div className="mt-4">
-            <DemoNotice>
-              Accounts are local to this preview while the backend is offline — nothing is sent anywhere. Real
-              authentication is wired in when the database reconnects.
-            </DemoNotice>
-          </div>
+          {confirmEmail ? (
+            <div className="mt-4">
+              <DemoNotice>
+                We sent a confirmation link to <strong>{confirmEmail}</strong>. Open it to activate
+                your account, then sign in.
+              </DemoNotice>
+            </div>
+          ) : null}
         </Glass>
       </div>
     </main>

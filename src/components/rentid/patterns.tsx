@@ -76,9 +76,7 @@ export function SectionCard({
         <h2 className="font-display text-[15px] font-semibold tracking-tight">{title}</h2>
         {aside ? <Eyebrow>{aside}</Eyebrow> : null}
       </div>
-      <div className="divide-y divide-border/50">
-        {children}
-      </div>
+      <div className="divide-y divide-border/50">{children}</div>
       {footer ? <div className="border-t border-border/60 px-4 py-3">{footer}</div> : null}
     </Glass>
   );
@@ -132,9 +130,7 @@ export function ListRow({
       </button>
     );
   }
-  return (
-    <div className="flex items-center gap-3 px-4 py-3">{content}</div>
-  );
+  return <div className="flex items-center gap-3 px-4 py-3">{content}</div>;
 }
 
 export function StatusPill({
@@ -186,4 +182,12 @@ export function SummaryGrid({
 
 export * from "@/components/rentid/kit";
 export { TrustBadge, VerificationChecklist } from "@/components/rentid/TrustBadge";
-export { Glass, Eyebrow, MetricCard, Pill, EmptyState, SectionHeading, ComingSoon } from "@/components/rentid/Surface";
+export {
+  Glass,
+  Eyebrow,
+  MetricCard,
+  Pill,
+  EmptyState,
+  SectionHeading,
+  ComingSoon,
+} from "@/components/rentid/Surface";

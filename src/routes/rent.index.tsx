@@ -57,13 +57,21 @@ function RentSearch() {
               placeholder="Search by city, property or unit"
               aria-label="Search listings"
             />
-            <Select value={minBeds} onChange={(e) => setMinBeds(e.target.value)} aria-label="Minimum bedrooms">
+            <Select
+              value={minBeds}
+              onChange={(e) => setMinBeds(e.target.value)}
+              aria-label="Minimum bedrooms"
+            >
               <option value="">Any beds</option>
               <option value="1">1+ beds</option>
               <option value="2">2+ beds</option>
               <option value="3">3+ beds</option>
             </Select>
-            <Select value={maxRent} onChange={(e) => setMaxRent(e.target.value)} aria-label="Maximum rent">
+            <Select
+              value={maxRent}
+              onChange={(e) => setMaxRent(e.target.value)}
+              aria-label="Maximum rent"
+            >
               <option value="">Any rent</option>
               <option value="1200">Up to $1,200</option>
               <option value="1600">Up to $1,600</option>
@@ -77,17 +85,25 @@ function RentSearch() {
         {listings.isPending ? (
           <LoadingCard label="Loading listings…" rows={4} />
         ) : listings.isError ? (
-          <InlineError message="We couldn't load listings." onRetry={() => void listings.refetch()} />
+          <InlineError
+            message="We couldn't load listings."
+            onRetry={() => void listings.refetch()}
+          />
         ) : listings.data && listings.data.length > 0 ? (
           <div className="grid gap-3 sm:grid-cols-2">
             {listings.data.map((listing, i) => (
               <Link key={listing.id} to="/rent/$listingId" params={{ listingId: listing.id }}>
-                <Glass className="h-full p-5 transition-colors hover:bg-secondary/40" delay={i * 60}>
+                <Glass
+                  className="h-full p-5 transition-colors hover:bg-secondary/40"
+                  delay={i * 60}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="font-display text-[15px] leading-snug font-semibold tracking-tight">
                       {listing.headline}
                     </h2>
-                    <p className="num shrink-0 text-[15px] font-medium">{money(listing.monthly_rent)}</p>
+                    <p className="num shrink-0 text-[15px] font-medium">
+                      {money(listing.monthly_rent)}
+                    </p>
                   </div>
                   <p className="mt-2 flex items-center gap-1.5 text-[12px] text-muted-foreground">
                     <MapPin className="size-3.5" strokeWidth={1.75} />
@@ -98,12 +114,15 @@ function RentSearch() {
                   <p className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
                     <BedDouble className="size-3.5" strokeWidth={1.75} />
                     {listing.unit?.bedrooms ?? "—"} bd · {listing.unit?.bathrooms ?? "—"} ba ·{" "}
-                    {listing.unit?.square_feet ? `${listing.unit.square_feet} sq ft` : "size on request"}
+                    {listing.unit?.square_feet
+                      ? `${listing.unit.square_feet} sq ft`
+                      : "size on request"}
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Pill tone="success">
                       <ShieldCheck className="size-3" strokeWidth={2} />
-                      Verified {listing.provider?.kind === "property_manager" ? "manager" : "landlord"}
+                      Verified{" "}
+                      {listing.provider?.kind === "property_manager" ? "manager" : "landlord"}
                     </Pill>
                     <Pill>Available {shortDate(listing.available_on)}</Pill>
                     <Pill tone="accent">{listing.lease_term_months} mo lease</Pill>

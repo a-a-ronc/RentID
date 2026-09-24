@@ -89,11 +89,18 @@ export function TextInput({ className, ...rest }: React.InputHTMLAttributes<HTML
   return <input className={cn(CONTROL, className)} {...rest} />;
 }
 
-export function TextArea({ className, ...rest }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function TextArea({
+  className,
+  ...rest
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea className={cn(CONTROL, "min-h-24 resize-y", className)} {...rest} />;
 }
 
-export function Select({ className, children, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({
+  className,
+  children,
+  ...rest
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select className={cn(CONTROL, "appearance-none pr-8", className)} {...rest}>
       {children}
@@ -175,7 +182,13 @@ export function DataTable<T>({
   onRowClick,
 }: {
   rows: T[];
-  columns: { key: string; header: string; cell: (row: T) => ReactNode; align?: "left" | "right"; hideOnMobile?: boolean }[];
+  columns: {
+    key: string;
+    header: string;
+    cell: (row: T) => ReactNode;
+    align?: "left" | "right";
+    hideOnMobile?: boolean;
+  }[];
   empty?: ReactNode;
   onRowClick?: (row: T) => void;
 }) {
@@ -205,7 +218,10 @@ export function DataTable<T>({
             <tr
               key={i}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={cn("transition-colors", onRowClick && "cursor-pointer hover:bg-secondary/60")}
+              className={cn(
+                "transition-colors",
+                onRowClick && "cursor-pointer hover:bg-secondary/60",
+              )}
             >
               {columns.map((c) => (
                 <td
@@ -247,7 +263,9 @@ export function LoadingCard({ label = "Loading…", rows = 3 }: { label?: string
 export function InlineError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <Glass className="border border-destructive/25 p-4">
-      <p className="font-display text-[13.5px] font-semibold text-destructive">Something went wrong</p>
+      <p className="font-display text-[13.5px] font-semibold text-destructive">
+        Something went wrong
+      </p>
       <p className="mt-1 text-[12.5px] text-muted-foreground">{message}</p>
       {onRetry ? (
         <Button tone="secondary" size="sm" className="mt-3" onClick={onRetry}>

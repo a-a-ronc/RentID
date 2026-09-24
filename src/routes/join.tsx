@@ -129,13 +129,14 @@ function JoinPage() {
               <div className="grid size-10 place-items-center rounded-2xl bg-accent/15 text-accent">
                 <col.icon className="size-5" strokeWidth={1.75} />
               </div>
-              <h2 className="mt-3 font-display text-[18px] font-bold tracking-tight">
-                {col.role}
-              </h2>
+              <h2 className="mt-3 font-display text-[18px] font-bold tracking-tight">{col.role}</h2>
               <p className="mt-1.5 text-[13.5px] font-medium">{col.lead}</p>
               <ul className="mt-4 space-y-2">
                 {col.items.map((item) => (
-                  <li key={item} className="flex gap-2 text-[13px] leading-snug text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex gap-2 text-[13px] leading-snug text-muted-foreground"
+                  >
                     <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand" strokeWidth={2} />
                     <span>{item}</span>
                   </li>
@@ -180,15 +181,21 @@ function RegistrationForm() {
 
   function validate() {
     const next: Record<string, string> = {};
-    if (fullName.trim().split(/\s+/).length < 2) next["full_name"] = "Enter your first and last name";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) next["email"] = "Enter a valid email address";
-    if (phone.replace(/\D/g, "").length !== 10) next["phone"] = "Enter a 10-digit U.S. phone number";
+    if (fullName.trim().split(/\s+/).length < 2)
+      next["full_name"] = "Enter your first and last name";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()))
+      next["email"] = "Enter a valid email address";
+    if (phone.replace(/\D/g, "").length !== 10)
+      next["phone"] = "Enter a 10-digit U.S. phone number";
     if (wouldUse === null) next["would_use"] = "Please select Yes or No";
     if (roles.length === 0) next["roles"] = "Select at least one option";
     if (managesUnits) {
       if (!/^\d+$/.test(currentUnits.trim()) || Number(currentUnits) < 1)
         next["current_units"] = "Enter a whole number of 1 or more";
-      if (intendedUnits.trim() !== "" && (!/^\d+$/.test(intendedUnits.trim()) || Number(intendedUnits) < 0))
+      if (
+        intendedUnits.trim() !== "" &&
+        (!/^\d+$/.test(intendedUnits.trim()) || Number(intendedUnits) < 0)
+      )
         next["intended_units"] = "Enter a whole number of 0 or more";
     }
     if (!acknowledged) next["acknowledged"] = "Please acknowledge to continue";
@@ -237,7 +244,9 @@ function RegistrationForm() {
         <div className="grid size-11 place-items-center rounded-2xl bg-brand/15 text-brand">
           <CheckCircle2 className="size-6" strokeWidth={1.75} />
         </div>
-        <h2 className="mt-4 font-display text-[24px] font-bold tracking-tight">You're registered.</h2>
+        <h2 className="mt-4 font-display text-[24px] font-bold tracking-tight">
+          You're registered.
+        </h2>
         <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-muted-foreground">
           {done === "updated"
             ? "Thank you — your response has been updated. We'll keep you updated as RentID gets closer to launch."
@@ -341,7 +350,9 @@ function RegistrationForm() {
                   onClick={() => toggleRole(opt.value)}
                   className={cn(
                     "flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left text-[13.5px] font-medium transition-all",
-                    active ? "border-brand bg-brand/10 text-foreground" : "border-border bg-card/70 hover:border-brand/50",
+                    active
+                      ? "border-brand bg-brand/10 text-foreground"
+                      : "border-border bg-card/70 hover:border-brand/50",
                   )}
                 >
                   <span
@@ -436,7 +447,12 @@ function RegistrationForm() {
 
         {errors["form"] ? <p className="text-[12.5px] text-destructive">{errors["form"]}</p> : null}
 
-        <Button type="submit" className="w-full py-3.5 text-[15px]" loading={pending} disabled={pending}>
+        <Button
+          type="submit"
+          className="w-full py-3.5 text-[15px]"
+          loading={pending}
+          disabled={pending}
+        >
           Register My Interest
         </Button>
       </form>

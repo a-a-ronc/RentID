@@ -37,4 +37,10 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  {
+    // The dedicated `bun run format` commit has landed, so formatting is clean and
+    // stays that way: a formatting drift is now an error rather than 3,000 lines of
+    // advisory noise that made `bun run lint` useless as a signal.
+    rules: { "prettier/prettier": "error" },
+  },
 );

@@ -1,6 +1,7 @@
 # RentID Roadmap
 
 ## Milestone 1 — Core platform (complete against mock data layer)
+
 - [x] Frosted Ledger → RentID coral/near-black design system (styles.css), logo + favicon
 - [x] Domain types for every planned entity (src/lib/types.ts)
 - [x] Mock data layer: localStorage DB + centralized seed (src/lib/mock/)
@@ -18,6 +19,7 @@
 - [x] Typecheck clean
 
 ## Milestone 2 — Rental identity network (business map, mock data)
+
 - [x] Public marketing routes per role: /for-tenants, /for-landlords, /for-property-managers
 - [x] Public rental marketplace: /rent search + /rent/$listingId detail with consented profile sharing
 - [x] Public provider profiles: /providers/$orgId with sourced trust signals and verified-tenancy reviews
@@ -29,6 +31,7 @@
       management_assignments, listings, rental_applications (review only)
 
 ## Milestone 3 — Student housing category (business map §25-§38, mock data)
+
 - [x] `management_category` on properties: student housing is a configuration on the
       same identity/property/lease/payment graph, not a separate product
 - [x] Bed/room inventory, academic terms, occupancies, roommate groups, guarantors
@@ -49,6 +52,7 @@
 - [x] Planned SQL + RLS for the full student layer (review only, not applied)
 
 ## Next — when the backend is reachable
+
 - [ ] Apply schema migration, then RLS migration
 - [ ] Enable email/password + Google auth; move invitation acceptance to a server function
 - [ ] Create the private documents bucket and switch lease/document upload to real storage
@@ -57,11 +61,13 @@
 - [ ] Landlord / tenant / property-manager access tests + database linter audit
 
 ## Deliberately not started
+
 Stripe and live payments, autopay, credit screening, background checks,
 reputation scoring, AI tenant scores, native apps, QuickBooks,
 partner listing syndication feeds, marketplace lease fees.
 
 ## Listing Syndication (mock mode, shipped)
+
 - One listing created in RentID is the source of truth: full home details, terms,
   requirements, photos, contact and showing instructions.
 - Permanent public URLs per listing: `/listing/{ref}` and `/apply/{ref}`.
@@ -75,10 +81,12 @@ partner listing syndication feeds, marketplace lease fees.
   marketplace, employee and availability filters.
 
 ### Still deferred
+
 Live external posting until partner approval; Stripe/live payments; screening and
 background checks; reputation scoring.
 
 ## Property Ownership & Authorized Representative Verification (mock mode, shipped)
+
 - Property-specific claims opened from the existing add-property flow (relationship,
   legal owner name, county, parcel/APN, recording jurisdiction) with normalized-address
   de-duplication so one address cannot be claimed twice in a workspace.
@@ -99,5 +107,6 @@ background checks; reputation scoring.
 - Tenancy verification stays a separate concept from ownership and authority.
 
 ### Still deferred
+
 Live provider integrations, production badges (never from mock data), Stripe/live
 payments, screening and background checks, reputation scoring.

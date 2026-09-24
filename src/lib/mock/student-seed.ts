@@ -94,19 +94,141 @@ type ResidentSpec = {
 
 const RESIDENTS: ResidentSpec[] = [
   // 123 College Ave — Unit 2A (individual by bed)
-  { name: "Alex Morgan", email: "alex.morgan@example.edu", bedLabel: "A", roomLabel: "Room 1", unitIndex: 0, leaseModel: "individual_by_bed", sharePct: null, money: "own_ach", guarantorComplete: true, firstTimeRenter: false },
-  { name: "Ben Carter", email: "ben.carter@example.edu", bedLabel: "B", roomLabel: "Room 2", unitIndex: 0, leaseModel: "individual_by_bed", sharePct: null, money: "unpaid", guarantorComplete: true, firstTimeRenter: true },
-  { name: "Cara Diaz", email: "cara.diaz@example.edu", bedLabel: "C", roomLabel: "Room 3", unitIndex: 0, leaseModel: "individual_by_bed", sharePct: null, money: "parent_ach", guarantorComplete: false, firstTimeRenter: true },
-  { name: "Drew Reed", email: "drew.reed@example.edu", bedLabel: "D", roomLabel: "Room 4", unitIndex: 0, leaseModel: "individual_by_bed", sharePct: null, money: "partial", partialAmount: 425, guarantorComplete: true, firstTimeRenter: false },
+  {
+    name: "Alex Morgan",
+    email: "alex.morgan@example.edu",
+    bedLabel: "A",
+    roomLabel: "Room 1",
+    unitIndex: 0,
+    leaseModel: "individual_by_bed",
+    sharePct: null,
+    money: "own_ach",
+    guarantorComplete: true,
+    firstTimeRenter: false,
+  },
+  {
+    name: "Ben Carter",
+    email: "ben.carter@example.edu",
+    bedLabel: "B",
+    roomLabel: "Room 2",
+    unitIndex: 0,
+    leaseModel: "individual_by_bed",
+    sharePct: null,
+    money: "unpaid",
+    guarantorComplete: true,
+    firstTimeRenter: true,
+  },
+  {
+    name: "Cara Diaz",
+    email: "cara.diaz@example.edu",
+    bedLabel: "C",
+    roomLabel: "Room 3",
+    unitIndex: 0,
+    leaseModel: "individual_by_bed",
+    sharePct: null,
+    money: "parent_ach",
+    guarantorComplete: false,
+    firstTimeRenter: true,
+  },
+  {
+    name: "Drew Reed",
+    email: "drew.reed@example.edu",
+    bedLabel: "D",
+    roomLabel: "Room 4",
+    unitIndex: 0,
+    leaseModel: "individual_by_bed",
+    sharePct: null,
+    money: "partial",
+    partialAmount: 425,
+    guarantorComplete: true,
+    firstTimeRenter: false,
+  },
   // 123 College Ave — Unit 3C (individual by bed, one bed available)
-  { name: "Ivy Salazar", email: "ivy.salazar@example.edu", bedLabel: "A", roomLabel: "Room 1", unitIndex: 1, leaseModel: "individual_by_bed", sharePct: null, money: "own_ach", guarantorComplete: true, firstTimeRenter: false },
-  { name: "Noah Kimani", email: "noah.kimani@example.edu", bedLabel: "B", roomLabel: "Room 2", unitIndex: 1, leaseModel: "individual_by_bed", sharePct: null, money: "own_ach", guarantorComplete: false, firstTimeRenter: true },
-  { name: "Priya Nandra", email: "priya.nandra@example.edu", bedLabel: "C", roomLabel: "Room 3", unitIndex: 1, leaseModel: "individual_by_bed", sharePct: null, money: "unpaid", guarantorComplete: true, firstTimeRenter: true },
+  {
+    name: "Ivy Salazar",
+    email: "ivy.salazar@example.edu",
+    bedLabel: "A",
+    roomLabel: "Room 1",
+    unitIndex: 1,
+    leaseModel: "individual_by_bed",
+    sharePct: null,
+    money: "own_ach",
+    guarantorComplete: true,
+    firstTimeRenter: false,
+  },
+  {
+    name: "Noah Kimani",
+    email: "noah.kimani@example.edu",
+    bedLabel: "B",
+    roomLabel: "Room 2",
+    unitIndex: 1,
+    leaseModel: "individual_by_bed",
+    sharePct: null,
+    money: "own_ach",
+    guarantorComplete: false,
+    firstTimeRenter: true,
+  },
+  {
+    name: "Priya Nandra",
+    email: "priya.nandra@example.edu",
+    bedLabel: "C",
+    roomLabel: "Room 3",
+    unitIndex: 1,
+    leaseModel: "individual_by_bed",
+    sharePct: null,
+    money: "unpaid",
+    guarantorComplete: true,
+    firstTimeRenter: true,
+  },
   // 88 Campus — Unit 4B (joint household lease, 25% shares)
-  { name: "Mia Stone", email: "mia.stone@example.edu", bedLabel: null, roomLabel: "Joint lease", unitIndex: 2, leaseModel: "joint_household", sharePct: 25, money: "external_check", guarantorComplete: true, firstTimeRenter: false },
-  { name: "Tess Aoki", email: "tess.aoki@example.edu", bedLabel: null, roomLabel: "Joint lease", unitIndex: 2, leaseModel: "joint_household", sharePct: 25, money: "own_ach", guarantorComplete: true, firstTimeRenter: false },
-  { name: "Ravi Shah", email: "ravi.shah@example.edu", bedLabel: null, roomLabel: "Joint lease", unitIndex: 2, leaseModel: "joint_household", sharePct: 25, money: "own_ach", guarantorComplete: true, firstTimeRenter: true },
-  { name: "Jae Park", email: "jae.park@example.edu", bedLabel: null, roomLabel: "Joint lease", unitIndex: 2, leaseModel: "joint_household", sharePct: 25, money: "unpaid", guarantorComplete: false, firstTimeRenter: true },
+  {
+    name: "Mia Stone",
+    email: "mia.stone@example.edu",
+    bedLabel: null,
+    roomLabel: "Joint lease",
+    unitIndex: 2,
+    leaseModel: "joint_household",
+    sharePct: 25,
+    money: "external_check",
+    guarantorComplete: true,
+    firstTimeRenter: false,
+  },
+  {
+    name: "Tess Aoki",
+    email: "tess.aoki@example.edu",
+    bedLabel: null,
+    roomLabel: "Joint lease",
+    unitIndex: 2,
+    leaseModel: "joint_household",
+    sharePct: 25,
+    money: "own_ach",
+    guarantorComplete: true,
+    firstTimeRenter: false,
+  },
+  {
+    name: "Ravi Shah",
+    email: "ravi.shah@example.edu",
+    bedLabel: null,
+    roomLabel: "Joint lease",
+    unitIndex: 2,
+    leaseModel: "joint_household",
+    sharePct: 25,
+    money: "own_ach",
+    guarantorComplete: true,
+    firstTimeRenter: true,
+  },
+  {
+    name: "Jae Park",
+    email: "jae.park@example.edu",
+    bedLabel: null,
+    roomLabel: "Joint lease",
+    unitIndex: 2,
+    leaseModel: "joint_household",
+    sharePct: 25,
+    money: "unpaid",
+    guarantorComplete: false,
+    firstTimeRenter: true,
+  },
 ];
 
 export function seedStudentHousing(input: {
@@ -236,7 +358,12 @@ export function seedStudentHousing(input: {
     approval_sla_hours: 48,
     lease_change_fee: 150,
     required_documents: ["Signed addendum", "Guarantor agreement", "Photo ID"],
-    accepted_payment_rails: ["RentID ACH", "Debit card", "Check (recorded)", "Bank bill-pay (recorded)"],
+    accepted_payment_rails: [
+      "RentID ACH",
+      "Debit card",
+      "Check (recorded)",
+      "Bank bill-pay (recorded)",
+    ],
     external_payment_recording: true,
     created_at: created,
     updated_at: iso(-20),
@@ -422,7 +549,15 @@ export function seedStudentHousing(input: {
     });
 
     // Settle it according to the resident's money story.
-    const settle = (amount: number, payer: Payer, method: StudentPayment["method"], processed: boolean, state: StudentPayment["state"], reference: string | null, proof: string | null) => {
+    const settle = (
+      amount: number,
+      payer: Payer,
+      method: StudentPayment["method"],
+      processed: boolean,
+      state: StudentPayment["state"],
+      reference: string | null,
+      proof: string | null,
+    ) => {
       const payment: StudentPayment = {
         id: sid("bd00", payments.length + 1),
         organization_id: pmOrgId,
@@ -465,10 +600,26 @@ export function seedStudentHousing(input: {
       settle(225, residentPayer, "card", true, "settled", "CARD-8841", null);
       rentCharge.state = "paid";
     } else if (r.money === "partial") {
-      settle(r.partialAmount ?? 425, residentPayer, "rentid_ach", true, "settled", "ACH-2263", null);
+      settle(
+        r.partialAmount ?? 425,
+        residentPayer,
+        "rentid_ach",
+        true,
+        "settled",
+        "ACH-2263",
+        null,
+      );
       rentCharge.state = "partial";
     } else if (r.money === "external_check") {
-      settle(BED_RENT, residentPayer, "check", false, "reconciled", "Check #1042", "Scanned check image");
+      settle(
+        BED_RENT,
+        residentPayer,
+        "check",
+        false,
+        "reconciled",
+        "Check #1042",
+        "Scanned check image",
+      );
       rentCharge.state = "paid";
     }
   });
@@ -653,7 +804,15 @@ export function seedStudentHousing(input: {
       request_id: request.id,
       role: "pm",
       label: "Property manager review",
-      state: ["approved", "documents_pending", "signatures_pending", "payment_pending", "scheduled", "effective", "completed"].includes(request.state)
+      state: [
+        "approved",
+        "documents_pending",
+        "signatures_pending",
+        "payment_pending",
+        "scheduled",
+        "effective",
+        "completed",
+      ].includes(request.state)
         ? "approved"
         : "pending",
       actor_name: null,
@@ -724,7 +883,8 @@ export function seedStudentHousing(input: {
     type: "sublease",
     state: "submitted",
     policy: "prohibited",
-    reason: "Summer sublease request — property prohibits subleasing, submitted for exception review.",
+    reason:
+      "Summer sublease request — property prohibits subleasing, submitted for exception review.",
     ownerApproval: true,
     daysAgo: 2,
   });
@@ -819,7 +979,13 @@ export function seedStudentHousing(input: {
     },
   ];
 
-  const memberSpecs: { group: number; name: string; state: RoommateGroupMember["state"]; verified: boolean; first: boolean }[] = [
+  const memberSpecs: {
+    group: number;
+    name: string;
+    state: RoommateGroupMember["state"];
+    verified: boolean;
+    first: boolean;
+  }[] = [
     { group: 0, name: "Hana Weber", state: "complete", verified: true, first: true },
     { group: 0, name: "Sam Ochoa", state: "guarantor_incomplete", verified: true, first: true },
     { group: 0, name: "Bri Talley", state: "profile_incomplete", verified: false, first: true },
@@ -872,14 +1038,94 @@ export function seedStudentHousing(input: {
     blocker: string | null;
     days: number;
   }[] = [
-    { unitIndex: 0, bedIndex: 0, area: "bed", label: "Bed A — private room inspection", category: "inspection", vendor: "In-house tech", state: "complete", blocker: null, days: 4 },
-    { unitIndex: 0, bedIndex: 1, area: "bed", label: "Bed B — paint and patch", category: "paint", vendor: "Vendor #14", state: "in_progress", blocker: null, days: 7 },
-    { unitIndex: 0, bedIndex: 2, area: "bed", label: "Bed C — flooring replacement", category: "flooring", vendor: "Vendor #9", state: "blocked", blocker: "Material backorder — at risk of missing move-in", days: 6 },
-    { unitIndex: 0, bedIndex: null, area: "shared", label: "Shared kitchen deep clean", category: "cleaning", vendor: "Bright Clean Co.", state: "not_started", blocker: null, days: 9 },
-    { unitIndex: 1, bedIndex: null, area: "unit", label: "Unit 3C keys and access re-key", category: "keys", vendor: "In-house tech", state: "not_started", blocker: null, days: 10 },
-    { unitIndex: 1, bedIndex: null, area: "unit", label: "Incoming resident guarantor packet", category: "documents", vendor: null, state: "blocked", blocker: "Missing guarantor signature", days: 3 },
-    { unitIndex: 2, bedIndex: null, area: "unit", label: "Move-out balance and deposit workflow", category: "money", vendor: null, state: "blocked", blocker: "Unpaid move-out balance", days: 5 },
-    { unitIndex: 2, bedIndex: null, area: "shared", label: "Living room wall repair", category: "repair", vendor: "Vendor #14", state: "in_progress", blocker: null, days: 8 },
+    {
+      unitIndex: 0,
+      bedIndex: 0,
+      area: "bed",
+      label: "Bed A — private room inspection",
+      category: "inspection",
+      vendor: "In-house tech",
+      state: "complete",
+      blocker: null,
+      days: 4,
+    },
+    {
+      unitIndex: 0,
+      bedIndex: 1,
+      area: "bed",
+      label: "Bed B — paint and patch",
+      category: "paint",
+      vendor: "Vendor #14",
+      state: "in_progress",
+      blocker: null,
+      days: 7,
+    },
+    {
+      unitIndex: 0,
+      bedIndex: 2,
+      area: "bed",
+      label: "Bed C — flooring replacement",
+      category: "flooring",
+      vendor: "Vendor #9",
+      state: "blocked",
+      blocker: "Material backorder — at risk of missing move-in",
+      days: 6,
+    },
+    {
+      unitIndex: 0,
+      bedIndex: null,
+      area: "shared",
+      label: "Shared kitchen deep clean",
+      category: "cleaning",
+      vendor: "Bright Clean Co.",
+      state: "not_started",
+      blocker: null,
+      days: 9,
+    },
+    {
+      unitIndex: 1,
+      bedIndex: null,
+      area: "unit",
+      label: "Unit 3C keys and access re-key",
+      category: "keys",
+      vendor: "In-house tech",
+      state: "not_started",
+      blocker: null,
+      days: 10,
+    },
+    {
+      unitIndex: 1,
+      bedIndex: null,
+      area: "unit",
+      label: "Incoming resident guarantor packet",
+      category: "documents",
+      vendor: null,
+      state: "blocked",
+      blocker: "Missing guarantor signature",
+      days: 3,
+    },
+    {
+      unitIndex: 2,
+      bedIndex: null,
+      area: "unit",
+      label: "Move-out balance and deposit workflow",
+      category: "money",
+      vendor: null,
+      state: "blocked",
+      blocker: "Unpaid move-out balance",
+      days: 5,
+    },
+    {
+      unitIndex: 2,
+      bedIndex: null,
+      area: "shared",
+      label: "Living room wall repair",
+      category: "repair",
+      vendor: "Vendor #14",
+      state: "in_progress",
+      blocker: null,
+      days: 8,
+    },
   ];
 
   const turnTasks: TurnTask[] = turnSpecs.map((t, i) => {

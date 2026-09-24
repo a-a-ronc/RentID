@@ -38,10 +38,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/listings/")({
   head: () => ({
-    meta: [
-      { title: "Listings & distribution — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Listings & distribution — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: ListingsPage,
 });
@@ -102,8 +99,8 @@ function ListingsPage() {
       {active.isDemo ? (
         <div className="mt-4">
           <DemoNotice>
-            Listings and applications use demo data. RentID publishes live; partner networks show
-            "Integration pending" until each official feed is approved.
+            Listings and applications are live. Partner networks show "Integration pending" until
+            each official feed is approved.
           </DemoNotice>
         </div>
       ) : null}
@@ -122,7 +119,8 @@ function ListingsPage() {
             },
             {
               label: "Approved",
-              value: apps.filter((a) => a.status === "approved" || a.status === "lease_signed").length,
+              value: apps.filter((a) => a.status === "approved" || a.status === "lease_signed")
+                .length,
               tone: "success",
             },
           ]}
@@ -137,7 +135,10 @@ function ListingsPage() {
             </div>
           ) : listings.isError ? (
             <div className="p-4">
-              <InlineError message="Listings unavailable." onRetry={() => void listings.refetch()} />
+              <InlineError
+                message="Listings unavailable."
+                onRetry={() => void listings.refetch()}
+              />
             </div>
           ) : rows.length > 0 ? (
             rows.map((listing, i) => (
@@ -203,22 +204,27 @@ function ListingsPage() {
                 <LoadingCard rows={3} />
               </div>
             ) : apps.length > 0 ? (
-              apps.slice(0, 8).map((application, i) => (
-                <ListRow
-                  key={application.id}
-                  title={application.applicant_name}
-                  subtitle={`${application.property_name} · ${application.unit_name} · from ${SOURCE_LABELS[application.source ?? "rentid"]} · ${shortDate(application.created_at)}`}
-                  pill={
-                    <StatusPill
-                      status={applicationLabel(application.status)}
-                      tone={applicationTone(application.status)}
-                    />
-                  }
-                  delay={i * 40}
-                />
-              ))
+              apps
+                .slice(0, 8)
+                .map((application, i) => (
+                  <ListRow
+                    key={application.id}
+                    title={application.applicant_name}
+                    subtitle={`${application.property_name} · ${application.unit_name} · from ${SOURCE_LABELS[application.source ?? "rentid"]} · ${shortDate(application.created_at)}`}
+                    pill={
+                      <StatusPill
+                        status={applicationLabel(application.status)}
+                        tone={applicationTone(application.status)}
+                      />
+                    }
+                    delay={i * 40}
+                  />
+                ))
             ) : (
-              <ListRow title="No applications yet" subtitle="Applications appear here as renters apply" />
+              <ListRow
+                title="No applications yet"
+                subtitle="Applications appear here as renters apply"
+              />
             )}
           </SectionCard>
 

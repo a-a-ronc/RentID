@@ -140,7 +140,9 @@ export function ComingSoon({
     <Glass className="p-6">
       <Eyebrow>Planned</Eyebrow>
       <h2 className="mt-1 font-display text-lg font-semibold tracking-tight">{title}</h2>
-      <p className="mt-2 max-w-lg text-[13px] leading-relaxed text-muted-foreground">{description}</p>
+      <p className="mt-2 max-w-lg text-[13px] leading-relaxed text-muted-foreground">
+        {description}
+      </p>
       <ul className="mt-4 space-y-2">
         {points.map((point) => (
           <li key={point} className="flex items-start gap-2.5 text-[13px]">

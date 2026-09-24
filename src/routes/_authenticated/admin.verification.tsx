@@ -20,10 +20,7 @@ import type { ReviewDecision } from "@/lib/services/verification";
 
 export const Route = createFileRoute("/_authenticated/admin/verification")({
   head: () => ({
-    meta: [
-      { title: "Ownership review — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Ownership review — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminVerification,
 });
@@ -99,7 +96,11 @@ function AdminVerification() {
         />
       </div>
 
-      <SectionCard title="Verification data sources" aside={`${providers.length} configured`} className="mt-5">
+      <SectionCard
+        title="Verification data sources"
+        aside={`${providers.length} configured`}
+        className="mt-5"
+      >
         {providers.map((p) => (
           <ListRow
             key={p.id}
@@ -123,7 +124,10 @@ function AdminVerification() {
         {queue.isPending ? (
           <LoadingCard label="Loading review queue…" rows={3} />
         ) : items.length === 0 ? (
-          <EmptyState title="Nothing awaiting review" description="New claims and risk events appear here." />
+          <EmptyState
+            title="Nothing awaiting review"
+            description="New claims and risk events appear here."
+          />
         ) : (
           items.map((item) => (
             <SectionCard
@@ -179,10 +183,17 @@ function AdminVerification() {
         )}
       </div>
 
-      <Modal open={caseId !== null} onClose={() => setCaseId(null)} title="Record a review decision">
+      <Modal
+        open={caseId !== null}
+        onClose={() => setCaseId(null)}
+        title="Record a review decision"
+      >
         <form onSubmit={submit} className="space-y-3.5">
           <Field label="Decision">
-            <Select value={decision} onChange={(e) => setDecision(e.target.value as ReviewDecision)}>
+            <Select
+              value={decision}
+              onChange={(e) => setDecision(e.target.value as ReviewDecision)}
+            >
               {DECISIONS.map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -191,7 +202,12 @@ function AdminVerification() {
             </Select>
           </Field>
           <Field label="Reason" hint="Required, stored with your reviewer ID">
-            <TextArea rows={3} required value={reason} onChange={(e) => setReason(e.target.value)} />
+            <TextArea
+              rows={3}
+              required
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
           </Field>
           <Button type="submit" loading={decide.isPending} className="w-full">
             Record decision

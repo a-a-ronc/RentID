@@ -15,10 +15,7 @@ import type { LeaseDetail, LeaseStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/leases/")({
   head: () => ({
-    meta: [
-      { title: "Leases — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Leases — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: LeasesPage,
 });
@@ -38,14 +35,19 @@ function LeasesPage() {
 
   return (
     <AppShell subtitle={active.isDemo ? "Demo portfolio" : "Landlord"}>
-      <PageHeader title="Leases" subtitle={active.org ? `${active.org.name} · ${rows.length} leases` : undefined} />
+      <PageHeader
+        title="Leases"
+        subtitle={active.org ? `${active.org.name} · ${rows.length} leases` : undefined}
+      />
 
       <div className="mt-5">
         {leases.isLoading ? (
           <LoadingCard label="Fetching leases…" />
         ) : leases.isError ? (
           <InlineError
-            message={leases.error instanceof Error ? leases.error.message : "Could not load leases."}
+            message={
+              leases.error instanceof Error ? leases.error.message : "Could not load leases."
+            }
             onRetry={() => leases.refetch()}
           />
         ) : rows.length === 0 ? (
@@ -74,13 +76,21 @@ function LeasesPage() {
                   return d == null ? "—" : d < 0 ? "Past" : `${d}d`;
                 },
               },
-              { key: "status", header: "Status", cell: (l) => <StatusPill status={l.status} tone={TONE[l.status]} /> },
+              {
+                key: "status",
+                header: "Status",
+                cell: (l) => <StatusPill status={l.status} tone={TONE[l.status]} />,
+              },
               {
                 key: "link",
                 header: "",
                 align: "right",
                 cell: (l) => (
-                  <Link to="/leases/$leaseId" params={{ leaseId: l.id }} className="text-[12.5px] font-medium text-brand">
+                  <Link
+                    to="/leases/$leaseId"
+                    params={{ leaseId: l.id }}
+                    className="text-[12.5px] font-medium text-brand"
+                  >
                     View
                   </Link>
                 ),

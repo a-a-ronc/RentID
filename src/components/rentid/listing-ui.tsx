@@ -45,10 +45,16 @@ export function applicationLabel(status: ApplicationStatus) {
 }
 
 export function applicationTone(status: ApplicationStatus): Tone {
-  if (status === "approved" || status === "lease_signed" || status === "qualified") return "success";
+  if (status === "approved" || status === "lease_signed" || status === "qualified")
+    return "success";
   if (status === "denied" || status === "withdrawn") return "danger";
   if (status === "more_info_requested") return "warning";
-  if (status === "under_review" || status === "in_review" || status === "screening" || status === "lease_sent")
+  if (
+    status === "under_review" ||
+    status === "in_review" ||
+    status === "screening" ||
+    status === "lease_sent"
+  )
     return "accent";
   return "neutral";
 }
@@ -352,7 +358,11 @@ export function ListingForm({
                 </Select>
               </Field>
               <Field label="Unit" hint="Only vacant or upcoming units can be listed">
-                <Select required value={values.unitId} onChange={(e) => set("unitId", e.target.value)}>
+                <Select
+                  required
+                  value={values.unitId}
+                  onChange={(e) => set("unitId", e.target.value)}
+                >
                   <option value="">Select a unit</option>
                   {units.map((u) => (
                     <option key={u.id} value={u.id}>
@@ -364,10 +374,17 @@ export function ListingForm({
             </>
           ) : null}
           <Field label="Listing headline" className="sm:col-span-2">
-            <TextInput required value={values.headline} onChange={(e) => set("headline", e.target.value)} />
+            <TextInput
+              required
+              value={values.headline}
+              onChange={(e) => set("headline", e.target.value)}
+            />
           </Field>
           <Field label="Property type">
-            <Select value={values.propertyType} onChange={(e) => set("propertyType", e.target.value)}>
+            <Select
+              value={values.propertyType}
+              onChange={(e) => set("propertyType", e.target.value)}
+            >
               <option value="apartment">Apartment</option>
               <option value="single_family">Single family</option>
               <option value="multi_family">Multi family</option>
@@ -383,7 +400,11 @@ export function ListingForm({
             />
           </Field>
           <Field label="Bedrooms">
-            <TextInput type="number" value={values.bedrooms} onChange={(e) => set("bedrooms", e.target.value)} />
+            <TextInput
+              type="number"
+              value={values.bedrooms}
+              onChange={(e) => set("bedrooms", e.target.value)}
+            />
           </Field>
           <Field label="Bathrooms">
             <TextInput
@@ -394,10 +415,17 @@ export function ListingForm({
             />
           </Field>
           <Field label="Description" className="sm:col-span-2">
-            <TextArea rows={3} value={values.description} onChange={(e) => set("description", e.target.value)} />
+            <TextArea
+              rows={3}
+              value={values.description}
+              onChange={(e) => set("description", e.target.value)}
+            />
           </Field>
           <Field label="Amenities" hint="Comma separated" className="sm:col-span-2">
-            <TextInput value={values.amenities} onChange={(e) => set("amenities", e.target.value)} />
+            <TextInput
+              value={values.amenities}
+              onChange={(e) => set("amenities", e.target.value)}
+            />
           </Field>
           <Field label="Photos" hint="Image links, comma separated" className="sm:col-span-2">
             <TextInput value={values.photos} onChange={(e) => set("photos", e.target.value)} />
@@ -438,13 +466,19 @@ export function ListingForm({
             />
           </Field>
           <Field label="Utilities included" hint="Comma separated">
-            <TextInput value={values.utilities} onChange={(e) => set("utilities", e.target.value)} />
+            <TextInput
+              value={values.utilities}
+              onChange={(e) => set("utilities", e.target.value)}
+            />
           </Field>
           <Field label="Parking">
             <TextInput value={values.parking} onChange={(e) => set("parking", e.target.value)} />
           </Field>
           <Field label="Pet policy" className="sm:col-span-2">
-            <TextInput value={values.petPolicy} onChange={(e) => set("petPolicy", e.target.value)} />
+            <TextInput
+              value={values.petPolicy}
+              onChange={(e) => set("petPolicy", e.target.value)}
+            />
           </Field>
           <Field label="Application requirements" hint="Comma separated" className="sm:col-span-2">
             <TextInput
@@ -479,7 +513,10 @@ export function ListingForm({
             />
           </Field>
           <Field label="Move-in fees" className="sm:col-span-2">
-            <TextInput value={values.moveInFees} onChange={(e) => set("moveInFees", e.target.value)} />
+            <TextInput
+              value={values.moveInFees}
+              onChange={(e) => set("moveInFees", e.target.value)}
+            />
           </Field>
         </FormGrid>
       ) : null}
@@ -487,10 +524,16 @@ export function ListingForm({
       {step === 2 ? (
         <FormGrid>
           <Field label="Contact name">
-            <TextInput value={values.contactName} onChange={(e) => set("contactName", e.target.value)} />
+            <TextInput
+              value={values.contactName}
+              onChange={(e) => set("contactName", e.target.value)}
+            />
           </Field>
           <Field label="Assigned to" hint="Leasing agent or employee">
-            <TextInput value={values.assignedTo} onChange={(e) => set("assignedTo", e.target.value)} />
+            <TextInput
+              value={values.assignedTo}
+              onChange={(e) => set("assignedTo", e.target.value)}
+            />
           </Field>
           <Field label="Contact email">
             <TextInput
@@ -500,7 +543,10 @@ export function ListingForm({
             />
           </Field>
           <Field label="Contact phone">
-            <TextInput value={values.contactPhone} onChange={(e) => set("contactPhone", e.target.value)} />
+            <TextInput
+              value={values.contactPhone}
+              onChange={(e) => set("contactPhone", e.target.value)}
+            />
           </Field>
           <Field label="Showing instructions" className="sm:col-span-2">
             <TextArea

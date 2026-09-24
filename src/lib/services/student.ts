@@ -120,9 +120,7 @@ function rosterRow(occupancyId: UUID): StudentRosterRow | null {
   const externalOnly =
     payerIds.size > 0 &&
     [...payerIds].every((pid) =>
-      db.student_payments
-        .filter((p) => p.payer_id === pid)
-        .every((p) => !p.processed_by_rentid),
+      db.student_payments.filter((p) => p.payer_id === pid).every((p) => !p.processed_by_rentid),
     );
 
   const paymentState: StudentRosterRow["payment_state"] =
@@ -154,7 +152,9 @@ function rosterRow(occupancyId: UUID): StudentRosterRow | null {
     rent:
       bed?.monthly_rent ??
       (occ.share_pct
-        ? Math.round(((db.units.find((u) => u.id === occ.unit_id)?.monthly_rent ?? 0) * occ.share_pct) / 100)
+        ? Math.round(
+            ((db.units.find((u) => u.id === occ.unit_id)?.monthly_rent ?? 0) * occ.share_pct) / 100,
+          )
         : 0),
     balance,
     paid: Math.round(paid),
@@ -174,9 +174,17 @@ function requestChecklist(request: LeaseChangeRequest) {
   const steps = db.approval_steps.filter((s) => s.request_id === request.id);
   return [
     { label: "Request submitted", done: Boolean(request.submitted_at) },
-    { label: "Property manager approval", done: steps.some((s) => s.role === "pm" && s.state === "approved") },
+    {
+      label: "Property manager approval",
+      done: steps.some((s) => s.role === "pm" && s.state === "approved"),
+    },
     ...(request.requires_owner_approval
-      ? [{ label: "Owner approval", done: steps.some((s) => s.role === "owner" && s.state === "approved") }]
+      ? [
+          {
+            label: "Owner approval",
+            done: steps.some((s) => s.role === "owner" && s.state === "approved"),
+          },
+        ]
       : []),
     { label: "Required documents attached", done: request.documents_complete },
     { label: "Signatures collected", done: request.signatures_complete },
@@ -202,7 +210,9 @@ function withContext(request: LeaseChangeRequest): LeaseChangeRequestWithContext
 
 /* ------------------------------ configuration ----------------------------- */
 
-export async function getStudentProperties(organizationId: UUID): Promise<StudentPropertyContext[]> {
+export async function getStudentProperties(
+  organizationId: UUID,
+): Promise<StudentPropertyContext[]> {
   const db = getDb();
   return latency(
     clone(
@@ -253,7 +263,11 @@ export async function enableStudentHousing(input: {
   const now = nowIso();
   const existing = db.student_housing_configs.find((c) => c.property_id === input.propertyId);
   if (existing) {
-    Object.assign(existing, { campus: input.campus, lease_model: input.leaseModel, updated_at: now });
+    Object.assign(existing, {
+      campus: input.campus,
+      lease_model: input.leaseModel,
+      updated_at: now,
+    });
     return latency(clone(existing));
   }
   const config: StudentHousingConfig = {
@@ -316,15 +330,19 @@ export async function getStudentRoster(
 export async function getStudentMetrics(organizationId: UUID): Promise<StudentPortfolioMetrics> {
   const db = getDb();
   const propertyIds = orgPropertyIds(organizationId);
-  const roster = (
-    await getStudentRoster(organizationId)
-  ).filter((r) => propertyIds.includes(r.property_id));
+  const roster = (await getStudentRoster(organizationId)).filter((r) =>
+    propertyIds.includes(r.property_id),
+  );
 
   const monthPrefix = new Date().toISOString().slice(0, 7);
   const collected = db.payment_allocations
     .filter((a) => {
       const charge = db.charges.find((c) => c.id === a.charge_id);
-      return Boolean(charge && propertyIds.includes(charge.property_id) && a.created_at.slice(0, 7) === monthPrefix);
+      return Boolean(
+        charge &&
+        propertyIds.includes(charge.property_id) &&
+        a.created_at.slice(0, 7) === monthPrefix,
+      );
     })
     .reduce((sum, a) => sum + a.amount, 0);
 
@@ -335,9 +353,14 @@ export async function getStudentMetrics(organizationId: UUID): Promise<StudentPo
     pending_lease_changes: db.lease_change_requests.filter(
       (r) =>
         propertyIds.includes(r.property_id) &&
-        ["submitted", "under_review", "owner_review", "documents_pending", "signatures_pending", "payment_pending"].includes(
-          r.state,
-        ),
+        [
+          "submitted",
+          "under_review",
+          "owner_review",
+          "documents_pending",
+          "signatures_pending",
+          "payment_pending",
+        ].includes(r.state),
     ).length,
     incomplete_guarantors: roster.filter((r) => !r.guarantor_complete).length,
     turns_not_ready: db.turn_tasks.filter(
@@ -381,7 +404,13 @@ export async function getStudentUnitLedger(unitId: UUID): Promise<StudentUnitLed
           : sources.every((p) => p!.processed_by_rentid)
             ? "Paid through RentID"
             : "External payment recorded";
-      return { ...charge, assigned_to: assigned, paid, balance: Math.max(0, charge.amount - charge.credits - paid), source_status };
+      return {
+        ...charge,
+        assigned_to: assigned,
+        paid,
+        balance: Math.max(0, charge.amount - charge.credits - paid),
+        source_status,
+      };
     })
     .sort((a, b) => a.due_date.localeCompare(b.due_date));
 
@@ -433,7 +462,8 @@ export async function recordStudentPayment(input: {
   const db = getDb();
   const charge = db.charges.find((c) => c.id === input.chargeId);
   if (!charge) throw new Error("Charge not found");
-  if (charge.gated_on_request_id) throw new Error("This charge is not collectible until the request is approved");
+  if (charge.gated_on_request_id)
+    throw new Error("This charge is not collectible until the request is approved");
 
   const now = nowIso();
   const payment = {
@@ -507,7 +537,15 @@ export async function listLeaseChangeRequests(
 ): Promise<LeaseChangeRequestWithContext[]> {
   const db = getDb();
   const propertyIds = orgPropertyIds(organizationId);
-  const open = ["submitted", "under_review", "owner_review", "documents_pending", "signatures_pending", "payment_pending", "scheduled"];
+  const open = [
+    "submitted",
+    "under_review",
+    "owner_review",
+    "documents_pending",
+    "signatures_pending",
+    "payment_pending",
+    "scheduled",
+  ];
   return latency(
     clone(
       db.lease_change_requests
@@ -695,7 +733,15 @@ export async function decideLeaseChange(input: {
     }
     case "enable_replacement_listing":
       // Only permitted once an operator has approved the request.
-      if (["documents_pending", "signatures_pending", "payment_pending", "scheduled", "approved"].includes(request.state)) {
+      if (
+        [
+          "documents_pending",
+          "signatures_pending",
+          "payment_pending",
+          "scheduled",
+          "approved",
+        ].includes(request.state)
+      ) {
         request.replacement_listing_enabled = true;
       }
       break;
@@ -724,14 +770,27 @@ export async function decideLeaseChange(input: {
 
 /* ------------------------- pre-leasing and renewals ----------------------- */
 
-export async function getPreLeasing(organizationId: UUID, propertyId?: UUID): Promise<PreLeasingSummary> {
+export async function getPreLeasing(
+  organizationId: UUID,
+  propertyId?: UUID,
+): Promise<PreLeasingSummary> {
   const db = getDb();
   const propertyIds = propertyId ? [propertyId] : orgPropertyIds(organizationId);
   const beds = db.room_beds.filter((b) => propertyIds.includes(b.property_id));
   const preLeasedStatuses: BedStatus[] = ["renewing", "leased", "approved", "held"];
   const preLeased = beds.filter((b) => preLeasedStatuses.includes(b.status)).length;
 
-  const pipelineOrder: BedStatus[] = ["available", "applied", "approved", "held", "leased", "renewing", "notice_given", "occupied", "offline"];
+  const pipelineOrder: BedStatus[] = [
+    "available",
+    "applied",
+    "approved",
+    "held",
+    "leased",
+    "renewing",
+    "notice_given",
+    "occupied",
+    "offline",
+  ];
   const pipeline = pipelineOrder
     .map((status) => ({ status, count: beds.filter((b) => b.status === status).length }))
     .filter((row) => row.count > 0);
@@ -753,9 +812,13 @@ export async function getPreLeasing(organizationId: UUID, propertyId?: UUID): Pr
       renewals_pending: db.occupancies.filter(
         (o) => propertyIds.includes(o.property_id) && o.stage === "current",
       ).length,
-      applications_in_review: groups.filter((g) => ["submitted", "screening", "operator_review"].includes(g.stage)).length,
+      applications_in_review: groups.filter((g) =>
+        ["submitted", "screening", "operator_review"].includes(g.stage),
+      ).length,
       changes_pending: db.lease_change_requests.filter(
-        (r) => propertyIds.includes(r.property_id) && !["completed", "denied", "withdrawn"].includes(r.state),
+        (r) =>
+          propertyIds.includes(r.property_id) &&
+          !["completed", "denied", "withdrawn"].includes(r.state),
       ).length,
       pipeline,
       groups,
@@ -786,7 +849,10 @@ export async function updateRoommateGroupStage(
 
 /* --------------------------------- turnover ------------------------------- */
 
-export async function getTurnover(organizationId: UUID, propertyId?: UUID): Promise<TurnoverSummary> {
+export async function getTurnover(
+  organizationId: UUID,
+  propertyId?: UUID,
+): Promise<TurnoverSummary> {
   const db = getDb();
   const propertyIds = propertyId ? [propertyId] : orgPropertyIds(organizationId);
   const tasks = db.turn_tasks
@@ -804,10 +870,13 @@ export async function getTurnover(organizationId: UUID, propertyId?: UUID): Prom
 
   return latency(
     clone({
-      moving_out: db.occupancies.filter((o) => propertyIds.includes(o.property_id) && o.stage === "current").length,
+      moving_out: db.occupancies.filter(
+        (o) => propertyIds.includes(o.property_id) && o.stage === "current",
+      ).length,
       inspected: inspections.filter((t) => t.state === "complete").length,
       inspection_remaining: inspections.filter((t) => t.state !== "complete").length,
-      make_ready_open: tasks.filter((t) => t.state !== "complete" && t.category !== "inspection").length,
+      make_ready_open: tasks.filter((t) => t.state !== "complete" && t.category !== "inspection")
+        .length,
       beds_ready: beds.filter((b) => b.ready).length,
       move_in_blocked: tasks.filter((t) => t.state === "blocked").length,
       tasks,
@@ -817,7 +886,11 @@ export async function getTurnover(organizationId: UUID, propertyId?: UUID): Prom
 
 export async function updateTurnTask(
   taskId: UUID,
-  patch: { state?: "not_started" | "in_progress" | "blocked" | "complete"; blocker_reason?: string | null; vendor?: string | null },
+  patch: {
+    state?: "not_started" | "in_progress" | "blocked" | "complete";
+    blocker_reason?: string | null;
+    vendor?: string | null;
+  },
   actorId?: UUID | null,
 ) {
   const db = getDb();
@@ -921,7 +994,9 @@ export type { RoomBed };
  */
 export async function getResidentHousing(userId: UUID): Promise<ResidentHousing | null> {
   const db = getDb();
-  const occupancy = db.occupancies.find((o) => o.resident_user_id === userId && o.stage !== "former");
+  const occupancy = db.occupancies.find(
+    (o) => o.resident_user_id === userId && o.stage !== "former",
+  );
   if (!occupancy) return latency(null);
   const config = db.student_housing_configs.find((c) => c.property_id === occupancy.property_id);
   const bed = db.room_beds.find((b) => b.id === occupancy.bed_id) ?? null;
@@ -930,7 +1005,9 @@ export async function getResidentHousing(userId: UUID): Promise<ResidentHousing 
   const myChargeRows: StudentChargeRow[] = db.charges
     .filter((charge) => {
       if (charge.occupancy_id === occupancy.id) return true;
-      return db.charge_allocations.some((a) => a.charge_id === charge.id && a.occupancy_id === occupancy.id);
+      return db.charge_allocations.some(
+        (a) => a.charge_id === charge.id && a.occupancy_id === occupancy.id,
+      );
     })
     .map((charge) => {
       const allocation = db.charge_allocations.find(
@@ -970,7 +1047,9 @@ export async function getResidentHousing(userId: UUID): Promise<ResidentHousing 
   const myPayers = db.payers.filter((p) => p.linked_occupancy_id === occupancy.id);
   const myChargeIds = myChargeRows.map((c) => c.id);
   const events = db.ledger_events
-    .filter((e) => (e.charge_id && myChargeIds.includes(e.charge_id)) || e.occupancy_id === occupancy.id)
+    .filter(
+      (e) => (e.charge_id && myChargeIds.includes(e.charge_id)) || e.occupancy_id === occupancy.id,
+    )
     // A shared charge produces one event per roommate payment; only mine is mine.
     .filter((e) => {
       if (!e.payment_id) return true;
@@ -1007,7 +1086,9 @@ export async function getResidentHousing(userId: UUID): Promise<ResidentHousing 
       balance: myChargeRows.reduce((sum, c) => sum + c.balance, 0),
       payers: myPayers,
       guarantors: db.guarantor_relationships.filter((g) => g.occupancy_id === occupancy.id),
-      requests: db.lease_change_requests.filter((r) => r.occupancy_id === occupancy.id).map(withContext),
+      requests: db.lease_change_requests
+        .filter((r) => r.occupancy_id === occupancy.id)
+        .map(withContext),
       maintenance: db.student_maintenance_cases.filter((c) => c.unit_id === occupancy.unit_id),
       events,
     }),

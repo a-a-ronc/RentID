@@ -15,10 +15,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/manager/")({
   head: () => ({
-    meta: [
-      { title: "Manager overview — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Manager overview — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: ManagerOverview,
 });
@@ -50,7 +47,9 @@ function ManagerOverview() {
   }
 
   // Exceptions first: what needs a human before month end.
-  const exceptions = (payments.data ?? []).filter((p) => p.status === "late" || p.status === "failed");
+  const exceptions = (payments.data ?? []).filter(
+    (p) => p.status === "late" || p.status === "failed",
+  );
   const urgent = (work.data ?? []).filter(
     (w) => (w.priority === "high" || w.priority === "emergency") && w.status !== "completed",
   );
@@ -63,7 +62,7 @@ function ManagerOverview() {
         <div className="mt-4">
           <DemoNotice>
             You're viewing the demo management company. Owners, authority and reconciliation are
-            mock data until the backend is connected.
+            live; the student-housing screens still run on sample data.
           </DemoNotice>
         </div>
       ) : null}
@@ -122,18 +121,23 @@ function ManagerOverview() {
               <LoadingCard rows={2} />
             </div>
           ) : exceptions.length === 0 ? (
-            <ListRow title="Nothing unreconciled" subtitle="Every payment this period matches the ledger" />
+            <ListRow
+              title="Nothing unreconciled"
+              subtitle="Every payment this period matches the ledger"
+            />
           ) : (
-            exceptions.slice(0, 5).map((p, i) => (
-              <ListRow
-                key={p.id}
-                title={`${p.tenant_name} · ${p.unit_name}`}
-                subtitle={`${p.period_label} · due ${p.due_date}`}
-                value={money(p.amount)}
-                pill={<StatusPill status={p.status} tone="danger" />}
-                delay={i * 40}
-              />
-            ))
+            exceptions
+              .slice(0, 5)
+              .map((p, i) => (
+                <ListRow
+                  key={p.id}
+                  title={`${p.tenant_name} · ${p.unit_name}`}
+                  subtitle={`${p.period_label} · due ${p.due_date}`}
+                  value={money(p.amount)}
+                  pill={<StatusPill status={p.status} tone="danger" />}
+                  delay={i * 40}
+                />
+              ))
           )}
         </SectionCard>
 
@@ -153,15 +157,17 @@ function ManagerOverview() {
           ) : urgent.length === 0 ? (
             <ListRow title="No urgent work" subtitle="All high-priority requests are closed" />
           ) : (
-            urgent.slice(0, 5).map((w, i) => (
-              <ListRow
-                key={w.id}
-                title={w.title}
-                subtitle={`${w.property_name} · ${w.unit_name}`}
-                pill={<StatusPill status={w.priority} tone="warning" />}
-                delay={i * 40}
-              />
-            ))
+            urgent
+              .slice(0, 5)
+              .map((w, i) => (
+                <ListRow
+                  key={w.id}
+                  title={w.title}
+                  subtitle={`${w.property_name} · ${w.unit_name}`}
+                  pill={<StatusPill status={w.priority} tone="warning" />}
+                  delay={i * 40}
+                />
+              ))
           )}
         </SectionCard>
 
@@ -188,7 +194,9 @@ function ManagerOverview() {
                 value={money(owner.collected_this_month)}
                 pill={
                   <StatusPill
-                    status={owner.authority_status === "verified" ? "authorized" : owner.authority_status}
+                    status={
+                      owner.authority_status === "verified" ? "authorized" : owner.authority_status
+                    }
                     tone={owner.authority_status === "verified" ? "success" : "warning"}
                   />
                 }
@@ -196,7 +204,10 @@ function ManagerOverview() {
               />
             ))
           ) : (
-            <ListRow title="No owners yet" subtitle="Add an owner to record a management contract" />
+            <ListRow
+              title="No owners yet"
+              subtitle="Add an owner to record a management contract"
+            />
           )}
         </SectionCard>
       </div>

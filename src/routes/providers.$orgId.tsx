@@ -20,7 +20,8 @@ export const Route = createFileRoute("/providers/$orgId")({
       { property: "og:title", content: "Verified landlord record — RentID" },
       {
         property: "og:description",
-        content: "Verified properties, response times and reviews — every label carries its source.",
+        content:
+          "Verified properties, response times and reviews — every label carries its source.",
       },
       { property: "og:type", content: "profile" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -47,7 +48,10 @@ function ProviderProfilePage() {
     return (
       <PublicShell>
         <div className="py-8">
-          <InlineError message="We couldn't load this record." onRetry={() => void profile.refetch()} />
+          <InlineError
+            message="We couldn't load this record."
+            onRetry={() => void profile.refetch()}
+          />
         </div>
       </PublicShell>
     );
@@ -78,10 +82,7 @@ function ProviderProfilePage() {
     ["Median first response", `${data.median_first_response_hours} h`],
     ["Resolved under 72h", `${data.resolved_under_72h_pct}%`],
     ["Rent collected on time", `${data.collection_rate_pct}%`],
-    [
-      data.kind === "property_manager" ? "Owners served" : "Portfolios",
-      data.owners_served,
-    ],
+    [data.kind === "property_manager" ? "Owners served" : "Portfolios", data.owners_served],
   ];
 
   return (
@@ -114,7 +115,9 @@ function ProviderProfilePage() {
             ) : (
               <Pill>No tenant reviews yet</Pill>
             )}
-            {data.owner_rating != null ? <Pill tone="accent">{data.owner_rating} from owners</Pill> : null}
+            {data.owner_rating != null ? (
+              <Pill tone="accent">{data.owner_rating} from owners</Pill>
+            ) : null}
             <Pill tone="success">
               <ShieldCheck className="size-3" strokeWidth={2} />
               Identity and ownership checked

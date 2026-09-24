@@ -36,7 +36,9 @@ function ForPropertyManagers() {
       />
 
       <section className="pb-12">
-        <h2 className="font-display text-[19px] font-semibold tracking-tight">Owners and authority</h2>
+        <h2 className="font-display text-[19px] font-semibold tracking-tight">
+          Owners and authority
+        </h2>
         <div className="mt-4">
           <PublicGrid
             items={[

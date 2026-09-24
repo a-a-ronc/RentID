@@ -1,746 +1,191 @@
-# RentID: Trusted Home Base
+<div align="center">
 
-Build a production-quality web application called RentID.
+# RentID
 
-RentID is a two-sided rental platform for landlords and tenants. The long-term goal is to become the trust, reputation, payment, and property-management layer for long-term renting.
+**Rent history that belongs to the renter.**
 
-The product should combine the simplicity and trust-focused UX of Airbnb with the clear financial dashboards of QuickBooks, without copying either company's design.
+A rental-identity network: verified tenancies, portable payment history, rent
+collection, and the property-management tools around them.
 
-IMPORTANT INFRASTRUCTURE REQUIREMENTS
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TanStack Start](https://img.shields.io/badge/TanStack%20Start-1.168-FF4154?logo=reactquery&logoColor=white)](https://tanstack.com/start)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20RLS-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 
-This application must be built so RentID owns and controls its infrastructure.
+</div>
 
-Use:
+---
 
-- My own Supabase project for PostgreSQL database, authentication, storage, and backend functions
+## The problem
 
-- My own GitHub repository for source-code ownership
+A renter can pay rent on time for six years and arrive at their next application
+with nothing to show for it. The landlord who watched them do it has no way to
+vouch that scales, and the next landlord has no reason to believe a PDF of bank
+statements.
 
-- My own Stripe account later for Stripe Connect
+RentID makes that history **portable and verifiable** — and, critically, makes
+it mean something.
 
-- Environment secrets for all third-party credentials
+## The one idea that matters
 
-Do not create a platform-controlled payment account.
+> **A payment is verified only if the platform settled it.**
 
-Do not implement live Stripe payments yet.
+`payments.verified` is not a column anyone can write. It is derived by a
+database trigger from `verification_source`, and a client can only ever assert
+`landlord_reported` or `tenant_reported`. `platform_settled` is reserved for the
+service role — the webhook handler that watched money actually move.
 
-The payment architecture will later use a Stripe Connect platform owned directly by RentID, with landlords as connected accounts. Do not build payment logic that would prevent this architecture later.
+A landlord clicking "mark paid" produces a landlord-reported record. That is
+honest, and still useful. It is not the badge another landlord will rely on.
 
-The existing domain is:
+The same principle runs through the rest of the trust model:
 
-www.rentid.online
+| Guarantee                                                   | How it is enforced                                                                                       |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| A tenancy is verified only when **both** parties confirm it | The flag flips inside `accept_invitation()` when the tenant accepts from their own account               |
+| Verified history is **append-only** for clients             | Settled payments can't be downgraded, re-amounted or deleted; verified tenancies can only be ended       |
+| An applicant can't inflate their own record                 | The passport snapshot is computed server-side at insert, then frozen                                     |
+| Ownership badges come from **one** path                     | `decide_verification_case()`, admin- or platform-only, writes a status event and an audit row every time |
+| No one can quietly rewrite the record                       | `ledger_entries`, `audit_logs` and `verification_status_events` reject `UPDATE` and `DELETE` outright    |
 
-Do NOT change or connect the domain yet. The existing site will remain live while this new application is being built.
+---
 
-The new application will eventually live at:
+## Quick start
 
-app.rentid.online
+Requires [Bun](https://bun.sh) and, for the database suites, a local PostgreSQL 16.
 
-BUILD THIS MOBILE-FIRST
-
-The application must work beautifully on:
-
-- Desktop
-
-- iPhone
-
-- Android
-
-- Tablet
-
-Do not simply shrink a desktop dashboard onto mobile.
-
-We will create native iOS and Android apps later using the same backend, so build the database and backend independently from the web interface.
-
-PRODUCT CONCEPT
-
-RentID has two primary customer types:
-
-LANDLORDS
-
-Landlords should eventually be able to:
-
-- Manage properties
-
-- Manage units
-
-- Invite tenants
-
-- Manage leases
-
-- Collect rent
-
-- Track payments
-
-- Handle maintenance
-
-- Message tenants
-
-- Review tenants after verified tenancies
-
-- View tenant rental profiles
-
-- View simple financial reporting
-
-TENANTS
-
-Tenants should eventually be able to:
-
-- Accept landlord invitations
-
-- View their tenancy
-
-- View their lease
-
-- Pay rent
-
-- Enable autopay
-
-- Submit maintenance requests
-
-- Message their landlord
-
-- Build a portable verified rental profile
-
-- Review landlords after verified tenancies
-
-The major long-term differentiator is a VERIFIED TWO-WAY RENTAL REPUTATION SYSTEM.
-
-Landlords can review tenants.
-
-Tenants can review landlords.
-
-However, reviews may only come from verified tenancy relationships.
-
-Objective RentID data should eventually be more important than subjective ratings.
-
-Examples:
-
-If RentID processed a rent payment on time, show:
-
-"Verified Payment — Paid On Time"
-
-If RentID records a maintenance request and response timestamps, those timestamps can later contribute to verified landlord responsiveness.
-
-Do not create an arbitrary proprietary Tenant Score.
-
-Traditional credit information may eventually be integrated through a compliant third-party provider, but that is NOT part of this first build.
-
-DESIGN DIRECTION
-
-The interface should feel:
-
-- Modern
-
-- Premium
-
-- Extremely simple
-
-- Trustworthy
-
-- Consumer-friendly
-
-- Financially clear
-
-Avoid traditional cluttered property-management software.
-
-Use:
-
-- Large clean cards
-
-- Generous spacing
-
-- Clear typography
-
-- Simple icons
-
-- Prominent financial numbers
-
-- Plain-English labels
-
-- Minimal navigation
-
-- Clear calls to action
-
-A new landlord should understand the application without training.
-
-BRANDING
-
-Use RentID as the working brand.
-
-Create a simple temporary visual identity that can easily be changed later.
-
-Use reusable design tokens for:
-
-- Primary color
-
-- Accent color
-
-- Background
-
-- Text
-
-- Success
-
-- Warning
-
-- Error
-
-- Borders
-
-Do not hardcode branding throughout individual components.
-
-USER ROLES
-
-Create these roles:
-
-1. Landlord
-
-2. Tenant
-
-3. Property Manager
-
-4. Platform Administrator
-
-Use proper role-based permissions.
-
-A landlord must never be able to access another landlord's private property, tenant, financial, lease, or document information.
-
-A tenant must only see information related to their own authorized tenancy relationships.
-
-LANDLORD DASHBOARD
-
-Start the application with a polished landlord dashboard.
-
-The desktop navigation should contain:
-
-Dashboard
-
-Properties
-
-Tenants
-
-Payments
-
-Maintenance
-
-Applications
-
-Messages
-
-Reviews
-
-Documents
-
-Reports
-
-Settings
-
-Payments and several later sections may initially be placeholders, but the architecture should support them.
-
-The landlord dashboard should prominently show:
-
-Rent Collected This Month
-
-Outstanding Rent
-
-Occupied Units
-
-Late Payments
-
-Open Maintenance Requests
-
-Leases Expiring Soon
-
-Use realistic demo data such as:
-
-Rent collected:
-
-$18,450
-
-Outstanding:
-
-$2,100
-
-Occupied:
-
-17 / 19
-
-Open maintenance:
-
-3
-
-Expiring leases:
-
-2
-
-Below those metrics show:
-
-Recent Payments
-
-Upcoming Rent
-
-Late Tenants
-
-Maintenance Requests
-
-Lease Expirations
-
-Important Notifications
-
-Keep the dashboard clean.
-
-Do not overload it with unnecessary charts.
-
-PROPERTIES
-
-Allow landlords to create and manage properties.
-
-Property fields:
-
-- Property name/nickname
-
-- Street address
-
-- City
-
-- State
-
-- ZIP
-
-- Property type
-
-- Number of units
-
-- Property photo
-
-- Notes
-
-- Ownership entity
-
-Allow each property to contain one or more units.
-
-UNIT FIELDS
-
-- Unit name/number
-
-- Bedrooms
-
-- Bathrooms
-
-- Square footage
-
-- Monthly rent
-
-- Security deposit
-
-- Rent due date
-
-- Occupancy status
-
-- Current tenant
-
-- Lease start
-
-- Lease end
-
-Statuses should include:
-
-Occupied
-
-Vacant
-
-Upcoming Vacancy
-
-TENANTS
-
-Create a tenant directory for landlords.
-
-Show:
-
-Tenant
-
-Property
-
-Unit
-
-Monthly Rent
-
-Lease Dates
-
-Payment Status placeholder
-
-Contact information
-
-Verified Tenancy status
-
-TENANT INVITATIONS
-
-Allow a landlord to invite a tenant by email and/or phone.
-
-Tenant receives an invitation and creates or joins a RentID account.
-
-When a landlord, tenant, property, unit, and lease are connected, create a:
-
-VERIFIED TENANCY
-
-This concept is critical to RentID.
-
-Only users connected through a verified tenancy will eventually be permitted to review each other.
-
-LEASES
-
-Allow landlords to:
-
-- Upload a PDF lease
-
-- Associate the lease with a tenant
-
-- Associate it with a property/unit
-
-- Record lease start date
-
-- Record lease end date
-
-- Record monthly rent
-
-- Record security deposit
-
-- Record rent due date
-
-- Record late-fee terms
-
-Do not build a full legal lease generator yet.
-
-DOCUMENT STORAGE
-
-Create secure document storage for:
-
-- Leases
-
-- Move-in inspections
-
-- Move-out inspections
-
-- Notices
-
-- Receipts
-
-- Photos
-
-- Maintenance files
-
-- Other tenancy documents
-
-DATABASE ARCHITECTURE
-
-Before adding unnecessary features, create a clean relational schema.
-
-At minimum plan for:
-
-users
-
-profiles
-
-organizations
-
-properties
-
-units
-
-tenancies
-
-leases
-
-tenant_invitations
-
-documents
-
-payments
-
-payment_schedules
-
-maintenance_requests
-
-messages
-
-conversations
-
-reviews
-
-review_disputes
-
-verification_records
-
-notifications
-
-audit_logs
-
-Not all features need to be implemented immediately, but the schema should be designed so they can be added cleanly.
-
-Use:
-
-- Proper foreign keys
-
-- Created/updated timestamps
-
-- Appropriate indexes
-
-- Row Level Security
-
-- Clear ownership relationships
-
-SUPABASE SECURITY
-
-Implement Row Level Security from the beginning.
-
-Examples:
-
-A landlord may access only properties they own or are authorized to manage.
-
-A tenant may access only tenancies where they are the authorized tenant.
-
-Documents must inherit tenancy/property permissions.
-
-Admin access must be separated from normal user access.
-
-Do not rely only on frontend hiding for security.
-
-ONBOARDING
-
-Landlord onboarding should be very short.
-
-Ask:
-
-How many rental units do you manage?
-
-1
-
-2–5
-
-6–20
-
-21–100
-
-100+
-
-Then guide them through:
-
-Add Property
-
-Add Unit
-
-Invite Tenant
-
-Do not force users through a long setup wizard.
-
-TENANT EXPERIENCE
-
-Also create the foundation for a separate tenant interface.
-
-Tenant mobile home screen should eventually show:
-
-NEXT RENT PAYMENT
-
-$1,500
-
-Due October 1
-
-Pay Now
-
-Then:
-
-Maintenance
-
-Messages
-
-Lease
-
-Payment History
-
-Rental Profile
-
-Landlord Profile
-
-For now, build the account/tenancy foundation and basic tenant dashboard.
-
-PAYMENTS
-
-Do NOT implement live payment processing yet.
-
-Create the UI/database architecture so payments can be added later.
-
-The future architecture must support:
-
-RentID-owned Stripe Connect platform
-
-Landlord connected accounts
-
-ACH Direct Debit
-
-Debit/credit cards
-
-Autopay
-
-RentID platform/application fees
-
-Stripe webhooks
-
-ACH returns
-
-Refunds
-
-Chargebacks
-
-Payment ledger
-
-Do not assume the exact Stripe Connect charge model yet.
-
-Do not hardcode payment processing assumptions.
-
-PLATFORM FEE CONFIGURATION
-
-Prepare the database/admin architecture so these can later be configurable:
-
-platform_fee_percentage
-
-platform_fee_cap
-
-fee_allocation
-
-The current working business model is approximately:
-
-0.50% RentID platform fee
-
-but this may change.
-
-Do not hardcode it into application logic yet.
-
-DEMO ENVIRONMENT
-
-Populate the application with realistic demo data so the dashboard immediately looks like a functioning rental portfolio.
-
-Use several:
-
-- Properties
-
-- Units
-
-- Tenants
-
-- Leases
-
-- Payment placeholder records
-
-- Maintenance placeholder records
-
-QUALITY REQUIREMENTS
-
-Do not make this only a visual prototype.
-
-Build working:
-
-- Authentication
-
-- Database persistence
-
-- Roles
-
-- Permissions
-
-- Property creation
-
-- Unit creation
-
-- Tenant invitations
-
-- Verified tenancy relationships
-
-- Lease uploads
-
-- Secure document storage
-
-Use reusable components and clean code.
-
-Do not prematurely build:
-
-- Credit screening
-
-- AI tenant scoring
-
-- Automated tenant approvals
-
-- Marketplace listings
-
-- Insurance marketplace
-
-- Contractor marketplace
-
-- QuickBooks replacement
-
-- Listing syndication
-
-- Native apps
-
-- Live Stripe payments
-
-FIRST DEVELOPMENT MILESTONE
-
-The first milestone is complete when I can:
-
-1. Create a landlord account
-
-2. Complete landlord onboarding
-
-3. Create a property
-
-4. Add a unit
-
-5. Invite a tenant
-
-6. Create/verify the landlord-tenant tenancy relationship
-
-7. Upload and associate a lease
-
-8. Log in as the tenant
-
-9. See that tenancy from the tenant side
-
-10. See the correct landlord dashboard information
-
-Before proceeding beyond this milestone, audit:
-
-- Database schema
-
-- Row Level Security
-
-- User permissions
-
-- Mobile responsiveness
-
-- Code organization
-
-Begin by creating the architecture, Supabase schema, authentication system, design system, and the first functioning landlord dashboard.
-
-Do not connect the RentID domain and do not implement live payments yet.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/474b523a-7ddc-49d8-8820-05f0a39fcc05).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+```bash
+bun install
+cp .env.example .env          # fill in your Supabase project values
+bun run dev
 ```
+
+Verify everything before you push:
+
+```bash
+bun run check                 # typecheck · lint · 545 unit tests · production build
+bun run db:reset              # apply every migration to a local Postgres
+bun run test:rls              # 10 SQL security suites against that database
+```
+
+---
+
+## Architecture
+
+**The database, not the application, is the security boundary.**
+
+The browser talks to Postgres directly through PostgREST with the signed-in
+user's JWT. Every table has row-level security on and every policy denies by
+default, so a bug in a React component, a tampered request from a modified
+client, or a service function someone forgets to guard cannot reach another
+tenant's data — the permission check does not live in code a client can
+influence.
+
+`20260915000600_security_hardening.sql` ends with a check that **fails the
+migration** if any table in `public` lacks RLS. That is the one mistake that has
+sunk comparable products, so it cannot be made here by accident.
+
+| Layer      | Choice                                                            |
+| ---------- | ----------------------------------------------------------------- |
+| Framework  | TanStack Start 1.168 · TanStack Router (file-based) · React 19    |
+| Build      | Vite 8 · Nitro (`cloudflare-module` preset)                       |
+| Data       | Supabase — Postgres, Auth, Storage · PostgREST · TanStack Query 5 |
+| UI         | Tailwind 4 · Radix primitives · a small in-repo component kit     |
+| Validation | zod at every server-function boundary                             |
+| Tests      | Vitest (545) · 10 SQL suites run against a real Postgres          |
+
+### Project layout
+
+```
+src/
+  routes/          55 file-based routes — public, landlord, tenant, manager, admin
+  lib/
+    services/      11 service modules; the only place that talks to the database
+    db/            client wrapper, error handling, Row → domain mappers
+    payments/      fee calculation, kept in parity with the SQL by a test
+    crypto/        AES-256-GCM envelope encryption with key rotation
+    verification/  address and owner-name normalisation for ownership claims
+  components/rentid/   the design system and shared patterns
+supabase/migrations/   17 migrations — 43 tables, 128 policies
+scripts/db/            local Postgres harness: reset, type generation, RLS suites
+docs/                  SECURITY.md · SCALING.md · PRODUCT-BRIEF.md
+```
+
+Components never touch a datasource. They use hooks from `src/lib/rentid.ts`,
+which wrap the service layer, which owns every query.
+
+---
+
+## Scripts
+
+| Command            | What it does                                                  |
+| ------------------ | ------------------------------------------------------------- |
+| `bun run dev`      | Development server                                            |
+| `bun run check`    | Typecheck, lint, unit tests, production build                 |
+| `bun run test`     | 545 unit tests                                                |
+| `bun run test:rls` | 10 SQL security suites against a local Postgres               |
+| `bun run db:reset` | Drop, recreate and migrate the local database                 |
+| `bun run db:types` | Regenerate `src/integrations/supabase/types.ts`               |
+| `bun run build`    | Production build (emits `.output/server/wrangler.json`)       |
+| `bun run deploy`   | Build and deploy to Cloudflare Workers (see `docs/DEPLOY.md`) |
+
+The local harness needs no Docker. `scripts/db/supabase-shim.sql` provides
+stand-ins for the `auth` and `storage` schemas so hosted-Supabase migrations
+apply to a plain PostgreSQL 16.
+
+---
+
+## Security
+
+`docs/SECURITY.md` is the full posture, written to be read by an engineer
+joining the project and by a payment partner's diligence team. The short
+version:
+
+- **Nothing sensitive is stored that doesn't have to be.** Bank and card details
+  live with the payment provider; RentID holds a token, a nickname and the last
+  four digits, and a trigger _rejects_ anything account-number-shaped. ID numbers
+  and images stay with the identity provider.
+- **Envelope encryption** (AES-256-GCM, per-value data keys, record identity
+  bound in as AAD) for the few references that must be stored.
+- **MFA** (`aal2`) required for admin actions on money and fee settings.
+- **Database-backed rate limits**, so they hold regardless of which client calls.
+- **CSP, HSTS** and the rest on every response, including error pages.
+
+That document also carries an explicit list of what is **not** done — no
+penetration test, no WAF, no SOC 2 — because a security document that only lists
+strengths isn't one.
+
+---
+
+## Status
+
+Verified on every push: `tsc` clean · 545 unit tests · 10 SQL security suites
+against PostgreSQL 16 · production build · dependency audit.
+
+**Working:** authentication and roles · properties and units · tenant
+invitations and two-sided verification · rent ledger and manual recording ·
+maintenance · documents with private storage and signed URLs · listings,
+applications and syndication · property-ownership verification · the
+management-company vertical.
+
+**Not built yet:** live payment processing (the ledger, fee model, payout tables
+and idempotency are in place and waiting on a provider) · reviews and disputes
+(tables and policies exist; the UI is gated on an FCRA review) · the
+student-housing vertical, which is parked on sample data on purpose.
+
+---
+
+## Documentation
+
+| Document                                         | What's in it                                                                    |
+| ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md)               | Supabase, Cloudflare Workers and DNS — step by step                             |
+| [`docs/SECURITY.md`](docs/SECURITY.md)           | Threat model, what's enforced and where, and what isn't                         |
+| [`docs/SCALING.md`](docs/SCALING.md)             | The current design's real ceiling, with numbers, and what to do when you hit it |
+| [`docs/PRODUCT-BRIEF.md`](docs/PRODUCT-BRIEF.md) | The original product brief, kept verbatim                                       |
+
+---
+
+<div align="center">
+<sub>rentid.online · private repository</sub>
+</div>

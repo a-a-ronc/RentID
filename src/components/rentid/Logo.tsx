@@ -6,24 +6,14 @@ import { cn } from "@/lib/utils";
  */
 export function RentIDMark({ className }: { className?: string | undefined }) {
   return (
-    <svg
-      viewBox="0 0 64 64"
-      role="img"
-      aria-label="RentID"
-      className={cn("size-7", className)}
-    >
+    <svg viewBox="0 0 64 64" role="img" aria-label="RentID" className={cn("size-7", className)}>
       <defs>
         <linearGradient id="rentid-mark" x1="0" y1="0" x2="0.35" y2="1">
           <stop offset="0%" stopColor="var(--brand-gradient-from)" />
           <stop offset="100%" stopColor="var(--brand-gradient-to)" />
         </linearGradient>
       </defs>
-      <g
-        fill="none"
-        stroke="url(#rentid-mark)"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <g fill="none" stroke="url(#rentid-mark)" strokeLinecap="round" strokeLinejoin="round">
         <path strokeWidth="5.5" d="M6 27.5 32 6l26 21.5" />
         <path strokeWidth="5.5" d="M11.5 30v22.5a3 3 0 0 0 3 3h35a3 3 0 0 0 3-3V30" />
         <rect x="19" y="27" width="26" height="19" rx="4" strokeWidth="3.4" />

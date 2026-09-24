@@ -30,3 +30,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment — never commit keys. Copy .env.example to .env for local dev.
+.env
+.env.*
+!.env.example
+
+# Local tooling
+.tanstack
+coverage

@@ -135,10 +135,17 @@ export function AppShell({
       ]
     : baseNav;
   const mobilePrimary =
-    activeRole === "tenant" ? TENANT_MOBILE : activeRole === "manager" ? MANAGER_MOBILE : LANDLORD_MOBILE;
+    activeRole === "tenant"
+      ? TENANT_MOBILE
+      : activeRole === "manager"
+        ? MANAGER_MOBILE
+        : LANDLORD_MOBILE;
   const moreItems =
-    activeRole === "tenant" ? [] : desktopNav.filter((item) => !mobilePrimary.some((m) => m.to === item.to));
-  const home = activeRole === "tenant" ? "/tenant" : activeRole === "manager" ? "/manager" : "/dashboard";
+    activeRole === "tenant"
+      ? []
+      : desktopNav.filter((item) => !mobilePrimary.some((m) => m.to === item.to));
+  const home =
+    activeRole === "tenant" ? "/tenant" : activeRole === "manager" ? "/manager" : "/dashboard";
 
   const name = profile.data?.full_name ?? user?.email ?? "";
 
@@ -232,7 +239,9 @@ export function AppShell({
         <div
           className={cn(
             "mx-auto grid max-w-md gap-1",
-            mobilePrimary.length + (moreItems.length > 0 ? 1 : 0) > 4 ? "grid-cols-5" : "grid-cols-4",
+            mobilePrimary.length + (moreItems.length > 0 ? 1 : 0) > 4
+              ? "grid-cols-5"
+              : "grid-cols-4",
           )}
         >
           {mobilePrimary.map((item) => (
@@ -254,7 +263,10 @@ export function AppShell({
                 <LayoutGrid className="size-4" strokeWidth={1.75} />
                 <span className="font-display text-[10px] font-medium">More</span>
               </SheetTrigger>
-              <SheetContent side="bottom" className="rounded-t-3xl border-none bg-background px-5 pb-8">
+              <SheetContent
+                side="bottom"
+                className="rounded-t-3xl border-none bg-background px-5 pb-8"
+              >
                 <SheetTitle className="font-display text-base">All sections</SheetTitle>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   {moreItems.map((item) => (

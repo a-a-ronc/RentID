@@ -2,7 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { AppShell, ListRow, PageHeader, SectionCard, StatusPill, SummaryGrid } from "@/components/rentid/patterns";
+import {
+  AppShell,
+  ListRow,
+  PageHeader,
+  SectionCard,
+  StatusPill,
+  SummaryGrid,
+} from "@/components/rentid/patterns";
 import { Button, Field, Modal, Select, TextInput } from "@/components/rentid/kit";
 import { EmptyState, Eyebrow, Glass, Pill } from "@/components/rentid/Surface";
 import { useAuth } from "@/lib/auth";
@@ -12,10 +19,7 @@ import type { LeaseChangeType } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/tenant/housing")({
   head: () => ({
-    meta: [
-      { title: "My student housing — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "My student housing — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: ResidentHousingPage,
 });
@@ -69,11 +73,7 @@ function ResidentHousingPage() {
       <PageHeader
         title="My student housing"
         subtitle={data ? `${data.property_name} · ${data.unit_name}` : undefined}
-        action={
-          data ? (
-            <Button onClick={() => setOpen(true)}>Request a change</Button>
-          ) : undefined
-        }
+        action={data ? <Button onClick={() => setOpen(true)}>Request a change</Button> : undefined}
       />
 
       {housing.isLoading ? (
@@ -88,26 +88,42 @@ function ResidentHousingPage() {
       ) : (
         <div className="mt-5 space-y-5">
           <Glass className="p-4 text-sm text-muted-foreground">
-            Money shown here is yours alone — a roommate&apos;s balance is never visible to you, and requests take
-            effect only after approvals, documents, signatures and payment all land.
+            Money shown here is yours alone — a roommate&apos;s balance is never visible to you, and
+            requests take effect only after approvals, documents, signatures and payment all land.
           </Glass>
 
           <SummaryGrid
             items={[
-              { label: "My balance", value: money(data.balance), hint: data.term_label ?? "Current term" },
+              {
+                label: "My balance",
+                value: money(data.balance),
+                hint: data.term_label ?? "Current term",
+              },
               {
                 label: "My bed",
-                value: data.bed ? `${data.bed.bed_label} · ${data.bed.room_label}` : `${data.occupancy.share_pct ?? 0}% joint share`,
+                value: data.bed
+                  ? `${data.bed.bed_label} · ${data.bed.room_label}`
+                  : `${data.occupancy.share_pct ?? 0}% joint share`,
                 hint: data.campus ?? "Student housing",
               },
-              { label: "Roommates", value: String(data.roommates.length), hint: data.lease_model.replace(/_/g, " ") },
-              { label: "Open requests", value: String(data.requests.filter((r) => r.state !== "completed").length) },
+              {
+                label: "Roommates",
+                value: String(data.roommates.length),
+                hint: data.lease_model.replace(/_/g, " "),
+              },
+              {
+                label: "Open requests",
+                value: String(data.requests.filter((r) => r.state !== "completed").length),
+              },
             ]}
           />
 
           <SectionCard title="My charges" aside="What I owe">
             {data.charges.length === 0 ? (
-              <EmptyState title="No charges yet" description="Charges appear as your term is billed." />
+              <EmptyState
+                title="No charges yet"
+                description="Charges appear as your term is billed."
+              />
             ) : (
               <div className="divide-y divide-border/60">
                 {data.charges.map((charge) => (
@@ -119,8 +135,20 @@ function ResidentHousingPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-display font-semibold">{money(charge.balance)}</span>
                         <StatusPill
-                          tone={charge.balance === 0 ? "success" : charge.gated_on_request_id ? "neutral" : "warning"}
-                          status={charge.balance === 0 ? "Settled" : charge.gated_on_request_id ? "Gated" : "Due"}
+                          tone={
+                            charge.balance === 0
+                              ? "success"
+                              : charge.gated_on_request_id
+                                ? "neutral"
+                                : "warning"
+                          }
+                          status={
+                            charge.balance === 0
+                              ? "Settled"
+                              : charge.gated_on_request_id
+                                ? "Gated"
+                                : "Due"
+                          }
                         />
                       </div>
                     }
@@ -133,7 +161,10 @@ function ResidentHousingPage() {
           <div className="grid gap-5 lg:grid-cols-2">
             <SectionCard title="Who pays" aside="Payers separate from the lease">
               {data.payers.length === 0 ? (
-                <EmptyState title="No payers on file" description="You or an authorized payer can be added." />
+                <EmptyState
+                  title="No payers on file"
+                  description="You or an authorized payer can be added."
+                />
               ) : (
                 <div className="divide-y divide-border/60">
                   {data.payers.map((payer) => (
@@ -160,14 +191,19 @@ function ResidentHousingPage() {
 
             <SectionCard title="My roommates" aside="Names only">
               {data.roommates.length === 0 ? (
-                <EmptyState title="No roommates" description="You are the only resident in this unit." />
+                <EmptyState
+                  title="No roommates"
+                  description="You are the only resident in this unit."
+                />
               ) : (
                 <div className="divide-y divide-border/60">
                   {data.roommates.map((r) => (
                     <ListRow
                       key={r.name}
                       title={r.name}
-                      subtitle={r.bed_label ? `Bed ${r.bed_label}` : `${r.share_pct ?? 0}% joint share`}
+                      subtitle={
+                        r.bed_label ? `Bed ${r.bed_label}` : `${r.share_pct ?? 0}% joint share`
+                      }
                       value={<Pill>{r.verified ? "Verified" : "Unverified"}</Pill>}
                     />
                   ))}
@@ -178,7 +214,11 @@ function ResidentHousingPage() {
 
           <SectionCard
             title="My requests"
-            aside={data.renewal_deadline ? `Renewal deadline ${shortDate(data.renewal_deadline)}` : "Approval-first"}
+            aside={
+              data.renewal_deadline
+                ? `Renewal deadline ${shortDate(data.renewal_deadline)}`
+                : "Approval-first"
+            }
           >
             {data.requests.length === 0 ? (
               <EmptyState
@@ -192,7 +232,12 @@ function ResidentHousingPage() {
                     key={r.id}
                     title={r.request_type.replace(/_/g, " ")}
                     subtitle={r.reason}
-                    value={<StatusPill tone={r.state === "denied" ? "danger" : "neutral"} status={r.state.replace(/_/g, " ")} />}
+                    value={
+                      <StatusPill
+                        tone={r.state === "denied" ? "danger" : "neutral"}
+                        status={r.state.replace(/_/g, " ")}
+                      />
+                    }
                   />
                 ))}
               </div>
@@ -201,7 +246,10 @@ function ResidentHousingPage() {
 
           <SectionCard title="Maintenance in my unit" aside="Private room and shared areas">
             {data.maintenance.length === 0 ? (
-              <EmptyState title="Nothing open" description="Reported issues appear here with their area and status." />
+              <EmptyState
+                title="Nothing open"
+                description="Reported issues appear here with their area and status."
+              />
             ) : (
               <div className="divide-y divide-border/60">
                 {data.maintenance.map((c) => (
@@ -209,7 +257,12 @@ function ResidentHousingPage() {
                     key={c.id}
                     title={c.issue}
                     subtitle={`${c.area_label} · reported by ${c.requester_name}`}
-                    value={<StatusPill tone={c.status === "disputed" ? "danger" : "neutral"} status={c.status.replace(/_/g, " ")} />}
+                    value={
+                      <StatusPill
+                        tone={c.status === "disputed" ? "danger" : "neutral"}
+                        status={c.status.replace(/_/g, " ")}
+                      />
+                    }
                   />
                 ))}
               </div>
@@ -218,7 +271,10 @@ function ResidentHousingPage() {
 
           <SectionCard title="My payment history" aside="Append-only">
             {data.events.length === 0 ? (
-              <EmptyState title="No activity yet" description="Every charge and payment is recorded here permanently." />
+              <EmptyState
+                title="No activity yet"
+                description="Every charge and payment is recorded here permanently."
+              />
             ) : (
               <div className="divide-y divide-border/60">
                 {data.events.map((e) => (
@@ -243,7 +299,10 @@ function ResidentHousingPage() {
       >
         <div className="space-y-3">
           <Field label="Request type">
-            <Select value={requestType} onChange={(e) => setRequestType(e.target.value as LeaseChangeType)}>
+            <Select
+              value={requestType}
+              onChange={(e) => setRequestType(e.target.value as LeaseChangeType)}
+            >
               {REQUEST_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
@@ -252,10 +311,18 @@ function ResidentHousingPage() {
             </Select>
           </Field>
           <Field label="Reason">
-            <TextInput value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Study abroad next semester" />
+            <TextInput
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Study abroad next semester"
+            />
           </Field>
           <Field label="Candidate name (optional)">
-            <TextInput value={candidate} onChange={(e) => setCandidate(e.target.value)} placeholder="Person taking over the bed" />
+            <TextInput
+              value={candidate}
+              onChange={(e) => setCandidate(e.target.value)}
+              placeholder="Person taking over the bed"
+            />
           </Field>
           <div className="flex justify-end gap-2">
             <Button tone="ghost" onClick={() => setOpen(false)}>

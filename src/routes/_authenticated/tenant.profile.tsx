@@ -23,10 +23,7 @@ import { tenancyVerification } from "@/lib/services/tenancies";
 
 export const Route = createFileRoute("/_authenticated/tenant/profile")({
   head: () => ({
-    meta: [
-      { title: "Rental profile — RentID" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Rental profile — RentID" }, { name: "robots", content: "noindex" }],
   }),
   component: TenantProfilePage,
 });
@@ -37,7 +34,9 @@ function TenantProfilePage() {
 
   const rows = tenancies.data ?? [];
   const payments = rows.flatMap((t) => t.payments);
-  const onTime = payments.filter((p) => p.status === "paid" && (!p.paid_at || p.paid_at.slice(0, 10) <= p.due_date)).length;
+  const onTime = payments.filter(
+    (p) => p.status === "paid" && (!p.paid_at || p.paid_at.slice(0, 10) <= p.due_date),
+  ).length;
   const paid = payments.filter((p) => p.status === "paid");
   const totalPaid = paid.reduce((sum, p) => sum + Number(p.amount), 0);
   const verifiedCount = rows.filter((t) => t.verified).length;
@@ -61,27 +60,48 @@ function TenantProfilePage() {
         {tenancies.isLoading ? (
           <LoadingCard label="Building your rental profile…" />
         ) : tenancies.isError ? (
-          <InlineError message="Your profile could not be loaded." onRetry={() => void tenancies.refetch()} />
+          <InlineError
+            message="Your profile could not be loaded."
+            onRetry={() => void tenancies.refetch()}
+          />
         ) : (
           <>
             <SummaryGrid
               items={[
-                { label: "Verified tenancies", value: String(verifiedCount), tone: verifiedCount > 0 ? "success" : "neutral" },
-                { label: "On-time payments", value: String(onTime), tone: "success", hint: `${paid.length} recorded` },
+                {
+                  label: "Verified tenancies",
+                  value: String(verifiedCount),
+                  tone: verifiedCount > 0 ? "success" : "neutral",
+                },
+                {
+                  label: "On-time payments",
+                  value: String(onTime),
+                  tone: "success",
+                  hint: `${paid.length} recorded`,
+                },
                 { label: "Rent paid", value: money(totalPaid), tone: "neutral" },
-                { label: "Records", value: String(payments.length), tone: "neutral", hint: "Payment history" },
+                {
+                  label: "Records",
+                  value: String(payments.length),
+                  tone: "neutral",
+                  hint: "Payment history",
+                },
               ]}
             />
 
             <DemoNotice>
-              Your rental history stays yours. RentID records verified tenancies and payments — no scoring, no
-              screening, and nothing shared without a landlord relationship.
+              Your rental history stays yours. RentID records verified tenancies and payments — no
+              scoring, no screening, and nothing shared without a landlord relationship.
             </DemoNotice>
 
             <Glass className="p-5">
               <Eyebrow>Identity</Eyebrow>
-              <p className="mt-1 font-display text-[17px] font-semibold">{profile.data?.full_name ?? "—"}</p>
-              <p className="mt-0.5 text-[12.5px] text-muted-foreground">{profile.data?.email ?? ""}</p>
+              <p className="mt-1 font-display text-[17px] font-semibold">
+                {profile.data?.full_name ?? "—"}
+              </p>
+              <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                {profile.data?.email ?? ""}
+              </p>
               {profile.data?.phone ? (
                 <p className="text-[12.5px] text-muted-foreground">{profile.data.phone}</p>
               ) : null}
@@ -107,15 +127,26 @@ function TenantProfilePage() {
                   >
                     <div className="space-y-4 px-4 py-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <TrustBadge kind={verification.complete ? "verified_tenancy" : "unverified"} />
-                        <StatusPill status={tenancy.status} tone={tenancy.status === "active" ? "success" : "neutral"} />
+                        <TrustBadge
+                          kind={verification.complete ? "verified_tenancy" : "unverified"}
+                        />
+                        <StatusPill
+                          status={tenancy.status}
+                          tone={tenancy.status === "active" ? "success" : "neutral"}
+                        />
                       </div>
                       <VerificationChecklist checks={verification.checks} />
                     </div>
                     <ListRow
                       title="Term"
-                      subtitle={[shortDate(tenancy.start_date), shortDate(tenancy.end_date)].filter(Boolean).join(" → ")}
-                      value={tenancy.monthly_rent != null ? `${money(Number(tenancy.monthly_rent))}/mo` : undefined}
+                      subtitle={[shortDate(tenancy.start_date), shortDate(tenancy.end_date)]
+                        .filter(Boolean)
+                        .join(" → ")}
+                      value={
+                        tenancy.monthly_rent != null
+                          ? `${money(Number(tenancy.monthly_rent))}/mo`
+                          : undefined
+                      }
                     />
                     <ListRow
                       title="Payments recorded"

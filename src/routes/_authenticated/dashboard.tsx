@@ -46,8 +46,17 @@ function Dashboard() {
   const notifications = useNotifications();
 
   const loading =
-    metrics.isLoading || payments.isLoading || tenancies.isLoading || maintenance.isLoading || leases.isLoading;
-  const isError = metrics.isError || payments.isError || tenancies.isError || maintenance.isError || leases.isError;
+    metrics.isLoading ||
+    payments.isLoading ||
+    tenancies.isLoading ||
+    maintenance.isLoading ||
+    leases.isLoading;
+  const isError =
+    metrics.isError ||
+    payments.isError ||
+    tenancies.isError ||
+    maintenance.isError ||
+    leases.isError;
 
   const recentPayments = (payments.data ?? [])
     .slice()
@@ -60,9 +69,7 @@ function Dashboard() {
     .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""))
     .slice(0, 5);
 
-  const lateTenants = (payments.data ?? [])
-    .filter((p) => p.status === "late")
-    .slice(0, 5);
+  const lateTenants = (payments.data ?? []).filter((p) => p.status === "late").slice(0, 5);
 
   const openMaintenance = (maintenance.data ?? [])
     .filter((m) => m.status !== "completed" && m.status !== "cancelled")
@@ -86,9 +93,13 @@ function Dashboard() {
       />
 
       {isError ? (
-        <div className="mt-5"><InlineError message="Couldn't load your dashboard data." /></div>
+        <div className="mt-5">
+          <InlineError message="Couldn't load your dashboard data." />
+        </div>
       ) : loading ? (
-        <div className="mt-5"><LoadingCard label="Loading dashboard…" /></div>
+        <div className="mt-5">
+          <LoadingCard label="Loading dashboard…" />
+        </div>
       ) : (
         <>
           <SummaryGrid
@@ -103,7 +114,10 @@ function Dashboard() {
               {
                 label: "Outstanding rent",
                 value: money(metrics.data?.outstanding_rent),
-                tone: (metrics.data?.outstanding_rent ?? 0) > 0 ? ("warning" as const) : ("neutral" as const),
+                tone:
+                  (metrics.data?.outstanding_rent ?? 0) > 0
+                    ? ("warning" as const)
+                    : ("neutral" as const),
                 hint: "Past due",
               },
               {
@@ -115,19 +129,28 @@ function Dashboard() {
               {
                 label: "Late payments",
                 value: String(metrics.data?.late_payments ?? 0),
-                tone: (metrics.data?.late_payments ?? 0) > 0 ? ("danger" as const) : ("neutral" as const),
+                tone:
+                  (metrics.data?.late_payments ?? 0) > 0
+                    ? ("danger" as const)
+                    : ("neutral" as const),
                 hint: "This month",
               },
               {
                 label: "Open maintenance",
                 value: String(metrics.data?.open_maintenance ?? 0),
-                tone: (metrics.data?.open_maintenance ?? 0) > 0 ? ("warning" as const) : ("neutral" as const),
+                tone:
+                  (metrics.data?.open_maintenance ?? 0) > 0
+                    ? ("warning" as const)
+                    : ("neutral" as const),
                 hint: "Requests",
               },
               {
                 label: "Leases expiring",
                 value: String(metrics.data?.leases_expiring ?? 0),
-                tone: (metrics.data?.leases_expiring ?? 0) > 0 ? ("warning" as const) : ("neutral" as const),
+                tone:
+                  (metrics.data?.leases_expiring ?? 0) > 0
+                    ? ("warning" as const)
+                    : ("neutral" as const),
                 hint: "Next 60 days",
               },
             ]}
@@ -135,7 +158,10 @@ function Dashboard() {
 
           <SectionCard title="Recent payments" aside="Latest 5" className="mt-6">
             {recentPayments.length === 0 ? (
-              <EmptyState title="No payments yet" description="Rent records appear once tenancies are set up." />
+              <EmptyState
+                title="No payments yet"
+                description="Rent records appear once tenancies are set up."
+              />
             ) : (
               recentPayments.map((p) => (
                 <ListRow
@@ -149,7 +175,11 @@ function Dashboard() {
                       <StatusPill
                         status={p.status}
                         tone={
-                          p.status === "paid" ? "success" : p.status === "late" ? "danger" : "neutral"
+                          p.status === "paid"
+                            ? "success"
+                            : p.status === "late"
+                              ? "danger"
+                              : "neutral"
                         }
                       />
                     </div>
@@ -177,7 +207,10 @@ function Dashboard() {
 
           <SectionCard title="Late tenants" aside={`${lateTenants.length} late`} className="mt-4">
             {lateTenants.length === 0 ? (
-              <EmptyState title="All caught up" description="No tenants are currently late on rent." />
+              <EmptyState
+                title="All caught up"
+                description="No tenants are currently late on rent."
+              />
             ) : (
               lateTenants.map((p) => (
                 <ListRow
@@ -193,14 +226,22 @@ function Dashboard() {
 
           <SectionCard title="Maintenance requests" aside="Open" className="mt-4">
             {openMaintenance.length === 0 ? (
-              <EmptyState title="Nothing open" description="Units are quiet — no open maintenance requests." />
+              <EmptyState
+                title="Nothing open"
+                description="Units are quiet — no open maintenance requests."
+              />
             ) : (
               openMaintenance.map((m) => (
                 <ListRow
                   key={m.id}
                   title={m.title}
                   subtitle={`${m.property_name} · ${m.unit_name}`}
-                  pill={<StatusPill status={m.status.replace("_", " ")} tone={m.status === "open" ? "warning" : "neutral"} />}
+                  pill={
+                    <StatusPill
+                      status={m.status.replace("_", " ")}
+                      tone={m.status === "open" ? "warning" : "neutral"}
+                    />
+                  }
                 />
               ))
             )}
@@ -208,7 +249,10 @@ function Dashboard() {
 
           <SectionCard title="Lease expirations" aside="Next 60 days" className="mt-4">
             {expiringLeases.length === 0 ? (
-              <EmptyState title="Nothing expiring" description="No leases expire in the next 60 days." />
+              <EmptyState
+                title="Nothing expiring"
+                description="No leases expire in the next 60 days."
+              />
             ) : (
               expiringLeases.map((l) => {
                 const days = daysUntil(l.end_date);
