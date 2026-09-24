@@ -2763,6 +2763,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      _generate_rent_periods: { Args: { _tenancy_id: string }; Returns: number };
       accept_invitation: { Args: { _token: string }; Returns: Json };
       can_access_conversation: {
         Args: { _conversation_id: string };
@@ -2786,6 +2787,10 @@ export type Database = {
         Args: { _action: string; _limit: number; _window?: string };
         Returns: undefined;
       };
+      compute_marketplace_fee: {
+        Args: { _monthly_rent: number };
+        Returns: number;
+      };
       compute_platform_fee: {
         Args: { _amount: number; _method?: string };
         Returns: number;
@@ -2803,6 +2808,11 @@ export type Database = {
         Args: { _case_id: string; _decision: string; _reason: string };
         Returns: string;
       };
+      ensure_my_rent_periods: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
+      ensure_rent_periods: { Args: { _org_id: string }; Returns: number };
       gen_random_uuid: { Args: Record<PropertyKey, never>; Returns: string };
       gen_salt: { Args: { "": string }; Returns: string };
       has_management_authority: {
@@ -2940,6 +2950,8 @@ export type Database = {
         };
         Returns: string;
       };
+      storage_org_prefix: { Args: { _name: string }; Returns: string };
+      storage_tenancy_prefix: { Args: { _name: string }; Returns: string };
       tenant_passport_snapshot: {
         Args: { _email: string; _user_id: string };
         Returns: Json;

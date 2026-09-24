@@ -228,7 +228,10 @@ export function useMyTenancies() {
   return useQuery({
     queryKey: ["my-tenancies", user?.id],
     enabled: Boolean(user?.id),
-    queryFn: () => svc.getMyTenancies(user?.id ?? null),
+    queryFn: async () => {
+      await svc.ensureMyRentPeriods(user?.id ?? null);
+      return svc.getMyTenancies(user?.id ?? null);
+    },
   });
 }
 
@@ -306,7 +309,10 @@ export function usePayments(orgId: UUID | null) {
   return useQuery({
     queryKey: ["payments", orgId],
     enabled: Boolean(orgId),
-    queryFn: () => svc.getPayments(orgId),
+    queryFn: async () => {
+      await svc.ensureRentPeriods(orgId);
+      return svc.getPayments(orgId);
+    },
   });
 }
 
@@ -314,7 +320,10 @@ export function useDashboardMetrics(orgId: UUID | null) {
   return useQuery({
     queryKey: ["metrics", orgId],
     enabled: Boolean(orgId),
-    queryFn: () => svc.getDashboardMetrics(orgId),
+    queryFn: async () => {
+      await svc.ensureRentPeriods(orgId);
+      return svc.getDashboardMetrics(orgId);
+    },
   });
 }
 

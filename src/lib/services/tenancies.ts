@@ -356,15 +356,25 @@ export async function inviteTenant(input: {
 }
 
 export async function revokeInvitation(invitationId: UUID) {
-  unwrapOne(
+  const revoked = unwrapOne(
     await db
       .from("tenant_invitations")
       .update({ status: "revoked" })
       .eq("id", invitationId)
-      .select("id")
+      .eq("status", "pending")
+      .select("id, tenancy_id")
       .single(),
     "Invitation",
   );
+  // inviteTenant() creates a pending tenancy alongside the invitation. Without
+  // this it would sit on the unit forever as a tenant who never arrived.
+  if (revoked.tenancy_id) {
+    await db
+      .from("tenancies")
+      .update({ status: "cancelled" })
+      .eq("id", revoked.tenancy_id)
+      .eq("status", "pending");
+  }
   await logAudit({
     action: "invitation.revoked",
     entity_type: "tenant_invitation",

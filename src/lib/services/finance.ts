@@ -48,6 +48,48 @@ function periodLabel(dueDate: string): string {
 const money = (amount: number) =>
   `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+/* ------------------------------ rent periods ------------------------------ */
+
+/**
+ * Rent periods are generated lazily by the database (ensure_rent_periods /
+ * ensure_my_rent_periods): one per month for every active tenancy, idempotent,
+ * overdue ones flipped to late. Opening a ledger is what triggers it.
+ *
+ * Throttled per key so a page that mounts several ledger queries makes one
+ * call, and best-effort: a failure here must never stop the ledger rendering.
+ */
+const RENT_PERIOD_TTL_MS = 5 * 60_000;
+const rentPeriodRuns = new Map<string, { at: number; run: Promise<number> }>();
+
+/**
+ * Concurrent callers share one in-flight call, so a ledger query never reads
+ * before generation has finished just because a sibling query started it.
+ */
+function throttled(key: string, call: () => PromiseLike<{ data: number | null; error: unknown }>) {
+  const existing = rentPeriodRuns.get(key);
+  if (existing && Date.now() - existing.at < RENT_PERIOD_TTL_MS) return existing.run;
+  const run = Promise.resolve(call())
+    .then(({ data, error }) => (error ? 0 : (data ?? 0)))
+    .catch(() => 0);
+  rentPeriodRuns.set(key, { at: Date.now(), run });
+  return run;
+}
+
+export function ensureRentPeriods(orgId: UUID | null): Promise<number> {
+  if (!orgId) return Promise.resolve(0);
+  return throttled(`org:${orgId}`, () => db.rpc("ensure_rent_periods", { _org_id: orgId }));
+}
+
+export function ensureMyRentPeriods(userId: UUID | null): Promise<number> {
+  if (!userId) return Promise.resolve(0);
+  return throttled(`me:${userId}`, () => db.rpc("ensure_my_rent_periods"));
+}
+
+/** Test seam. */
+export function resetRentPeriodThrottle() {
+  rentPeriodRuns.clear();
+}
+
 /* --------------------------------- reads ---------------------------------- */
 
 export async function getPayments(orgId: UUID | null): Promise<PaymentWithContext[]> {

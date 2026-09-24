@@ -18,7 +18,8 @@ import {
 } from "@/components/rentid/patterns";
 import { useProfile } from "@/lib/auth";
 import { money, shortDate } from "@/lib/format";
-import { useMyTenancies } from "@/lib/rentid";
+import { applicationLabel, applicationTone } from "@/components/rentid/listing-ui";
+import { useMyApplications, useMyTenancies } from "@/lib/rentid";
 import { tenancyVerification } from "@/lib/services/tenancies";
 
 export const Route = createFileRoute("/_authenticated/tenant/profile")({
@@ -150,13 +151,15 @@ function TenantProfilePage() {
                     />
                     <ListRow
                       title="Payments recorded"
-                      subtitle="Verified by RentID from your rent ledger"
+                      subtitle="Marked paid in your rent ledger"
                       value={String(tenancy.payments.filter((p) => p.status === "paid").length)}
                     />
                   </SectionCard>
                 );
               })
             )}
+
+            <MyApplications />
 
             <SectionCard title="Coming with the full launch">
               <div className="space-y-2 px-4 py-3 text-[12.5px] text-muted-foreground">
@@ -168,5 +171,26 @@ function TenantProfilePage() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+/** Where the signed-in renter has applied, and where each application stands. */
+function MyApplications() {
+  const applications = useMyApplications();
+  const rows = applications.data ?? [];
+  if (applications.isLoading || applications.isError || rows.length === 0) return null;
+  return (
+    <SectionCard title="My applications" aside={`${rows.length} total`}>
+      {rows.map((a) => (
+        <ListRow
+          key={a.id}
+          title={a.listing?.headline ?? "Listing no longer available"}
+          subtitle={`${a.property_name} ${a.unit_name} · applied ${shortDate(a.created_at)}${
+            a.profile_shared ? " · RentID profile shared" : ""
+          }`}
+          pill={<StatusPill status={applicationLabel(a.status)} tone={applicationTone(a.status)} />}
+        />
+      ))}
+    </SectionCard>
   );
 }
