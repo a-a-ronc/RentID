@@ -118,15 +118,16 @@ which wrap the service layer, which owns every query.
 
 ## Scripts
 
-| Command            | What it does                                            |
-| ------------------ | ------------------------------------------------------- |
-| `bun run dev`      | Development server                                      |
-| `bun run check`    | Typecheck, lint, unit tests, production build           |
-| `bun run test`     | 545 unit tests                                          |
-| `bun run test:rls` | 10 SQL security suites against a local Postgres         |
-| `bun run db:reset` | Drop, recreate and migrate the local database           |
-| `bun run db:types` | Regenerate `src/integrations/supabase/types.ts`         |
-| `bun run build`    | Production build (emits `.output/server/wrangler.json`) |
+| Command            | What it does                                                  |
+| ------------------ | ------------------------------------------------------------- |
+| `bun run dev`      | Development server                                            |
+| `bun run check`    | Typecheck, lint, unit tests, production build                 |
+| `bun run test`     | 545 unit tests                                                |
+| `bun run test:rls` | 10 SQL security suites against a local Postgres               |
+| `bun run db:reset` | Drop, recreate and migrate the local database                 |
+| `bun run db:types` | Regenerate `src/integrations/supabase/types.ts`               |
+| `bun run build`    | Production build (emits `.output/server/wrangler.json`)       |
+| `bun run deploy`   | Build and deploy to Cloudflare Workers (see `docs/DEPLOY.md`) |
 
 The local harness needs no Docker. `scripts/db/supabase-shim.sql` provides
 stand-ins for the `auth` and `storage` schemas so hosted-Supabase migrations
@@ -178,6 +179,7 @@ student-housing vertical, which is parked on sample data on purpose.
 
 | Document                                         | What's in it                                                                    |
 | ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md)               | Supabase, Cloudflare Workers and DNS — step by step                             |
 | [`docs/SECURITY.md`](docs/SECURITY.md)           | Threat model, what's enforced and where, and what isn't                         |
 | [`docs/SCALING.md`](docs/SCALING.md)             | The current design's real ceiling, with numbers, and what to do when you hit it |
 | [`docs/PRODUCT-BRIEF.md`](docs/PRODUCT-BRIEF.md) | The original product brief, kept verbatim                                       |
