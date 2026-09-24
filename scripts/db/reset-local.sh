@@ -2,7 +2,7 @@
 # Recreate the local verification database and apply every migration in order:
 #   1. scripts/db/supabase-shim.sql   (auth/storage/roles stand-ins)
 #   2. supabase/migrations/*.sql      (the hosted project's applied + pending migrations)
-#   3. drizzle/migrations/*.sql       (Lovable's interest_registrations table)
+#   (interest_registrations, once drizzle-only, is now 20260924000100.)
 #
 # Usage:  bun run db:reset            (LOCAL_DATABASE_URL defaults to postgres://postgres:postgres@localhost:5432/rentid_local)
 # Fails fast on the first SQL error — a failing migration here will also fail on Supabase.
@@ -33,8 +33,6 @@ apply "${ROOT}/scripts/db/supabase-shim.sql"
 echo "==> supabase/migrations"
 for f in $(ls "${ROOT}"/supabase/migrations/*.sql | sort); do apply "${f}"; done
 
-echo "==> drizzle/migrations"
-for f in $(ls "${ROOT}"/drizzle/migrations/*.sql | sort); do apply "${f}"; done
 
 TABLES=$(psql "${URL}" -tAc "select count(*) from information_schema.tables where table_schema='public'")
 POLICIES=$(psql "${URL}" -tAc "select count(*) from pg_policies where schemaname='public'")
