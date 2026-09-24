@@ -29,13 +29,15 @@ You don't need to merge to deploy. Deploys come from whatever is checked out.
 3. **Project Settings → API Keys.** Copy the project URL, the **publishable** key
    and the **secret** key.
 
-## 3. Apply the schema (18 migrations)
+## 3. Apply the schema (19 migrations)
 
 ```bash
 bunx supabase login
 bunx supabase link --project-ref <your-project-ref>     # asks for the DB password
-bunx supabase db push                                    # lists 18 migrations; answer Y
+bunx supabase db push                                    # lists 19 migrations; answer Y
 ```
+
+Already pushed before? Run `bunx supabase db push` again — it applies only the new ones.
 
 If `bunx supabase` fails to start, use `npx supabase` for the same three commands.
 
