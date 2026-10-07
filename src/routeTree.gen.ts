@@ -15,8 +15,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForLandlordsRouteImport } from './routes/for-landlords'
 import { Route as ForPropertyManagersRouteImport } from './routes/for-property-managers'
 import { Route as ForTenantsRouteImport } from './routes/for-tenants'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as InviteRouteImport } from './routes/invite'
 import { Route as JoinRouteImport } from './routes/join'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -93,6 +95,11 @@ const ForTenantsRoute = ForTenantsRouteImport.update({
   path: '/for-tenants',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InviteRoute = InviteRouteImport.update({
   id: '/invite',
   path: '/invite',
@@ -101,6 +108,11 @@ const InviteRoute = InviteRouteImport.update({
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -368,8 +380,10 @@ export interface FileRoutesByFullPath {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/invite': typeof InviteRoute
   '/join': typeof JoinRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -423,8 +437,10 @@ export interface FileRoutesByTo {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/invite': typeof InviteRoute
   '/join': typeof JoinRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/applications': typeof AuthenticatedApplicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -478,8 +494,10 @@ export interface FileRoutesById {
   '/for-landlords': typeof ForLandlordsRoute
   '/for-property-managers': typeof ForPropertyManagersRoute
   '/for-tenants': typeof ForTenantsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/invite': typeof InviteRoute
   '/join': typeof JoinRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -535,8 +553,10 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/forgot-password'
     | '/invite'
     | '/join'
+    | '/reset-password'
     | '/admin'
     | '/applications'
     | '/dashboard'
@@ -590,8 +610,10 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/forgot-password'
     | '/invite'
     | '/join'
+    | '/reset-password'
     | '/admin'
     | '/applications'
     | '/dashboard'
@@ -644,8 +666,10 @@ export interface FileRouteTypes {
     | '/for-landlords'
     | '/for-property-managers'
     | '/for-tenants'
+    | '/forgot-password'
     | '/invite'
     | '/join'
+    | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/applications'
     | '/_authenticated/dashboard'
@@ -701,8 +725,10 @@ export interface RootRouteChildren {
   ForLandlordsRoute: typeof ForLandlordsRoute
   ForPropertyManagersRoute: typeof ForPropertyManagersRoute
   ForTenantsRoute: typeof ForTenantsRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   InviteRoute: typeof InviteRoute
   JoinRoute: typeof JoinRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ApplyListingRefRoute: typeof ApplyListingRefRoute
   ListingListingRefRoute: typeof ListingListingRefRoute
   ProvidersOrgIdRoute: typeof ProvidersOrgIdRoute
@@ -754,6 +780,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForTenantsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invite': {
       id: '/invite'
       path: '/invite'
@@ -766,6 +799,13 @@ declare module '@tanstack/react-router' {
       path: '/join'
       fullPath: '/join'
       preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -1223,8 +1263,10 @@ const rootRouteChildren: RootRouteChildren = {
   ForLandlordsRoute: ForLandlordsRoute,
   ForPropertyManagersRoute: ForPropertyManagersRoute,
   ForTenantsRoute: ForTenantsRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   InviteRoute: InviteRoute,
   JoinRoute: JoinRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ApplyListingRefRoute: ApplyListingRefRoute,
   ListingListingRefRoute: ListingListingRefRoute,
   ProvidersOrgIdRoute: ProvidersOrgIdRoute,

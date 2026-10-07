@@ -10,6 +10,7 @@ import {
 import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 
 function NotFoundComponent() {
@@ -127,6 +128,9 @@ function RootComponent() {
       <AuthProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        {/* Every toast.success / toast.error in the app renders here. Without
+            this mounted, all of them were silently dropped. */}
+        <Toaster position="top-center" richColors closeButton duration={5000} />
       </AuthProvider>
     </QueryClientProvider>
   );

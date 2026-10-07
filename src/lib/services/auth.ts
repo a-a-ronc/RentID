@@ -9,6 +9,7 @@
  */
 import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
 
+import { friendlyAuthError, MIN_PASSWORD_LENGTH } from "@/lib/auth-validation";
 import { db, DbError, unwrap, unwrapMaybe, unwrapOne } from "@/lib/db";
 import { toProfile } from "@/lib/db/mappers";
 import type { TablesUpdate } from "@/integrations/supabase/types";
@@ -94,11 +95,12 @@ export function onAuthStateChange(listener: (s: AppSession | null) => void) {
 }
 
 export async function signIn(email: string, password: string): Promise<AppSession> {
-  const { data, error } = await db.auth.signInWithPassword({
-    email: email.trim().toLowerCase(),
-    password,
-  });
-  if (error) throw new Error(friendlyAuthError(error.message));
+  const { data, error } = await db.auth
+    .signInWithPassword({ email: email.trim().toLowerCase(), password })
+    .catch((e: unknown) => {
+      throw new Error(friendlyAuthError(e));
+    });
+  if (error) throw new Error(friendlyAuthError(error));
   current = await buildSession(data.session);
   emit();
   if (!current) throw new Error("Sign in failed.");
@@ -113,19 +115,24 @@ export async function signUp(input: {
   phone?: string | null;
 }): Promise<SignUpResult> {
   if (!SIGNUP_ROLES.includes(input.role)) throw new Error("That role cannot be self-assigned.");
-  if (input.password.length < 12) throw new Error("Use at least 12 characters for your password.");
-  const { data, error } = await db.auth.signUp({
-    email: input.email.trim().toLowerCase(),
-    password: input.password,
-    options: {
-      // consumed by public.handle_new_user() → profile + role (never admin)
-      data: { full_name: input.fullName.trim(), role: input.role, phone: input.phone ?? null },
-      ...(typeof window !== "undefined"
-        ? { emailRedirectTo: `${window.location.origin}/auth` }
-        : {}),
-    },
-  });
-  if (error) throw new Error(friendlyAuthError(error.message));
+  if (input.password.length < MIN_PASSWORD_LENGTH)
+    throw new Error(`Use at least ${MIN_PASSWORD_LENGTH} characters for your password.`);
+  const { data, error } = await db.auth
+    .signUp({
+      email: input.email.trim().toLowerCase(),
+      password: input.password,
+      options: {
+        // consumed by public.handle_new_user() → profile + role (never admin)
+        data: { full_name: input.fullName.trim(), role: input.role, phone: input.phone ?? null },
+        ...(typeof window !== "undefined"
+          ? { emailRedirectTo: `${window.location.origin}/auth` }
+          : {}),
+      },
+    })
+    .catch((e: unknown) => {
+      throw new Error(friendlyAuthError(e));
+    });
+  if (error) throw new Error(friendlyAuthError(error));
   if (!data.session) return { session: null, needsEmailConfirmation: true };
   current = await buildSession(data.session);
   emit();
@@ -139,19 +146,50 @@ export async function signOut() {
   return true;
 }
 
+/**
+ * Sends the reset email. The link lands on /reset-password, where the
+ * recovery session from the URL lets the user choose a new password.
+ */
 export async function requestPasswordReset(email: string) {
-  const { error } = await db.auth.resetPasswordForEmail(
-    email.trim().toLowerCase(),
-    typeof window !== "undefined" ? { redirectTo: `${window.location.origin}/auth?reset=1` } : {},
-  );
-  if (error) throw new Error(friendlyAuthError(error.message));
+  const { error } = await db.auth
+    .resetPasswordForEmail(
+      email.trim().toLowerCase(),
+      typeof window !== "undefined"
+        ? { redirectTo: `${window.location.origin}/reset-password` }
+        : {},
+    )
+    .catch((e: unknown) => {
+      throw new Error(friendlyAuthError(e));
+    });
+  if (error) throw new Error(friendlyAuthError(error));
   return true;
 }
 
+/**
+ * Whether this page load carries a usable password-recovery session.
+ * supabase-js reads the token from the reset link's URL while initialising,
+ * so by the time getSession() resolves it has either a session or nothing.
+ */
+export async function getRecoveryState(): Promise<"ready" | "invalid"> {
+  if (typeof window === "undefined") return "invalid";
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const query = new URLSearchParams(window.location.search);
+  if (hash.get("error") || query.get("error") || hash.get("error_code")) return "invalid";
+  try {
+    const { data } = await db.auth.getSession();
+    return data.session ? "ready" : "invalid";
+  } catch {
+    return "invalid";
+  }
+}
+
 export async function updatePassword(newPassword: string) {
-  if (newPassword.length < 12) throw new Error("Use at least 12 characters for your password.");
-  const { error } = await db.auth.updateUser({ password: newPassword });
-  if (error) throw new Error(friendlyAuthError(error.message));
+  if (newPassword.length < MIN_PASSWORD_LENGTH)
+    throw new Error(`Use at least ${MIN_PASSWORD_LENGTH} characters for your password.`);
+  const { error } = await db.auth.updateUser({ password: newPassword }).catch((e: unknown) => {
+    throw new Error(friendlyAuthError(e));
+  });
+  if (error) throw new Error(friendlyAuthError(error));
   return true;
 }
 
@@ -194,15 +232,4 @@ export async function addRole(userId: UUID, role: AppRole) {
     emit();
   }
   return true;
-}
-
-function friendlyAuthError(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes("invalid login credentials")) return "Incorrect email or password.";
-  if (m.includes("email not confirmed"))
-    return "Confirm your email address first — check your inbox.";
-  if (m.includes("already registered")) return "An account with that email already exists.";
-  if (m.includes("rate limit")) return "Too many attempts — please wait a minute and try again.";
-  if (m.includes("password")) return message;
-  return message;
 }
