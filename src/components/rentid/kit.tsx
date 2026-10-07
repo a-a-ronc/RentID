@@ -3,7 +3,8 @@
  * All colors come from the semantic tokens in `src/styles.css`.
  */
 import { Loader2, X } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { Glass } from "@/components/rentid/Surface";
 import { cn } from "@/lib/utils";
@@ -114,6 +115,15 @@ export function FormGrid({ children, className }: { children: ReactNode; classNa
 
 /* ---------------------------------- modal --------------------------------- */
 
+/**
+ * Dialog rendered into <body> through a portal.
+ *
+ * It must not render in place: most of the app sits inside `Glass` cards, and
+ * `backdrop-filter` (plus the settle animation's transform) makes a card the
+ * containing block for `position: fixed` children. A modal opened from inside
+ * a card was therefore trapped in that card, clipped to its height and
+ * impossible to scroll, which hid the submit button of "Claim this property".
+ */
 export function Modal({
   open,
   onClose,
@@ -129,36 +139,57 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Callers pass inline arrow functions; keep the latest without re-running the
+  // open/close effect (which would steal focus on every keystroke).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseRef.current();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    // Keep the page behind the dialog from scrolling; restore exactly what was there.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    // Move focus into the dialog so keyboard and screen-reader users land in it.
+    const first = panelRef.current?.querySelector<HTMLElement>(
+      "input, select, textarea, button:not([aria-label='Close dialog'])",
+    );
+    first?.focus();
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <button
         aria-label="Close"
         onClick={onClose}
         className="absolute inset-0 bg-foreground/25 backdrop-blur-sm"
       />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="glass animate-settle relative z-10 max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-t-3xl px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-3xl sm:pb-5"
+        className="glass animate-settle relative z-10 flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-3xl sm:rounded-3xl"
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-5">
           <div>
             <h2 className="font-display text-[16px] font-semibold tracking-tight">{title}</h2>
             {description ? (
-              <p className="mt-1 text-[12.5px] text-muted-foreground">{description}</p>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
+                {description}
+              </p>
             ) : null}
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close dialog"
             className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
@@ -166,10 +197,13 @@ export function Modal({
             <X className="size-4" />
           </button>
         </div>
-        <div className="mt-4">{children}</div>
-        {footer ? <div className="mt-5 flex justify-end gap-2">{footer}</div> : null}
+        <div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5">
+          {children}
+          {footer ? <div className="mt-5 flex justify-end gap-2">{footer}</div> : null}
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

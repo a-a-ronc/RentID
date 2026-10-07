@@ -128,18 +128,30 @@ export function PropertyVerificationCard({
   const status = c ? STATUS_COPY[c.status] : null;
   const activeAuthorizations = (v?.authorizations ?? []).filter((a) => a.status === "active");
 
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [claimTouched, setClaimTouched] = useState(false);
+  const claimNameError = claimantName.trim()
+    ? null
+    : relationship === "individual_owner"
+      ? "Enter the owner's name exactly as it appears on the deed."
+      : "Enter the owner's legal name as recorded (person, business, trust or estate).";
+
   async function submitClaim(e: React.FormEvent) {
     e.preventDefault();
+    setClaimTouched(true);
+    setClaimError(null);
+    if (claimNameError) return;
     try {
       await startClaim.mutateAsync({
         propertyId,
         relationship,
-        claimantName: claimantName || null,
+        claimantName: claimantName.trim(),
       });
-      toast.success("Ownership claim started.");
+      toast.success("Claim started. Next, add a document that shows ownership.");
       setClaimOpen(false);
+      setClaimTouched(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not start the claim.");
+      setClaimError(err instanceof Error ? err.message : "Could not start the claim.");
     }
   }
 
@@ -188,8 +200,18 @@ export function PropertyVerificationCard({
       footer={
         <div className="flex flex-wrap items-center gap-2">
           {c ? (
-            <Button tone="secondary" size="sm" onClick={() => setEvidenceOpen(true)}>
-              Add evidence
+            <Button
+              tone={
+                c.status === "pending" || c.status === "collecting_evidence"
+                  ? "primary"
+                  : "secondary"
+              }
+              size="sm"
+              onClick={() => setEvidenceOpen(true)}
+            >
+              {c.status === "pending" || c.status === "collecting_evidence"
+                ? "Next: add ownership evidence"
+                : "Add evidence"}
             </Button>
           ) : (
             <Button size="sm" onClick={() => setClaimOpen(true)}>
@@ -268,10 +290,27 @@ export function PropertyVerificationCard({
         />
       ))}
 
-      <Modal open={claimOpen} onClose={() => setClaimOpen(false)} title="Claim this property">
-        <form onSubmit={submitClaim} className="space-y-3.5">
-          <Field label="Your relationship to this property">
+      <Modal
+        open={claimOpen}
+        onClose={() => {
+          setClaimOpen(false);
+          setClaimError(null);
+        }}
+        title="Claim this property"
+        description="Step 1 of 2. Tell RentID how you're connected to this property. In step 2 you add a document, such as the recorded deed or a property tax statement, and a RentID reviewer checks it against county records."
+      >
+        <form onSubmit={submitClaim} noValidate className="space-y-3.5">
+          {claimError ? (
+            <p
+              role="alert"
+              className="rounded-2xl border border-destructive/40 bg-destructive/8 px-3 py-2.5 text-[12.5px] text-destructive"
+            >
+              {claimError}
+            </p>
+          ) : null}
+          <Field label="Your relationship to this property" htmlFor="claim-relationship">
             <Select
+              id="claim-relationship"
               value={relationship}
               onChange={(e) => setRelationship(e.target.value as PropertyClaimRelationship)}
             >
@@ -282,23 +321,47 @@ export function PropertyVerificationCard({
               ))}
             </Select>
           </Field>
-          <Field label="Legal owner name as recorded">
-            <TextInput value={claimantName} onChange={(e) => setClaimantName(e.target.value)} />
+          <Field
+            label="Legal owner name as recorded"
+            htmlFor="claim-owner"
+            hint="As it's written on the deed or county record, e.g. John A. Smith or Smith Holdings LLC."
+            error={claimTouched ? claimNameError : null}
+          >
+            <TextInput
+              id="claim-owner"
+              autoComplete="name"
+              value={claimantName}
+              aria-invalid={Boolean(claimTouched && claimNameError) || undefined}
+              onChange={(e) => setClaimantName(e.target.value)}
+              onBlur={() => setClaimTouched(true)}
+            />
           </Field>
-          <p className="text-[12px] text-muted-foreground">
-            RentID verifies against recorded ownership records. A claim on its own never produces a
-            public badge.
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            Starting a claim doesn't show a badge on its own. The verified badge appears only after
+            the records check out.
           </p>
-          <Button type="submit" loading={startClaim.isPending} className="w-full">
-            Start verification
-          </Button>
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+            <Button
+              tone="ghost"
+              onClick={() => {
+                setClaimOpen(false);
+                setClaimError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" loading={startClaim.isPending} className="sm:min-w-44">
+              Start claim
+            </Button>
+          </div>
         </form>
       </Modal>
 
       <Modal
         open={evidenceOpen}
         onClose={() => setEvidenceOpen(false)}
-        title="Add verification evidence"
+        title="Add ownership evidence"
+        description="Step 2 of 2. Choose the document you have and describe what it shows. A RentID reviewer checks it against county records."
       >
         <form onSubmit={submitEvidenceForm} className="space-y-3.5">
           <Field label="Document type">
@@ -313,13 +376,17 @@ export function PropertyVerificationCard({
           <Field label="What this document shows">
             <TextArea rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} />
           </Field>
-          <p className="text-[12px] text-muted-foreground">
-            Uploaded documents are treated as unverified until a RentID reviewer checks them, and
-            are stored privately — never shown to tenants or on public pages.
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            Evidence is reviewed by RentID only. It is never shown to tenants or on public pages.
           </p>
-          <Button type="submit" loading={submitEvidence.isPending} className="w-full">
-            Submit for review
-          </Button>
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+            <Button tone="ghost" onClick={() => setEvidenceOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={submitEvidence.isPending} className="sm:min-w-44">
+              Submit for review
+            </Button>
+          </div>
         </form>
       </Modal>
 
