@@ -21,6 +21,7 @@ import {
   ToolbarButton,
 } from "@/components/rentid/patterns";
 import { InviteLink } from "@/components/rentid/InviteLink";
+import { validateEmail } from "@/lib/auth-validation";
 import { PropertyVerificationCard } from "@/components/rentid/PropertyVerificationCard";
 import { PropertyVerificationBadgeButton } from "@/components/rentid/verification-ui";
 import { money, shortDate } from "@/lib/format";
@@ -160,9 +161,14 @@ function AddUnitModal({
               />
             </Field>
           </FormGrid>
-          <Button type="submit" loading={createUnit.isPending} className="w-full">
-            Save unit
-          </Button>
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+            <Button tone="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={createUnit.isPending} className="sm:min-w-44">
+              Save unit
+            </Button>
+          </div>
         </form>
       </Modal>
     </>
@@ -193,10 +199,26 @@ function InviteTenantModal({
     endDate: "",
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const errors = {
+    name: form.name.trim() ? null : "Enter the tenant's name.",
+    email: form.email.trim() ? validateEmail(form.email) : "Enter the tenant's email address.",
+    endDate:
+      form.startDate && form.endDate && form.endDate <= form.startDate
+        ? "The lease has to end after it starts."
+        : null,
+  };
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!organizationId) return;
+    setSubmitted(true);
+    setError(null);
+    if (errors.name || errors.email || errors.endDate) return;
+    if (!organizationId) {
+      setError("Your workspace is still loading. Try again in a moment.");
+      return;
+    }
     try {
       const result = await inviteTenant.mutateAsync({
         organizationId,
@@ -211,13 +233,15 @@ function InviteTenantModal({
       setSent({ email: form.email.trim(), token: result.invitation.token });
       toast.success(`Invitation ready for ${form.email.trim()}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send the invitation.");
+      setError(err instanceof Error ? err.message : "Could not create the invitation.");
     }
   }
 
   function close() {
     setOpen(false);
     setSent(null);
+    setSubmitted(false);
+    setError(null);
     setForm({
       name: "",
       email: "",
@@ -232,7 +256,17 @@ function InviteTenantModal({
       <Button tone="secondary" size="sm" onClick={() => setOpen(true)}>
         Invite tenant
       </Button>
-      <Modal open={open} onClose={close} title={`Invite a tenant — ${unitName}`}>
+      <Modal
+        open={open}
+        onClose={close}
+        title={`Invite a tenant to ${unitName}`}
+        {...(sent
+          ? {}
+          : {
+              description:
+                "RentID creates a private link for you to send them by text or email. When they accept it from their own account, the tenancy is verified for both of you.",
+            })}
+      >
         {sent ? (
           <div className="space-y-3">
             <p className="text-[13px] text-muted-foreground">
@@ -253,27 +287,36 @@ function InviteTenantModal({
             </Button>
           </div>
         ) : (
-          <form onSubmit={submit} className="space-y-3.5">
-            <p className="text-[12.5px] leading-relaxed text-muted-foreground">
-              You'll get a link to send them. When they accept it from their own account, the
-              tenancy becomes a verified tenancy for both sides.
-            </p>
-            <Field label="Tenant name" htmlFor="i-name">
+          <form onSubmit={submit} noValidate className="space-y-3.5">
+            {error ? (
+              <p
+                role="alert"
+                className="rounded-2xl border border-destructive/40 bg-destructive/8 px-3 py-2.5 text-[12.5px] text-destructive"
+              >
+                {error}
+              </p>
+            ) : null}
+            <Field label="Tenant name" htmlFor="i-name" error={submitted ? errors.name : null}>
               <TextInput
                 id="i-name"
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
-                required
+                autoComplete="off"
                 placeholder="Jordan Smith"
               />
             </Field>
-            <Field label="Email" htmlFor="i-email">
+            <Field
+              label="Tenant's email"
+              htmlFor="i-email"
+              hint="They'll sign up with this address. The invitation only works for it."
+              error={submitted ? errors.email : null}
+            >
               <TextInput
                 id="i-email"
                 type="email"
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
-                required
+                autoComplete="off"
                 placeholder="jordan@example.com"
               />
             </Field>
@@ -287,7 +330,7 @@ function InviteTenantModal({
                   onChange={(e) => set("monthlyRent", e.target.value)}
                 />
               </Field>
-              <Field label="Start date" htmlFor="i-start">
+              <Field label="Lease start" htmlFor="i-start">
                 <TextInput
                   id="i-start"
                   type="date"
@@ -296,7 +339,12 @@ function InviteTenantModal({
                 />
               </Field>
             </FormGrid>
-            <Field label="End date" htmlFor="i-end">
+            <Field
+              label="Lease end"
+              htmlFor="i-end"
+              hint="Leave blank for month-to-month."
+              error={submitted ? errors.endDate : null}
+            >
               <TextInput
                 id="i-end"
                 type="date"
@@ -304,9 +352,14 @@ function InviteTenantModal({
                 onChange={(e) => set("endDate", e.target.value)}
               />
             </Field>
-            <Button type="submit" loading={inviteTenant.isPending} className="w-full">
-              Send invitation
-            </Button>
+            <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+              <Button tone="ghost" onClick={close}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={inviteTenant.isPending} className="sm:min-w-44">
+                Create invitation link
+              </Button>
+            </div>
           </form>
         )}
       </Modal>
