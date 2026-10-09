@@ -95,6 +95,9 @@ create table if not exists storage.buckets (
   public boolean not null default false,
   created_at timestamptz not null default now()
 );
+-- hosted Supabase enforces these in the storage service
+alter table storage.buckets add column if not exists file_size_limit bigint;
+alter table storage.buckets add column if not exists allowed_mime_types text[];
 
 create table if not exists storage.objects (
   id uuid primary key default gen_random_uuid(),

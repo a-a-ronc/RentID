@@ -64,7 +64,12 @@ export class CryptoConfigError extends Error {
 
 /* ------------------------------------------------------------------ keys */
 
-type MasterKey = { id: string; key: CryptoKey };
+/**
+ * `key` wraps data keys (AES-GCM, always with a random IV). `indexKey` is a
+ * separate HMAC key derived from the same material with HKDF, used only for
+ * blind indexes, so the wrapping key is never used for a second purpose.
+ */
+type MasterKey = { id: string; key: CryptoKey; indexKey: CryptoKey };
 
 let cachedKeys: Map<string, MasterKey> | null = null;
 let cachedPrimary: string | null = null;
@@ -110,7 +115,22 @@ async function loadKeys(): Promise<{ keys: Map<string, MasterKey>; primary: stri
       "encrypt",
       "decrypt",
     ]);
-    keys.set(id, { id, key });
+    const hkdf = await crypto.subtle.importKey("raw", material as BufferSource, "HKDF", false, [
+      "deriveKey",
+    ]);
+    const indexKey = await crypto.subtle.deriveKey(
+      {
+        name: "HKDF",
+        hash: "SHA-256",
+        salt: new Uint8Array(32) as BufferSource,
+        info: encodeUtf8("rentid/blind-index/v1") as BufferSource,
+      },
+      hkdf,
+      { name: "HMAC", hash: "SHA-256", length: 256 },
+      false,
+      ["sign"],
+    );
+    keys.set(id, { id, key, indexKey });
     primary ??= id;
   }
 
@@ -252,29 +272,9 @@ export async function rewrap(sealed: SealedValue, context: string): Promise<Seal
 export async function blindIndex(value: string, context: string): Promise<string> {
   const { keys, primary } = await loadKeys();
   const master = keys.get(primary) as MasterKey;
-  const raw = await crypto.subtle.exportKey("raw", master.key).catch(() => null);
-  // The master key is imported as non-extractable, so derive through HKDF-like
-  // use of the key itself: encrypt a fixed block and use it as the HMAC key.
-  const seed = raw
-    ? new Uint8Array(raw)
-    : new Uint8Array(
-        await crypto.subtle.encrypt(
-          { name: ALGORITHM, iv: new Uint8Array(IV_BYTES) as BufferSource },
-          master.key,
-          encodeUtf8(`blind-index:${context}`) as BufferSource,
-        ),
-      ).slice(0, 32);
-
-  const hmacKey = await crypto.subtle.importKey(
-    "raw",
-    seed as BufferSource,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
   const mac = await crypto.subtle.sign(
     "HMAC",
-    hmacKey,
+    master.indexKey,
     encodeUtf8(`${context}:${value}`) as BufferSource,
   );
   return bytesToBase64(new Uint8Array(mac));

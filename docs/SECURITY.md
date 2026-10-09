@@ -71,14 +71,14 @@ old ones; `rewrap()` migrates values without downtime.
 
 ## 4. Encryption
 
-| Layer                       | Status                                                                                                                                                                                                      |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| In transit, browser → app   | TLS 1.2+, HSTS `max-age=63072000; includeSubDomains; preload`.                                                                                                                                              |
-| In transit, app → database  | TLS, enforced by the platform.                                                                                                                                                                              |
-| At rest, database           | AES-256, managed by the platform, including backups.                                                                                                                                                        |
-| At rest, uploaded documents | Private storage bucket, encrypted at rest. No public URLs anywhere: access is a signed URL with a five-minute expiry, issued only after the RLS policy on the `documents` row has already allowed the read. |
-| Field level                 | `src/lib/crypto/envelope.ts` for the references above.                                                                                                                                                      |
-| Key management              | `RENTID_ENCRYPTION_KEYS` holds `<key-id>:<base64 32 bytes>` entries, newest first. Move this to a KMS before processing real money.                                                                         |
+| Layer                       | Status                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| In transit, browser → app   | TLS 1.2+, HSTS `max-age=63072000; includeSubDomains; preload`.                                                                                                                                                                                                                                                                                             |
+| In transit, app → database  | TLS, enforced by the platform.                                                                                                                                                                                                                                                                                                                             |
+| At rest, database           | AES-256, managed by the platform, including backups.                                                                                                                                                                                                                                                                                                       |
+| At rest, uploaded documents | Private storage bucket, encrypted at rest. No public URLs anywhere: access is a signed URL with a five-minute expiry, issued only after the RLS policy on the `documents` row has already allowed the read.                                                                                                                                                |
+| Field level                 | **Not in use yet.** `src/lib/crypto/envelope.ts` (AES-256-GCM envelope encryption, separate HKDF-derived key for blind indexes) is built and tested, but no column is sealed with it today because the app does not yet store bank or identity-document references. It must be wired in before the first payment-provider token or ID reference is stored. |
+| Key management              | `RENTID_ENCRYPTION_KEYS` holds `<key-id>:<base64 32 bytes>` entries, newest first. Move this to a KMS before processing real money.                                                                                                                                                                                                                        |
 
 ---
 
@@ -95,7 +95,8 @@ Also in place:
 - **CSRF** middleware on every server function (`src/start.ts`).
 - **Rate limits in the database**, so they hold no matter which client calls: 10 invitation-acceptance attempts per hour per user (token guessing — and acceptance _soft-fails_ so a wrong token still counts against the limit, which a thrown exception would have rolled back), 20 applications per day, 30 leads per hour, 50 invitations per day.
 - **Input validation** with zod at the server-function boundary; PostgREST parameterizes everything, so SQL injection is not reachable through the data path, and the few places that build a filter string validate the input against a character class first.
-- **File uploads**: 25 MB cap, mime allowlist (pdf, png, jpeg, webp, heic, doc, docx), content type taken from the file rather than the extension, stored under `<organization-id>/<uuid>-<name>` so the storage policy can authorize by path prefix.
+- **File uploads**: 25 MB cap and mime allowlist (pdf, png, jpeg, webp, heic, doc, docx) enforced twice: in the browser before upload, and on the `documents` bucket itself (`file_size_limit`, `allowed_mime_types`) so a direct call to the storage API cannot bypass it. Objects live under `<organization-id>/…` or `tenancy/<tenancy-id>/…`, and a `documents` row may only point inside its own folder.
+- **Public waitlist form** (`/join`): 5 submissions per client address per hour and 300 site-wide, a honeypot field, the same answer whether or not the address is already registered, and a repeat submission never overwrites the stored one. The admin list is released only to a verified admin session.
 
 ---
 
@@ -151,7 +152,7 @@ or relationship history — is enforced by triggers, not by policy documents.
 
 ## 8. CI
 
-Every push runs: typecheck, lint, 545 unit tests, production build, all nine
+Every push runs: typecheck, lint, the unit tests, production build, all thirteen
 SQL security suites against a real Postgres 16, and `bun audit` for known
 vulnerable dependencies. A dependency with a known high-severity advisory fails
 the build.
@@ -171,7 +172,10 @@ Stating this plainly is part of the posture.
 7. **FCRA exposure is unreviewed.** The moment landlord-authored reviews and verified payment history influence a leasing decision, RentID is arguably a consumer reporting agency, which brings accuracy, dispute, and adverse-action obligations. **Get a lawyer's opinion before the reviews feature ships.** The dispute workflow is built; the legal framing is not.
 8. **Backups are the platform's defaults.** Set an explicit retention and, more importantly, _test a restore_.
 9. **The `anon` role can read published listings and public verification badges.** That is intentional, and deliberately narrow: `20260915000600` revokes everything else from `anon` and re-grants only those, plus three aggregate-only functions.
-10. **No MFA requirement for landlords and PMs**, only for admins. Worth revisiting once a payout account can be changed from the UI — that is the step an account takeover would target.
+10. **Email confirmation depends on a dashboard setting.** Invitations and the pre-accept invitation list are matched by e-mail address. If "Confirm email" is off in Supabase Auth, anyone can register an invited address. It must be on (with custom SMTP) before real tenants are invited. See `docs/DEPLOY.md` §4.
+11. **Admin decisions do not require MFA yet.** `is_admin_mfa()` exists and guards role changes, but the app has no MFA enrolment screen, so ownership-verification decisions only check the admin role. Add enrolment, then switch `decide_verification_case` to `is_admin_mfa()`.
+12. **Sybil tenancies.** One person with two accounts can still create an organization, invite the second account and produce a "verified tenancy". Property ownership verification is the control for this; the passport should eventually count only tenancies on platform-verified properties.
+13. **No MFA requirement for landlords and PMs**, only for admins. Worth revisiting once a payout account can be changed from the UI — that is the step an account takeover would target.
 
 ---
 

@@ -391,6 +391,8 @@ const ACCEPT_ERRORS: Record<string, string> = {
   already_accepted: "This invitation was already accepted.",
   already_revoked: "This invitation was withdrawn by the landlord.",
   already_expired: "This invitation has expired — ask your landlord to send a new one.",
+  own_organization:
+    "You manage the workspace that sent this invitation, so you can't accept it as the tenant.",
 };
 
 /**
@@ -425,12 +427,8 @@ export async function acceptInvitation(input: {
   if (!result.ok || !result.tenancy_id) {
     throw new Error(ACCEPT_ERRORS[result.error ?? ""] ?? "Could not accept this invitation.");
   }
-  if (input.fullName) {
-    await db
-      .from("tenancies")
-      .update({ tenant_name: input.fullName.trim() })
-      .eq("id", result.tenancy_id);
-  }
+  // The tenancy's terms (including the name on it) belong to the housing
+  // provider; a tenant cannot update the row, so nothing is written here.
   return { tenancyId: result.tenancy_id };
 }
 

@@ -169,8 +169,9 @@ function RegistrationForm() {
   const [acknowledged, setAcknowledged] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
-  const [duplicate, setDuplicate] = useState<string | null>(null);
-  const [done, setDone] = useState<null | "created" | "updated">(null);
+  const [done, setDone] = useState<null | "created">(null);
+  // Honeypot: off-screen and skipped by keyboard and screen readers. Only bots fill it.
+  const [website, setWebsite] = useState("");
 
   function toggleRole(role: InterestRole) {
     setRoles((prev) => (prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]));
@@ -203,11 +204,10 @@ function RegistrationForm() {
     return Object.keys(next).length === 0;
   }
 
-  async function send(updateExisting: boolean) {
+  async function send() {
     if (pending || done) return;
     if (!validate()) return;
     setPending(true);
-    setDuplicate(null);
     try {
       const result = (await submit({
         data: {
@@ -220,12 +220,11 @@ function RegistrationForm() {
           current_units: managesUnits ? Number(currentUnits) : null,
           intended_units:
             managesUnits && intendedUnits.trim() !== "" ? Number(intendedUnits) : null,
-          update_existing: updateExisting,
+          website,
         },
       })) as RegisterResult;
 
-      if (result.status === "duplicate") setDuplicate(result.message);
-      else setDone(result.status);
+      setDone(result.status);
     } catch {
       setErrors({ form: "We couldn't record your registration. Please try again." });
     } finally {
@@ -235,7 +234,7 @@ function RegistrationForm() {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    void send(false);
+    void send();
   }
 
   if (done) {
@@ -248,9 +247,8 @@ function RegistrationForm() {
           You're registered.
         </h2>
         <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-muted-foreground">
-          {done === "updated"
-            ? "Thank you — your response has been updated. We'll keep you updated as RentID gets closer to launch."
-            : "Thank you for your interest in RentID. Your registration has been recorded. We'll keep you updated as RentID gets closer to launch."}
+          Thank you for your interest in RentID. Your registration has been recorded. We'll keep you
+          updated as RentID gets closer to launch.
         </p>
       </Glass>
     );
@@ -426,24 +424,19 @@ function RegistrationForm() {
           ) : null}
         </div>
 
-        {duplicate ? (
-          <div className="rounded-2xl border border-accent/40 bg-accent/10 p-4">
-            <p className="text-[13px] font-medium">{duplicate}</p>
-            <p className="mt-1 text-[12.5px] text-muted-foreground">
-              You can update your previous response instead of creating a second registration.
-            </p>
-            <Button
-              tone="secondary"
-              size="sm"
-              className="mt-3"
-              loading={pending}
-              disabled={pending}
-              onClick={() => void send(true)}
-            >
-              Update my response
-            </Button>
-          </div>
-        ) : null}
+        <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+          <label>
+            Website
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </label>
+        </div>
 
         {errors["form"] ? <p className="text-[12.5px] text-destructive">{errors["form"]}</p> : null}
 

@@ -2,12 +2,15 @@
  * Prospective-user registrations ("Join RentID / Letter of Intent").
  *
  * Public submissions are written server-side with the privileged client because
- * the table intentionally has no anon policy. Admin reads verify the caller's
- * admin role through their own session before touching privileged reads.
+ * the table intentionally has no anon policy; that path is throttled and never
+ * overwrites an existing registration. Admin reads verify the caller's admin
+ * role through their own session before touching privileged reads.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
+
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const INTEREST_ROLES = ["renter", "landlord", "property_manager", "other"] as const;
 export type InterestRole = (typeof INTEREST_ROLES)[number];
@@ -27,8 +30,11 @@ export type InterestRegistration = {
   updated_at: string;
 };
 
-export type RegisterResult =
-  { status: "created" | "updated" } | { status: "duplicate"; message: string };
+/**
+ * The answer is the same whether or not the address was already registered, so
+ * the form cannot be used to test which e-mail addresses are on the list.
+ */
+export type RegisterResult = { status: "created" };
 
 const baseSchema = z.object({
   full_name: z
@@ -48,7 +54,8 @@ const baseSchema = z.object({
   acknowledged: z.literal(true),
   current_units: z.number().int().min(1).max(1000000).nullable().optional(),
   intended_units: z.number().int().min(0).max(1000000).nullable().optional(),
-  update_existing: z.boolean().optional(),
+  /** Honeypot: hidden from people, filled in by form-spamming bots. */
+  website: z.string().max(200).optional(),
 });
 
 /** Unit counts only apply to landlords / property managers. */
@@ -65,9 +72,22 @@ const registrationSchema = baseSchema.superRefine((data, ctx) => {
 
 export type RegistrationInput = z.input<typeof baseSchema>;
 
+/** Registrations accepted per client address per hour, and site-wide per hour. */
+const PER_ADDRESS_LIMIT = 5;
+const SITE_WIDE_LIMIT = 300;
+const GENERIC_FAILURE = "We couldn't record your registration. Please try again later.";
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export const registerInterest = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => registrationSchema.parse(data))
   .handler(async ({ data }): Promise<RegisterResult> => {
+    // A person never sees this field; answer as if it worked and store nothing.
+    if (data.website && data.website.trim() !== "") return { status: "created" };
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const emailNormalized = data.email.toLowerCase();
@@ -76,14 +96,45 @@ export const registerInterest = createServerFn({ method: "POST" })
 
     const request = getRequest();
     const headers = request?.headers;
+    // cf-connecting-ip is set by Cloudflare and cannot be spoofed by the
+    // client; x-forwarded-for is only a fallback for local development.
+    const ip =
+      headers?.get("cf-connecting-ip") ??
+      headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      null;
     const metadata = {
       user_agent: headers?.get("user-agent")?.slice(0, 500) ?? null,
       referer: headers?.get("referer")?.slice(0, 500) ?? null,
-      ip_address:
-        headers?.get("cf-connecting-ip") ??
-        headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        null,
+      ip_address: ip,
     };
+
+    // The table has no anonymous policy, so this function is the only way in:
+    // throttle it per address and overall. Typed loosely because the generated
+    // types predate check_rate_limit_key().
+    const limiter = supabaseAdmin as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: boolean | null; error: { message: string } | null }>;
+    };
+    const addressKey = `interest:ip:${await sha256Hex(ip ?? "unknown")}`;
+    for (const [key, limit] of [
+      [addressKey, PER_ADDRESS_LIMIT],
+      ["interest:all", SITE_WIDE_LIMIT],
+    ] as const) {
+      const { data: allowed, error } = await limiter.rpc("check_rate_limit_key", {
+        _key: key,
+        _limit: limit,
+        _window: "1 hour",
+      });
+      if (error) {
+        console.error("[interest] rate limit check failed:", error.message);
+        throw new Error(GENERIC_FAILURE);
+      }
+      if (allowed === false) {
+        throw new Error("Too many registrations from this connection. Please try again later.");
+      }
+    }
 
     const managesUnits = data.roles.includes("landlord") || data.roles.includes("property_manager");
     const units = {
@@ -91,37 +142,25 @@ export const registerInterest = createServerFn({ method: "POST" })
       intended_units: managesUnits ? (data.intended_units ?? null) : null,
     };
 
-    const { data: existing } = await supabaseAdmin
+    const { data: existing, error: lookupError } = await supabaseAdmin
       .from("interest_registrations")
       .select("id, submission_count")
       .eq("email_normalized", emailNormalized)
       .maybeSingle();
-
-    if (existing && !data.update_existing) {
-      return {
-        status: "duplicate",
-        message: "It looks like you've already registered your interest in RentID.",
-      };
+    if (lookupError) {
+      console.error("[interest] lookup failed:", lookupError.message);
+      throw new Error(GENERIC_FAILURE);
     }
 
     if (existing) {
+      // Anyone can type anyone's address, so a repeat submission never
+      // overwrites the stored answers. It is only counted.
       const { error } = await supabaseAdmin
         .from("interest_registrations")
-        .update({
-          full_name: data.full_name,
-          email: data.email.trim(),
-          phone,
-          roles: data.roles,
-          would_use: data.would_use,
-          acknowledged: true,
-          submitted_at: new Date().toISOString(),
-          submission_count: (existing.submission_count ?? 1) + 1,
-          ...units,
-          ...metadata,
-        })
+        .update({ submission_count: (existing.submission_count ?? 1) + 1 })
         .eq("id", existing.id);
-      if (error) throw new Error(error.message);
-      return { status: "updated" };
+      if (error) console.error("[interest] repeat count failed:", error.message);
+      return { status: "created" };
     }
 
     const { error } = await supabaseAdmin.from("interest_registrations").insert({
@@ -135,7 +174,10 @@ export const registerInterest = createServerFn({ method: "POST" })
       ...units,
       ...metadata,
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[interest] insert failed:", error.message);
+      throw new Error(GENERIC_FAILURE);
+    }
     return { status: "created" };
   });
 
@@ -166,19 +208,18 @@ export type InterestStats = {
 };
 
 /**
- * Registrations are personal data, so the read is authorised server-side only.
- * The app's session layer is still local (not real auth), so an administrator
- * unlocks the list with the RENTID_ADMIN_ACCESS_CODE secret. Once real sessions
- * land, an admin bearer token authorises without the code.
+ * Registrations are personal data. The read is authorised server-side from the
+ * caller's own session: the bearer token is verified, then the admin role is
+ * checked in the database as that user. There is no shared access code.
  */
 export const listInterestRegistrations = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) =>
-    z.object({ access_code: z.string().max(200).optional() }).parse(data ?? {}),
-  )
-  .handler(async ({ data }): Promise<{ rows: InterestRegistration[]; stats: InterestStats }> => {
-    const expected = process.env["RENTID_ADMIN_ACCESS_CODE"];
-    const authorised = Boolean(expected && data.access_code && data.access_code === expected);
-    if (!authorised) throw new Error("Administrator access only");
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ rows: InterestRegistration[]; stats: InterestStats }> => {
+    const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleError || isAdmin !== true) throw new Error("Administrator access only");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: registrations, error } = await supabaseAdmin
@@ -187,7 +228,10 @@ export const listInterestRegistrations = createServerFn({ method: "POST" })
         "id, full_name, email, phone, roles, would_use, acknowledged, current_units, intended_units, submitted_at, created_at, updated_at",
       )
       .order("submitted_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[interest] list failed:", error.message);
+      throw new Error("Registrations could not be loaded.");
+    }
 
     const rows = (registrations ?? []) as InterestRegistration[];
     return { rows, stats: computeInterestStats(rows) };

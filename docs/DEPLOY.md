@@ -34,7 +34,7 @@ You don't need to merge to deploy. Deploys come from whatever is checked out.
 ```bash
 bunx supabase login
 bunx supabase link --project-ref <your-project-ref>     # asks for the DB password
-bunx supabase db push                                    # lists 19 migrations; answer Y
+bunx supabase db push                                    # lists 20 migrations; answer Y
 ```
 
 Already pushed before? Run `bunx supabase db push` again — it applies only the new ones.
@@ -42,22 +42,34 @@ Already pushed before? Run `bunx supabase db push` again — it applies only the
 If `bunx supabase` fails to start, use `npx supabase` for the same three commands.
 
 Expect 43 tables, 128+ policies, and a private `documents` bucket. Every
-migration has been applied to a clean Postgres 16 and passes all 10 RLS suites.
+migration has been applied to a clean Postgres 16 and passes all 13 SQL security suites.
 
 ## 4. Supabase auth settings (dashboard)
 
 **Authentication → URL Configuration**
 
 - Site URL: `https://rentid.online`
-- Redirect URLs — add all of:
-  `https://rentid.online/**` · `https://www.rentid.online/**` ·
-  `https://rentid.*.workers.dev/**` · `http://localhost:5173/**`
+- Redirect URLs — add exactly these, nothing with a `*` in the host name:
+  `https://rentid.online/**` · `https://www.rentid.online/**`
 
-**Authentication → Sign In / Providers → Email → turn OFF "Confirm email"** for
-now. Supabase's built-in mailer only delivers to members of your Supabase
-organization and is heavily rate-limited, so a landlord signing up would never
-get the confirmation email. Turn it back on once custom SMTP is set up
-(Authentication → Emails → SMTP — Microsoft 365 or Resend).
+  Never add `https://rentid.*.workers.dev/**`. Anyone can register a Worker
+  called `rentid` on their own Cloudflare account, and a wildcard host would let
+  them receive your users' password-reset links. While testing on the
+  workers.dev URL, add that one exact host (for example
+  `https://rent-id.<your-subdomain>.workers.dev/**`) and remove it after the
+  domain is live. Keep `http://localhost:5173/**` out of the production project.
+
+**Authentication → Emails → SMTP: set up custom SMTP (Microsoft 365 or Resend)
+and leave "Confirm email" ON.** Supabase's built-in mailer only delivers to
+members of your Supabase organization, so without SMTP nobody outside it can
+sign up. Do not work around that by turning confirmation off on a project that
+holds real tenants: invitations are matched by e-mail address, so with
+confirmation off anyone can register an invited tenant's address and accept
+their invitation. Confirmation off is acceptable only while every account is a
+test account.
+
+Also under **Authentication**: minimum password length 12, leaked-password
+protection on, and "Secure email change" on.
 
 ## 5. Build config + deploy
 
@@ -91,7 +103,6 @@ Then the secrets (each prompts for the value; they persist across deploys):
 
 ```bash
 bunx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name rentid   # the Supabase *secret* key
-bunx wrangler secret put RENTID_ADMIN_ACCESS_CODE  --name rentid   # any long passphrase
 openssl rand -base64 32                                            # copy the output, then:
 bunx wrangler secret put RENTID_ENCRYPTION_KEYS    --name rentid   # 2026-09:<that output>
 ```

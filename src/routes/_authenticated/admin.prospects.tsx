@@ -37,19 +37,14 @@ function stamp(iso: string) {
   return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-const CODE_KEY = "rentid.admin.prospects.code";
-
 function AdminProspects() {
   const { roles } = useAuth();
   const fetchRows = useServerFn(listInterestRegistrations);
-  const [code, setCode] = useState(() =>
-    typeof window === "undefined" ? "" : (window.sessionStorage.getItem(CODE_KEY) ?? ""),
-  );
-  const [codeDraft, setCodeDraft] = useState("");
+  // Authorised server-side from this session's admin role; nothing to type in.
   const query = useQuery({
-    queryKey: ["interest-registrations", code],
-    queryFn: () => fetchRows({ data: { access_code: code } }),
-    enabled: roles.includes("admin") && code.length > 0,
+    queryKey: ["interest-registrations"],
+    queryFn: () => fetchRows(),
+    enabled: roles.includes("admin"),
     retry: false,
   });
 
@@ -90,7 +85,12 @@ function AdminProspects() {
       "submitted_date",
       "submitted_time",
     ];
-    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    // Registrants type these values. A cell starting with = + - @ would run as
+    // a formula when the export is opened in a spreadsheet, so neutralise it.
+    const esc = (v: string) => {
+      const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
     const lines = filtered.map((r) => {
       const d = new Date(r.submitted_at);
       return [
@@ -162,44 +162,12 @@ function AdminProspects() {
           }
         />
 
-        {!code || query.isError ? (
+        {query.isError ? (
           <Glass className="p-5">
-            <h2 className="font-display text-[15px] font-semibold tracking-tight">
-              Unlock prospective users
-            </h2>
-            <p className="mt-1.5 text-[12.5px] text-muted-foreground">
-              Registrations contain personal contact details, so the list is released server-side
-              only. Enter the administrator access code to view, filter and export it.
+            <p className="text-[12.5px] text-destructive">
+              Registrations could not be loaded. Sign out and back in with an administrator account,
+              then try again.
             </p>
-            {query.isError ? (
-              <p className="mt-2 text-[12.5px] text-destructive">
-                That access code was not accepted.
-              </p>
-            ) : null}
-            <div className="mt-3 flex flex-wrap items-end gap-2">
-              <Field
-                label="Administrator access code"
-                htmlFor="prospect-code"
-                className="min-w-[240px]"
-              >
-                <TextInput
-                  id="prospect-code"
-                  type="password"
-                  autoComplete="off"
-                  value={codeDraft}
-                  onChange={(e) => setCodeDraft(e.target.value)}
-                />
-              </Field>
-              <Button
-                onClick={() => {
-                  window.sessionStorage.setItem(CODE_KEY, codeDraft);
-                  setCode(codeDraft);
-                }}
-                disabled={codeDraft.length === 0}
-              >
-                Unlock
-              </Button>
-            </div>
           </Glass>
         ) : null}
 
